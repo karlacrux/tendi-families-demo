@@ -1,0 +1,980 @@
+/* ============================================================
+   TENDI CHILDREN LIST: the command bar reskin
+   ------------------------------------------------------------
+   Port of reskin-harness/children-A-command.html. Every value here is the value in that
+   mockup; the mockup inlines a verbatim copy of tendi-tokens.css, so the two render identically
+   as long as nothing below hardcodes a colour. ZERO hex in this file: everything is var(--token).
+
+   SCOPE: `.tendi-skin.tnd-children-page`. The page markup opts in with that class, so this file
+   is a no-op everywhere else and is safe to load globally from head.php.
+
+   LOADED AFTER tendi-skin.css so the page-scoped rules win over the generic list rules
+   (same specificity would otherwise be decided by source order).
+   ============================================================ */
+
+/* ---------- 0. neutralise the generic list chrome this page replaces ---------- */
+/* The shared list page renders a DataTables search pill in .tnd-dt-toolbar2. This page draws its
+   own search inside the command bar and drives .search() directly, so the stock one is dropped
+   from the dom string rather than hidden; this rule only kills the empty wrapper's margin. */
+.tendi-skin.tnd-children-page .tnd-dt-toolbar2 { display: none; }
+.tendi-skin.tnd-children-page .tnd-dt-toolbar { margin: 0; }
+
+/* ---------- 1. page head ---------- */
+.tendi-skin.tnd-children-page .tnd-page-head { align-items: center; margin-bottom: 14px; }
+.tendi-skin.tnd-children-page .tnd-page-head .tnd-head-ico { width: 44px; height: 44px; }
+.tendi-skin.tnd-children-page .tnd-page-head--icon .tnd-dt-title { font-size: 27px; margin-bottom: 4px; }
+.tendi-skin.tnd-children-page .tnd-page-head--icon .tnd-dt-subtitle { font-size: 13px; font-variant-numeric: tabular-nums; }
+.tendi-skin.tnd-children-page .tnd-dt-subtitle b { color: var(--ink-2); font-weight: 600; }
+.tendi-skin.tnd-children-page .tnd-dt-subtitle .sep { color: var(--ink-5); margin: 0 7px; }
+.tendi-skin.tnd-children-page .tnd-page-head--icon .btnContainer { padding-top: 0; align-items: center; }
+
+/* Buttons. `.tnd-btn` exists in tendi-skin.css only scoped to other components, so this page
+   defines its own copy; the values are the mockup's. */
+.tendi-skin.tnd-children-page .tnd-btn {
+  display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-sans);
+  font-weight: 600; font-size: 13px; line-height: 1; padding: 0 15px; height: 38px;
+  border-radius: var(--radius-md); border: 1px solid var(--paper-edge-strong);
+  background: var(--paper-2); color: var(--ink-2); cursor: pointer; white-space: nowrap;
+  text-decoration: none; box-shadow: none; text-shadow: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tendi-skin.tnd-children-page .tnd-btn svg { width: 15px; height: 15px; display: block; color: var(--ink-4); flex: none; }
+.tendi-skin.tnd-children-page .tnd-btn:hover { background: var(--cream-2); color: var(--ink); }
+.tendi-skin.tnd-children-page .tnd-btn:hover svg { color: var(--ink-3); }
+.tendi-skin.tnd-children-page .tnd-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+.tendi-skin.tnd-children-page .tnd-btn--primary { background: var(--primary); border-color: var(--primary); color: var(--paper-2); }
+.tendi-skin.tnd-children-page .tnd-btn--primary svg { color: var(--paper-2); }
+.tendi-skin.tnd-children-page .tnd-btn--primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: var(--paper-2); }
+
+/* ---------- 2. the command bar ---------- */
+.tendi-skin .tnd-chl-bar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 9px;
+  background: var(--paper-2); border: 1px solid var(--paper-edge); border-radius: var(--radius-lg);
+  padding: 7px 9px; margin-bottom: 10px;
+}
+.tendi-skin .tnd-chl-div { width: 1px; height: 24px; background: var(--paper-edge); flex: none; margin: 0 2px; }
+
+/* view switcher */
+.tendi-skin .tnd-viewsw { position: relative; flex: none; }
+.tendi-skin .tnd-viewsw-trg {
+  display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px;
+  border-radius: var(--radius-md); border: 1px solid transparent; background: transparent;
+  font-family: var(--font-display); font-weight: 700; font-size: 13.5px; letter-spacing: -0.01em;
+  color: var(--ink); cursor: pointer; transition: 0.14s; max-width: 260px;
+}
+.tendi-skin .tnd-viewsw-trg .vname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tendi-skin .tnd-viewsw-trg:hover { background: var(--cream-2); }
+.tendi-skin .tnd-viewsw-trg .car { width: 14px; height: 14px; color: var(--ink-4); transition: transform 0.15s; flex: none; }
+.tendi-skin .tnd-viewsw.is-open .tnd-viewsw-trg { background: var(--cream-2); }
+.tendi-skin .tnd-viewsw.is-open .tnd-viewsw-trg .car { transform: rotate(180deg); }
+.tendi-skin .tnd-viewsw-trg .cnt {
+  font-family: var(--font-sans); font-weight: 600; font-size: 11.5px; color: var(--ink-4);
+  font-variant-numeric: tabular-nums; background: var(--cream-2); padding: 2px 7px;
+  border-radius: var(--radius-full); flex: none;
+}
+.tendi-skin .tnd-viewsw.is-open .tnd-viewsw-trg .cnt { background: var(--paper-2); }
+.tendi-skin .tnd-viewsw-trg > svg:first-child { width: 15px; height: 15px; color: var(--primary); flex: none; }
+
+/* search: the hero */
+.tendi-skin .tnd-chl-search { position: relative; flex: 1; min-width: 200px; }
+.tendi-skin .tnd-chl-search > svg {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; color: var(--ink-4); pointer-events: none;
+}
+.tendi-skin .tnd-chl-search input {
+  width: 100%; height: 36px; padding: 0 74px 0 36px; border: 1px solid transparent;
+  border-radius: var(--radius-md); background: var(--cream); font: inherit; font-size: 13.5px;
+  color: var(--ink); transition: 0.14s;
+}
+.tendi-skin .tnd-chl-search input::placeholder { color: var(--ink-4); }
+.tendi-skin .tnd-chl-search input:focus {
+  outline: none; background: var(--paper-2); border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.tendi-skin .tnd-chl-search .hint {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; gap: 6px;
+}
+.tendi-skin .tnd-chl-search kbd {
+  font-family: var(--font-sans); font-size: 11px; font-weight: 600; color: var(--ink-4);
+  border: 1px solid var(--paper-edge-strong); border-radius: 5px; padding: 1px 6px;
+  background: var(--paper-2); line-height: 1.5; box-shadow: none;
+}
+.tendi-skin .tnd-chl-search .clr {
+  display: none; width: 20px; height: 20px; border: 0; background: var(--cream-3); color: var(--ink-3);
+  border-radius: var(--radius-full); cursor: pointer; place-items: center; padding: 0;
+}
+.tendi-skin .tnd-chl-search .clr svg { width: 11px; height: 11px; }
+.tendi-skin .tnd-chl-search.has-val .clr { display: grid; }
+.tendi-skin .tnd-chl-search.has-val kbd { display: none; }
+
+/* inline hot filters (Branch + Class). Named tnd-chl-sel, NOT tnd-select: the global
+   tendi-dropdown.js component owns .tnd-select and would fight these rules. */
+.tendi-skin .tnd-chl-sel { position: relative; flex: none; }
+.tendi-skin .tnd-chl-sel .trg {
+  display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 11px;
+  border: 1px solid transparent; border-radius: var(--radius-md); background: transparent;
+  font-size: 13px; color: var(--ink-2); font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: 0.14s; font-family: var(--font-sans);
+}
+.tendi-skin .tnd-chl-sel .trg:hover { background: var(--cream-2); }
+.tendi-skin .tnd-chl-sel .trg .lbl { color: var(--ink-4); font-weight: 500; max-width: 168px; overflow: hidden; text-overflow: ellipsis; }
+.tendi-skin .tnd-chl-sel .trg svg.lead { width: 15px; height: 15px; color: var(--ink-4); flex: none; }
+.tendi-skin .tnd-chl-sel .trg .car { width: 14px; height: 14px; color: var(--ink-4); flex: none; transition: transform 0.15s; }
+.tendi-skin .tnd-chl-sel.is-set .trg { background: var(--primary-tint); color: var(--primary); }
+.tendi-skin .tnd-chl-sel.is-set .trg .lbl { color: var(--primary); font-weight: 600; }
+.tendi-skin .tnd-chl-sel.is-set .trg svg.lead,
+.tendi-skin .tnd-chl-sel.is-set .trg .car { color: var(--primary); }
+.tendi-skin .tnd-chl-sel.is-open .trg { background: var(--cream-2); }
+.tendi-skin .tnd-chl-sel.is-open .trg .car { transform: rotate(180deg); }
+
+/* Filters button with a live count of what is hidden behind it */
+.tendi-skin .tnd-filt-btn {
+  display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px;
+  border-radius: var(--radius-md); border: 1px solid var(--paper-edge-strong); background: var(--paper-2);
+  font-family: var(--font-sans); font-weight: 600; font-size: 13px; color: var(--ink-2);
+  cursor: pointer; white-space: nowrap; transition: 0.14s; flex: none;
+}
+.tendi-skin .tnd-filt-btn svg { width: 15px; height: 15px; color: var(--ink-4); }
+.tendi-skin .tnd-filt-btn:hover { background: var(--cream-2); color: var(--ink); }
+.tendi-skin .tnd-filt-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+.tendi-skin .tnd-filt-btn .badge {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-full);
+  background: var(--primary); color: var(--paper-2); font-size: 11px; font-weight: 700;
+  display: none; place-items: center; font-variant-numeric: tabular-nums; line-height: 1;
+}
+.tendi-skin .tnd-filt-btn.has-n { border-color: var(--primary); background: var(--primary-tint); color: var(--primary); }
+.tendi-skin .tnd-filt-btn.has-n svg { color: var(--primary); }
+.tendi-skin .tnd-filt-btn.has-n .badge { display: grid; }
+.tendi-skin .tnd-filt-btn.is-icon { padding: 0 10px; }
+
+/* enrollment window segmented */
+.tendi-skin .tnd-chl-seg {
+  display: inline-flex; background: var(--cream); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md); padding: 3px; gap: 2px; flex: none;
+}
+.tendi-skin .tnd-chl-seg button {
+  border: 0; background: transparent; color: var(--ink-3); font-weight: 600; font-size: 12.5px;
+  font-family: var(--font-sans); height: 30px; padding: 0 14px; border-radius: 7px;
+  cursor: pointer; transition: 0.14s; box-shadow: none;
+}
+.tendi-skin .tnd-chl-seg button:not(.is-active):hover { color: var(--ink); background: var(--paper-2); }
+.tendi-skin .tnd-chl-seg button.is-active { background: var(--paper-2); color: var(--primary); box-shadow: var(--shadow-overlay-sm); }
+
+/* ---------- 3. active-filter chips (only rendered when something is on) ---------- */
+.tendi-skin .tnd-afbar { display: none; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; padding: 0 3px; }
+.tendi-skin .tnd-afbar.is-on { display: flex; }
+.tendi-skin .tnd-afchip {
+  display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 5px 0 11px;
+  border-radius: var(--radius-full); background: var(--paper-2); border: 1px solid var(--paper-edge-strong);
+  font-size: 12px; font-weight: 600; color: var(--ink-2); white-space: nowrap;
+}
+.tendi-skin .tnd-afchip .k { color: var(--ink-4); font-weight: 500; }
+.tendi-skin .tnd-afchip button {
+  width: 18px; height: 18px; border: 0; background: transparent; color: var(--ink-4);
+  border-radius: var(--radius-full); cursor: pointer; display: grid; place-items: center; padding: 0; transition: 0.13s;
+}
+.tendi-skin .tnd-afchip button svg { width: 11px; height: 11px; }
+.tendi-skin .tnd-afchip button:hover { background: var(--critical-tint); color: var(--critical); }
+.tendi-skin .tnd-afclear {
+  border: 0; background: transparent; color: var(--primary); font-family: var(--font-sans);
+  font-size: 12px; font-weight: 600; cursor: pointer; padding: 5px 8px; border-radius: var(--radius-sm);
+}
+.tendi-skin .tnd-afclear:hover { background: var(--primary-tint); }
+
+/* ---------- 4. filter popover ---------- */
+.tendi-skin .tnd-fpop-wrap { position: relative; flex: none; }
+.tendi-skin .tnd-fpop {
+  position: absolute; top: calc(100% + 8px); right: 0; width: 640px; background: var(--paper-2);
+  border: 1px solid var(--paper-edge); border-radius: var(--radius-xl); box-shadow: var(--shadow-overlay);
+  z-index: 70; display: none;
+}
+.tendi-skin .tnd-fpop.is-open { display: block; }
+.tendi-skin .tnd-fpop-body { padding: 18px 20px 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; }
+.tendi-skin .tnd-fgroup { padding-bottom: 16px; }
+.tendi-skin .tnd-fgroup + .tnd-fgroup { border-top: 1px solid var(--paper-edge); padding-top: 15px; }
+.tendi-skin .tnd-fgroup:nth-child(2) { border-top: 0; padding-top: 0; }
+.tendi-skin .tnd-fgroup h4 {
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--ink-4); margin: 0 0 11px;
+}
+.tendi-skin .tnd-frow { display: flex; gap: 10px; margin-bottom: 10px; }
+.tendi-skin .tnd-ffield { flex: 1; min-width: 0; }
+.tendi-skin .tnd-ffield > label { display: block; font-size: 11.5px; font-weight: 600; color: var(--ink-3); margin-bottom: 5px; }
+.tendi-skin .tnd-fhelp { font-size: 11px; color: var(--ink-5); margin: 5px 0 0; line-height: 1.45; }
+
+/* the popover's own selects reuse the real TndSelect component; only sizing is set here */
+.tendi-skin .tnd-fpop .tnd-select .tnd-select-trigger { height: 36px; font-size: 13px; }
+
+/* toggle pills */
+.tendi-skin .tnd-fpills { display: flex; flex-wrap: wrap; gap: 7px; }
+.tendi-skin .tnd-fpill {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px;
+  border-radius: var(--radius-full); border: 1px solid var(--paper-edge-strong); background: var(--paper-2);
+  font-family: var(--font-sans); font-size: 12.5px; font-weight: 600; color: var(--ink-3);
+  cursor: pointer; transition: 0.14s; white-space: nowrap;
+}
+.tendi-skin .tnd-fpill:hover { border-color: var(--primary); color: var(--primary); }
+.tendi-skin .tnd-fpill:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+.tendi-skin .tnd-fpill .tick { width: 13px; height: 13px; flex: none; opacity: 0; transition: opacity 0.12s; }
+.tendi-skin .tnd-fpill .n { font-size: 11px; font-weight: 700; color: var(--ink-5); font-variant-numeric: tabular-nums; }
+.tendi-skin .tnd-fpill.is-on { background: var(--primary-tint); border-color: var(--primary); color: var(--primary); }
+.tendi-skin .tnd-fpill.is-on .tick { opacity: 1; }
+.tendi-skin .tnd-fpill.is-on .n { color: var(--primary); }
+
+/* the date field, styled (never a bare native control) */
+.tendi-skin .tnd-fdate { position: relative; }
+.tendi-skin .tnd-fdate input {
+  width: 100%; height: 36px; padding: 0 34px 0 11px; border: 1px solid var(--paper-edge-strong);
+  border-radius: var(--radius-md); background: var(--paper-2); font: inherit; font-size: 13px; color: var(--ink-2);
+}
+.tendi-skin .tnd-fdate input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+.tendi-skin .tnd-fdate input::-webkit-calendar-picker-indicator {
+  opacity: 0; position: absolute; right: 0; width: 34px; height: 100%; cursor: pointer;
+}
+.tendi-skin .tnd-fdate > svg {
+  position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; color: var(--ink-4); pointer-events: none;
+}
+.tendi-skin .tnd-fpop-foot {
+  display: flex; align-items: center; gap: 10px; padding: 13px 20px; border-top: 1px solid var(--paper-edge);
+  background: var(--cream); border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+.tendi-skin .tnd-fpop-foot .spacer { flex: 1; }
+.tendi-skin .tnd-fpop-foot .lnk {
+  border: 0; background: transparent; color: var(--ink-3); font-family: var(--font-sans);
+  font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 6px 9px; border-radius: var(--radius-sm);
+}
+.tendi-skin .tnd-fpop-foot .lnk:hover { background: var(--cream-2); color: var(--ink); }
+.tendi-skin .tnd-fpop-foot .lnk.save { color: var(--primary); display: inline-flex; align-items: center; gap: 5px; }
+.tendi-skin .tnd-fpop-foot .lnk.save svg { width: 13px; height: 13px; }
+.tendi-skin .tnd-fpop-foot .lnk.save:hover { background: var(--primary-tint); }
+
+/* ---------- 5. shared flyout menu (views / options / row actions) ---------- */
+/* text-align is stated here, not left to inherit. The menu is mounted wherever its trigger lives,
+   and the Import / Export trigger sits inside the list header's `.btnContainer.text-right`, whose
+   Bootstrap `text-align: right` cascaded straight into the panel: the rows looked fine only because
+   `.tnd-chl-mi` sets `left` itself, so the section titles ("Bring in", "Take out", "Print") were the
+   only thing left ranged right. A popup owns its own alignment regardless of where it is anchored. */
+.tendi-skin .tnd-chl-menu {
+  position: absolute; top: calc(100% + 7px); min-width: 236px; background: var(--paper-2);
+  border: 1px solid var(--paper-edge); border-radius: var(--radius-md); box-shadow: var(--shadow-overlay);
+  padding: 6px; z-index: 80; display: none; text-align: left;
+}
+.tendi-skin .tnd-chl-menu.r { right: 0; }
+.tendi-skin .tnd-chl-menu.l { left: 0; }
+/* The row-action panel is taken out of the cell and pinned to the viewport instead, with its
+   coordinates measured in placeRowMenu() (tendi-children-list.js). Anchored inside the cell it was
+   clipped by `.tnd-table-scroll` (overflow:auto) and `.tnd-table-clip` (overflow:hidden), so on the
+   last rows of a page the menu rendered entirely below the visible bottom of the table. Plain
+   overflow does not clip a fixed descendant, which is what makes this escape both; it is the same
+   approach `.tnd-rowmenu-pop` already takes in tendi-skin.css, and the z-index is borrowed from it.
+   Note the two are NOT equivalent in stacking: that one also needs tendi-list.js to lift its whole
+   cell (`.tnd-rowmenu-cell-open`, z-index 2060) to escape a sticky cell's stacking context. This
+   menu needs no such lift only because the Children action cell is never made sticky, so if that
+   column is ever pinned, this rule alone will not be enough. `right`/`bottom` are cleared because
+   the `.r` rule above would otherwise fight the measured `left`/`top`. */
+.tendi-skin .tnd-chl-menu.is-fixed {
+  position: fixed; right: auto; bottom: auto; z-index: 2050;
+  /* A waiting row's menu runs to about 300px, so on a short viewport (a laptop with the browser
+     chrome open, or a tablet in landscape) the last items would sit past the bottom with no way to
+     reach them: placeRowMenu clamps the panel into the viewport, it does not shrink it. Scrolls
+     within itself instead, the same treatment the other flyouts in this app give a long list. */
+  max-height: calc(100vh - 16px); overflow-y: auto;
+}
+/* Flex column with a gap rather than plain block: adjacent rows each paint a rounded background on
+   hover / when selected, and with no gap those backgrounds butt together and read as one block.
+   The wrappers the lists render into need the same gap, since they are flex ITEMS here, not the
+   parents of the rows. */
+.tendi-skin .tnd-chl-menu.is-open { display: flex; flex-direction: column; gap: 3px; }
+.tendi-skin .tnd-chl-menu.is-open > div:not(.tnd-chl-msep):not(.tnd-chl-mhead):not(.tnd-chl-mi) {
+  display: flex; flex-direction: column; gap: 3px;
+}
+.tendi-skin .tnd-chl-mi {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0;
+  background: transparent; border-radius: var(--radius-sm); font-family: var(--font-sans);
+  font-size: 13px; font-weight: 500; color: var(--ink-2); cursor: pointer; white-space: nowrap;
+  text-align: left; transition: 0.12s;
+}
+.tendi-skin .tnd-chl-mi > svg { width: 15px; height: 15px; color: var(--ink-4); flex: none; }
+.tendi-skin .tnd-chl-mi .sp { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tendi-skin .tnd-chl-mi .n { font-size: 11.5px; font-weight: 600; color: var(--ink-5); font-variant-numeric: tabular-nums; }
+.tendi-skin .tnd-chl-mi:hover { background: var(--cream-2); color: var(--ink); }
+.tendi-skin .tnd-chl-mi:hover > svg { color: var(--ink-3); }
+.tendi-skin .tnd-chl-mi.is-active { background: var(--primary-tint); color: var(--primary); font-weight: 600; }
+.tendi-skin .tnd-chl-mi.is-active > svg,
+.tendi-skin .tnd-chl-mi.is-active .n { color: var(--primary); }
+/* An action the account cannot use reads as unavailable rather than broken: greyed, no hover
+   response, no pointer. Used by Bus timeline on a tenant with transportation switched off.
+   `--ink-4` (the muted-label step, ~5.6:1 on white) rather than `--ink-5`, which the token file
+   reserves for decorative marks and which lands near-invisible here. It is still clearly a step
+   down from the `--ink-2` the live items use, which is the whole job. The item keeps pointer
+   events so its title tooltip can explain itself: it is marked `aria-disabled`, not `disabled`. */
+.tendi-skin .tnd-chl-mi.is-disabled,
+.tendi-skin .tnd-chl-mi[disabled] { color: var(--ink-4); cursor: default; }
+.tendi-skin .tnd-chl-mi.is-disabled:hover,
+.tendi-skin .tnd-chl-mi[disabled]:hover { background: transparent; color: var(--ink-4); }
+.tendi-skin .tnd-chl-mi.is-disabled > svg,
+.tendi-skin .tnd-chl-mi[disabled] > svg,
+.tendi-skin .tnd-chl-mi.is-disabled:hover > svg,
+.tendi-skin .tnd-chl-mi[disabled]:hover > svg { color: var(--ink-5); }
+.tendi-skin .tnd-chl-mi.danger { color: var(--critical); }
+.tendi-skin .tnd-chl-mi.danger > svg { color: var(--critical); }
+.tendi-skin .tnd-chl-mi.danger:hover { background: var(--critical-tint); color: var(--critical); }
+.tendi-skin .tnd-chl-msep { height: 1px; background: var(--paper-edge); margin: 5px 2px; }
+.tendi-skin .tnd-chl-mhead {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-5); padding: 8px 10px 5px;
+}
+.tendi-skin .tnd-chl-mnote { font-size: 11px; color: var(--ink-5); line-height: 1.5; padding: 4px 10px 7px; margin: 0; }
+.tendi-skin .tnd-chl-mnote b { color: var(--ink-3); font-weight: 600; }
+
+/* view rows carry a star (default) and, when saved, a delete */
+.tendi-skin .tnd-chl-mi.viewrow { padding-right: 6px; }
+.tendi-skin .viewrow .rowacts { display: flex; align-items: center; gap: 2px; flex: none; margin-left: 4px; }
+.tendi-skin .viewrow .ra {
+  width: 22px; height: 22px; border: 0; background: transparent; border-radius: 6px;
+  color: var(--ink-5); cursor: pointer; display: grid; place-items: center; padding: 0;
+  opacity: 0; transition: 0.12s;
+}
+.tendi-skin .viewrow .ra svg { width: 13px; height: 13px; }
+.tendi-skin .viewrow:hover .ra,
+.tendi-skin .viewrow .ra:focus-visible { opacity: 1; }
+.tendi-skin .viewrow .ra:hover { background: var(--cream-3); color: var(--ink-2); }
+.tendi-skin .viewrow .ra.del:hover { background: var(--critical-tint); color: var(--critical); }
+.tendi-skin .viewrow .ra.star.is-on { opacity: 1; color: var(--attention); }
+.tendi-skin .viewrow .ra.star.is-on svg { fill: currentColor; }
+
+/* locked columns read as locked, never as an unchecked checkbox */
+.tendi-skin .colrow.is-locked { cursor: default; color: var(--ink-4); }
+.tendi-skin .colrow.is-locked:hover { background: transparent; }
+.tendi-skin .colrow .lockwrap { display: flex; align-items: center; gap: 6px; flex: none; }
+.tendi-skin .colrow .lock { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-5); }
+.tendi-skin .colrow .lockwrap svg { width: 12px; height: 12px; color: var(--ink-5); }
+
+/* ---------- 6. table cells ---------- */
+.tendi-skin.tnd-children-page .tnd-list-table tbody td { padding: 9px 11px; vertical-align: middle; }
+.tendi-skin.tnd-children-page.tnd-dens-compact .tnd-list-table tbody td { padding: 5px 11px; }
+.tendi-skin.tnd-children-page.tnd-dens-roomy .tnd-list-table tbody td { padding: 14px 11px; }
+/* the generic list skin centres every cell; this table is left-aligned so names scan */
+.tendi-skin.tnd-children-page .tnd-list-table tbody td,
+.tendi-skin.tnd-children-page .tnd-list-table thead th { text-align: left; }
+
+.tendi-skin .tnd-namecell { display: flex; align-items: center; gap: 10px; }
+.tendi-skin .tnd-rowav {
+  flex: none; width: 30px; height: 30px; border-radius: var(--radius-full); display: grid;
+  place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 11.5px;
+  color: var(--paper-2); letter-spacing: -0.01em; overflow: hidden;
+}
+.tendi-skin .tnd-rowav.has-img { background: var(--cream-2); }
+.tendi-skin .tnd-rowav img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tendi-skin .tnd-rowav.acc-plum { background: var(--plum-deep); }
+.tendi-skin .tnd-rowav.acc-teal { background: var(--teal-deep); }
+.tendi-skin .tnd-rowav.acc-rose { background: var(--rose-deep); }
+.tendi-skin .tnd-rowav.acc-sage { background: var(--sage-deep); }
+.tendi-skin .tnd-rowav.acc-sky { background: var(--sky-deep); }
+.tendi-skin .tnd-rowav.acc-apricot { background: var(--apricot-deep); }
+.tendi-skin .tnd-rowav.acc-lavender { background: var(--lavender-deep); }
+.tendi-skin .tnd-rowav.acc-coral { background: var(--coral-deep); }
+.tendi-skin .tnd-rowav.acc-mint { background: var(--mint-deep); }
+.tendi-skin .tnd-rowav.acc-sun { background: var(--sun-deep); }
+
+.tendi-skin .tnd-nm { min-width: 0; }
+.tendi-skin .tnd-nm .n1 {
+  font-weight: 600; color: var(--ink); font-size: 13.5px; letter-spacing: -0.005em;
+  display: flex; align-items: center; gap: 6px;
+}
+.tendi-skin .tnd-nm .n2 { font-size: 11.5px; color: var(--ink-5); font-weight: 500; margin-top: 1px; display: block; }
+/* !important on the box properties: a global `.is-empty` rule and the legacy `.child_note` styling
+   both used to reach this element and paint it as an amber chip. It carries neither class now, but
+   the reset is kept so a future global rule cannot turn a 16px icon back into a block. */
+.tendi-skin .tnd-noteflag {
+  flex: none; display: inline-grid !important; place-items: center;
+  width: 16px !important; height: 16px !important; padding: 0 !important;
+  background: none !important; border: 0 !important; border-radius: 0 !important;
+  color: var(--ink-5); cursor: pointer;
+}
+.tendi-skin .tnd-noteflag svg { width: 14px; height: 14px; }
+.tendi-skin .tnd-noteflag:hover { color: var(--primary); }
+.tendi-skin .tnd-noteflag:focus-visible { outline: none; color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); border-radius: 4px !important; }
+/* the "no note yet" affordance stays invisible until the row is hovered, so an empty column
+   does not become a wall of grey marks the way the old "Click to update" text did */
+.tendi-skin .tnd-noteflag--add { opacity: 0; transition: opacity 0.12s; }
+.tendi-skin .tnd-list-table tbody tr:hover .tnd-noteflag--add { opacity: 1; }
+
+.tendi-skin .tnd-cls { font-weight: 600; color: var(--ink-2); }
+.tendi-skin .tnd-cls .br { display: block; font-size: 11.5px; color: var(--ink-5); font-weight: 500; margin-top: 1px; }
+.tendi-skin .tnd-age { font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tendi-skin .tnd-age .d { display: block; font-size: 11.5px; color: var(--ink-5); font-weight: 500; margin-top: 1px; }
+.tendi-skin .tnd-enr {
+  display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums;
+  font-size: 12.5px; color: var(--ink-2); white-space: nowrap;
+}
+.tendi-skin .tnd-enr svg { width: 13px; height: 13px; color: var(--ink-5); flex: none; }
+.tendi-skin .tnd-enr .open { color: var(--ink-5); font-style: normal; }
+.tendi-skin .tnd-enr.is-soon { color: var(--attention); font-weight: 600; }
+.tendi-skin .tnd-enr.is-soon svg { color: var(--attention); }
+
+.tendi-skin .tnd-pgs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tendi-skin .tnd-pg {
+  display: inline-flex; align-items: center; height: 21px; padding: 0 8px;
+  border-radius: var(--radius-full); font-size: 11px; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap;
+}
+.tendi-skin .tnd-pg.hs { background: var(--info-tint); color: var(--info); }
+.tendi-skin .tnd-pg.ln { background: var(--ok-tint); color: var(--ok); }
+.tendi-skin .tnd-pg.vc { background: var(--attention-tint); color: var(--attention); }
+.tendi-skin .tnd-pg.tag { background: var(--cream-2); color: var(--ink-3); }
+
+.tendi-skin .tnd-trn {
+  display: inline-flex; align-items: center; gap: 9px; font-size: 12px; color: var(--ink-3);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.tendi-skin .tnd-trn i { display: inline-flex; align-items: center; gap: 4px; font-style: normal; }
+.tendi-skin .tnd-trn svg { width: 14px; height: 14px; color: var(--ink-4); }
+.tendi-skin .tnd-trn .bus svg { color: var(--primary); }
+/* Renamed from .tnd-dash, which collided with the DASHBOARD page's own wrapper class and let a
+   single "no value" cell re-pad the whole shell (see tendi-dashboard.css). */
+.tendi-skin .tnd-nil { color: var(--ink-5); }
+
+.tendi-skin .tnd-st {
+  display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 11.5px;
+  padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap;
+}
+.tendi-skin .tnd-st .dot { width: 6px; height: 6px; border-radius: var(--radius-full); background: currentColor; flex: none; }
+.tendi-skin .tnd-st.is-active { color: var(--ok); background: var(--ok-tint); }
+.tendi-skin .tnd-st.is-inactive { color: var(--ink-3); background: var(--cream-2); }
+.tendi-skin .tnd-st.is-trash { color: var(--critical); background: var(--critical-tint); }
+
+/* row actions: one kebab, only drawn on hover so 50 rows are not 50 buttons */
+.tendi-skin .tnd-rowmenu { position: relative; display: inline-flex; }
+.tendi-skin .tnd-kebab {
+  width: 28px; height: 28px; border-radius: var(--radius-sm); border: 1px solid transparent;
+  background: transparent; color: var(--ink-4); cursor: pointer; display: grid; place-items: center; transition: 0.13s;
+}
+.tendi-skin .tnd-kebab svg { width: 15px; height: 15px; }
+.tendi-skin .tnd-list-table tbody tr:hover .tnd-kebab { border-color: var(--paper-edge-strong); background: var(--paper-2); }
+.tendi-skin .tnd-kebab:hover,
+.tendi-skin .tnd-rowmenu.is-open .tnd-kebab { background: var(--cream-2); border-color: var(--primary); color: var(--primary); }
+.tendi-skin .tnd-kebab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+.tendi-skin.tnd-children-page .tnd-list-table td.tnd-col-act { width: 44px; text-align: right; padding-right: 12px; }
+
+/* ---------- 6b. the table must use border-collapse: SEPARATE ----------
+   Bootstrap's `.table` sets `border-collapse: collapse`, and Chrome does not lay out
+   `position: sticky` table cells reliably under collapsed borders: the frozen <th>s rendered in the
+   wrong place until some unrelated style change forced a reflow, so the header sat offset from the
+   body it was labelling. `separate` with zero spacing is the supported combination and looks
+   identical here, because every rule in this table is drawn with `border-bottom` on the cells rather
+   than by the collapsed grid. `.table-bordered`'s per-cell box is cancelled for the same reason:
+   under `separate` it would double every line. */
+.tendi-skin.tnd-children-page .tnd-list-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+.tendi-skin.tnd-children-page .tnd-list-table > thead > tr > th,
+.tendi-skin.tnd-children-page .tnd-list-table > tbody > tr > td {
+  border-left: 0; border-right: 0; border-top: 0;
+}
+
+/* ---------- 7. frozen identity columns, WIDE SCREENS ONLY ----------
+   A sticky column costs its own width out of the scrollable area. On a 1366-wide Chromebook or a
+   13" laptop that makes the horizontal scroll worse, not better, so below the breakpoint these
+   columns simply scroll with the rest of the table. */
+@media (min-width: 1500px) {
+  .tendi-skin.tnd-children-page .tnd-list-table th.tnd-f1,
+  .tendi-skin.tnd-children-page .tnd-list-table td.tnd-f1 { position: sticky; left: 0; }
+  /* The Child column is pinned at the checkbox column's REAL width, not a guessed one. Auto table
+     layout negotiates that cell down (a declared 40px came out 38px), and the 2px difference was a
+     slot the scrolling columns showed through, just left of the avatar. tendi-children-list.js
+     measures the cell and writes --tnd-f1w after every draw; the 40px here is only the pre-measure
+     fallback. */
+  .tendi-skin.tnd-children-page .tnd-list-table th.tnd-f2,
+  .tendi-skin.tnd-children-page .tnd-list-table td.tnd-f2 { position: sticky; left: var(--tnd-f1w, 40px); }
+  /* Body cells: the scrolling <td>s are unpositioned, so any z-index above 0 wins. f1 sits above f2
+     so the checkbox column stays on top as the name column slides under it. */
+  .tendi-skin.tnd-children-page .tnd-list-table td.tnd-f1 { z-index: 4; }
+  .tendi-skin.tnd-children-page .tnd-list-table td.tnd-f2 { z-index: 3; }
+  .tendi-skin.tnd-children-page .tnd-list-table td.tnd-f1,
+  .tendi-skin.tnd-children-page .tnd-list-table td.tnd-f2 { background: var(--paper-2); }
+  .tendi-skin.tnd-children-page .tnd-list-table tbody tr:hover td.tnd-f1,
+  .tendi-skin.tnd-children-page .tnd-list-table tbody tr:hover td.tnd-f2 { background: var(--cream); }
+  /* The header's frozen cells sit ON TOP of the columns scrolling under them, so they need an
+     opaque background (the header band colour) and a HIGHER z-index than their siblings.
+     This is the bit that was wrong: the shared skin already gives EVERY `thead th` z-index 5 for the
+     vertical sticky header, so matching that value left the frozen cells tied with the scrolling
+     ones, and a tie is broken by dom order, which means the later column painted over the frozen
+     one. The header read "Enrollment" where the pinned "Child" should have been. */
+  .tendi-skin.tnd-children-page .tnd-list-table th.tnd-f1 { z-index: 7; background: var(--cream-2); }
+  .tendi-skin.tnd-children-page .tnd-list-table th.tnd-f2 { z-index: 6; background: var(--cream-2); }
+  .tendi-skin.tnd-children-page .tnd-list-table td.tnd-f2::after,
+  .tendi-skin.tnd-children-page .tnd-list-table th.tnd-f2::after {
+    content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 1px; background: var(--paper-edge);
+  }
+}
+/* min/max as well as width: on an auto-layout table a bare `width` is only a suggestion, and the
+   browser shrinking this cell is what opened the gap the frozen Child column was meant to close. */
+.tendi-skin.tnd-children-page .tnd-list-table th.tnd-f1,
+.tendi-skin.tnd-children-page .tnd-list-table td.tnd-f1 {
+  width: 40px; min-width: 40px; max-width: 40px; padding-left: 14px; padding-right: 4px;
+}
+.tendi-skin.tnd-children-page .tnd-list-table th.tnd-f2,
+.tendi-skin.tnd-children-page .tnd-list-table td.tnd-f2 { min-width: 236px; }
+
+/* The optional Note column. `.child_note` carries legacy styling that renders it as an amber chip;
+   inside this table it is just text, and the empty state is a quiet prompt rather than a filled
+   block repeated down the column. The element keeps its class because the update-description modal
+   writes back into `.child_note[data-id]`. */
+.tendi-skin.tnd-children-page .tndcol-note .child_note {
+  background: none !important; border: 0 !important; padding: 0 !important;
+  color: var(--ink-2); font-size: 12.5px; line-height: 1.45; cursor: pointer;
+  max-width: 260px; white-space: normal;
+}
+.tendi-skin.tnd-children-page .tndcol-note .child_note:hover { color: var(--primary); }
+.tendi-skin.tnd-children-page .tndcol-note .tnd-note-empty { color: var(--ink-5); }
+
+/* ---------- 7b. column visibility ----------
+   Hiding is done in CSS, NOT with DataTables' column().visible(). That API REMOVES the <th> from
+   the dom, so the next `destroy: true` re-init (every filter change on this page re-inits the
+   table) saw 9 header cells against the 15 columns the server returns and threw
+   "Cannot read properties of undefined (reading 'style')" mid-draw, leaving the list empty.
+   A class on the page root sidesteps the whole interaction: the column count never changes. */
+.tendi-skin.tnd-hide-class  .tndcol-class,
+.tendi-skin.tnd-hide-age    .tndcol-age,
+.tendi-skin.tnd-hide-enroll .tndcol-enroll,
+.tendi-skin.tnd-hide-prog   .tndcol-prog,
+.tendi-skin.tnd-hide-trans  .tndcol-trans,
+.tendi-skin.tnd-hide-status .tndcol-status,
+.tendi-skin.tnd-hide-recid  .tndcol-recid,
+.tendi-skin.tnd-hide-cir    .tndcol-cir,
+.tendi-skin.tnd-hide-lp     .tndcol-lp,
+.tendi-skin.tnd-hide-vouch  .tndcol-vouch,
+.tendi-skin.tnd-hide-tag    .tndcol-tag,
+.tendi-skin.tnd-hide-note   .tndcol-note { display: none !important; }
+
+/* ---------- 8. selection dock ---------- */
+/* THE DOCK FLOATS CLEAR ABOVE THE TABLE FOOT, IT DOES NOT SIT ON TOP OF IT.
+   `.tnd-dt-foot` (count, pager, rows-per-page; tendi-skin.css) is `flex: 0 0 auto` at the end of a
+   pinned flex column, so it is parked at the bottom of the viewport permanently, not scrolled to.
+   Measured, with one child selected: the foot is 58px tall and its top sits 80px above the viewport
+   bottom, identically at 1280x700, 1440x820 and 1440x1200. The old `bottom: 26px` put the dock
+   across 26px to 76px of that same 22px-to-80px band, so the pager was underneath the pill:
+   document.elementFromPoint at the centre of every page link returned a dock node (SPAN.cnt,
+   BUTTON.tnd-dockbtn.btn-bulk-add-group, BUTTON.tnd-dockbtn.danger, BUTTON.tnd-dockx), and only
+   "Next" stuck out past the pill's right edge. 8 of 9 controls were unreachable at every height.
+
+   THIS IS NOT A Z-INDEX PROBLEM AND MUST NOT BE FIXED WITH ONE. The two elements want the same
+   rectangle, so whichever wins the layer, the loser is unclickable: at the dock's old z-index of 90
+   the table painted over it and the DOCK was dead (that was the "bulk actions not clickable" bug);
+   at 2000 the dock wins and the PAGER is dead. Adding the pager to the page's stacking ladder in
+   children_manage.php would only hand the defect back to the Delete and Add to group buttons.
+   Separating them vertically is what actually retires it.
+
+   92px clears the foot's 80px with a 12px gap. Keep this above 80 if the foot ever grows. */
+/* z-index 2000, not 90. At 90 the list table paints OVER the dock, which is the bug the block
+   above describes; the Children page has carried a local `z-index: 2000` override ever since, so
+   the component's own value was one nobody could use. It belongs on the component: the Employees
+   dock hit the identical "it is in the DOM, is-on, and invisible" symptom the moment it was added.
+   This is safe for the same reason it is safe there and for no other: `bottom: 92px` already
+   separates the dock from the pager, so winning the layer costs the foot nothing. Read the block
+   above before touching either number. */
+.tendi-skin .tnd-seldock {
+  position: fixed; left: 50%; bottom: 92px; transform: translateX(-50%) translateY(14px); z-index: 2000;
+  display: flex; align-items: center; gap: 8px; padding: 9px 10px 9px 16px; background: var(--ink);
+  border-radius: var(--radius-full); box-shadow: var(--shadow-overlay);
+  opacity: 0; pointer-events: none; transition: opacity 0.18s, transform 0.18s;
+}
+.tendi-skin .tnd-seldock.is-on { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+.tendi-skin .tnd-seldock .cnt { color: var(--paper-2); font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* `.scope` is the second half of "1,196 selected · every child in this view", and it is not
+   decoration: the header checkbox selects the filtered set, not the page, so the bar has to say
+   which of the two its number counts. `.is-busy` is the window while the server is resolving that
+   set, when the count is not yet true and the actions must not be reachable. Both were page-scoped
+   copies in children_manage.php; they belong to the component, which Employees now uses too. */
+.tendi-skin .tnd-seldock .cnt .scope { color: var(--ink-5, #8c85a0); font-weight: 500; }
+/* A LITERAL middle dot, not `\00b7`. In CSS a hex escape swallows the single whitespace character
+   that terminates it, so `" \00b7 "` renders as " ·" with nothing after it and the bar read
+   "37 selected ·every employee in this view". */
+.tendi-skin .tnd-seldock .cnt .scope:not(:empty)::before { content: " · "; }
+.tendi-skin .tnd-seldock.is-busy .tnd-dockbtn { opacity: .5; cursor: default; }
+.tendi-skin .tnd-seldock .tnd-dockbtn[disabled] { pointer-events: none; }
+.tendi-skin .tnd-seldock .vdiv { width: 1px; height: 20px; background: var(--paper-edge-strong); margin: 0 3px; }
+.tendi-skin .tnd-dockbtn {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px;
+  border-radius: var(--radius-full); border: 0; background: var(--cream-3); color: var(--ink);
+  font-family: var(--font-sans); font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: 0.14s; white-space: nowrap;
+}
+.tendi-skin .tnd-dockbtn svg { width: 14px; height: 14px; }
+.tendi-skin .tnd-dockbtn:hover { background: var(--paper-2); }
+.tendi-skin .tnd-dockbtn.danger { background: var(--critical-tint); color: var(--critical); }
+.tendi-skin .tnd-dockbtn.danger:hover { background: var(--critical); color: var(--paper-2); }
+.tendi-skin .tnd-dockx {
+  width: 30px; height: 30px; border-radius: var(--radius-full); border: 0; background: transparent;
+  color: var(--ink-5); cursor: pointer; display: grid; place-items: center;
+}
+.tendi-skin .tnd-dockx svg { width: 14px; height: 14px; }
+.tendi-skin .tnd-dockx:hover { background: var(--ink-2); color: var(--paper-2); }
+
+/* ============================================================
+   9. MODALS
+   ------------------------------------------------------------
+   NOT scoped under `.tendi-skin`: these modals are deliberately siblings of the list container
+   (tendi-skin.css exempts `.modal` from the rule that collapses what follows it), so the skin's
+   scoped selectors cannot reach them. They carry `.tnd-modal` and are styled directly.
+   Bootstrap 3 still owns show/hide, `.fade` and `.in`; only the looks are ours.
+   ============================================================ */
+.tnd-modal .tnd-modal-dialog { width: 560px; max-width: calc(100vw - 32px); margin: 48px auto; }
+.tnd-modal .tnd-modal-content {
+  background: var(--paper-2);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  color: var(--ink);
+}
+
+.tnd-modal .tnd-modal-head {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 20px 22px 16px; border-bottom: 1px solid var(--paper-edge);
+}
+.tnd-modal .tnd-modal-htext { flex: 1; min-width: 0; }
+.tnd-modal .tnd-modal-title {
+  font-family: var(--font-display); font-size: 18px; font-weight: 700;
+  letter-spacing: -0.015em; color: var(--ink); margin: 0; line-height: 1.2;
+}
+.tnd-modal .tnd-modal-sub {
+  margin: 4px 0 0; font-size: 13px; color: var(--ink-4); line-height: 1.4;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tnd-modal .tnd-modal-sub:empty { display: none; }
+.tnd-modal .tnd-modal-x {
+  flex: none; width: 30px; height: 30px; border-radius: var(--radius-sm);
+  border: 1px solid transparent; background: transparent; color: var(--ink-4);
+  cursor: pointer; display: grid; place-items: center; padding: 0; transition: 0.13s;
+  opacity: 1; text-shadow: none; font-size: 0;
+}
+.tnd-modal .tnd-modal-x svg { width: 16px; height: 16px; }
+.tnd-modal .tnd-modal-x:hover { background: var(--cream-2); color: var(--ink); opacity: 1; }
+.tnd-modal .tnd-modal-x:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+
+.tnd-modal .tnd-modal-body { padding: 18px 22px 20px; }
+.tnd-modal .tnd-modal-label {
+  display: block; font-size: 11.5px; font-weight: 600; color: var(--ink-3); margin: 0 0 6px;
+}
+.tnd-modal .tnd-modal-textarea {
+  width: 100%; min-height: 150px; resize: vertical;
+  padding: 11px 13px; border: 1px solid var(--paper-edge-strong); border-radius: var(--radius-md);
+  background: var(--paper-2); font: inherit; font-size: 13.5px; line-height: 1.55; color: var(--ink);
+  box-shadow: none;
+}
+.tnd-modal .tnd-modal-textarea::placeholder { color: var(--ink-5); }
+.tnd-modal .tnd-modal-textarea:focus {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.tnd-modal .tnd-modal-help { margin: 7px 0 0; font-size: 11.5px; color: var(--ink-5); line-height: 1.45; }
+
+/* --- shared modal component, additions for forms with more than a textarea ---------------------
+   Added for Special Messages (Transport), which is the first .tnd-modal carrying a single-line
+   field, a multi-select and jQuery Validate. Written against .tnd-modal like the rest of the block
+   so any modal using the component gets them, not just that page. */
+
+/* single-line twin of .tnd-modal-textarea */
+.tnd-modal .tnd-modal-input {
+  width: 100%; height: 40px; padding: 0 13px;
+  border: 1px solid var(--paper-edge-strong); border-radius: var(--radius-md);
+  background: var(--paper-2); font: inherit; font-size: 13.5px; color: var(--ink); box-shadow: none;
+}
+.tnd-modal .tnd-modal-input::placeholder { color: var(--ink-5); }
+.tnd-modal .tnd-modal-input:focus {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring);
+}
+/* one field per row, so groups do not run together */
+.tnd-modal .tnd-modal-field + .tnd-modal-field { margin-top: 15px; }
+
+/* Select2 3.4.5 (v3 markup: .select2-choices > .select2-search-choice) dressed to match the fields
+   above. Left as Select2 rather than converted to TndSelect on purpose: every .tnd-select rule is
+   scoped to .tendi-skin and this modal renders outside it, which is exactly the trap that stretched
+   the Live Route Monitor toolbar. */
+.tnd-modal .select2-container { width: 100% !important; }
+/* !important is doing real work here, not papering over a specificity mistake: select2.css is
+   loaded by the page AFTER this file and paints the control with a grey gradient
+   (`background-image: linear-gradient(...)`) plus its own border, which is the grey slab the
+   card's screenshot shows. The gradient in particular cannot be beaten by ordering alone. */
+.tnd-modal .select2-container-multi .select2-choices {
+  min-height: 40px; padding: 4px 6px !important; gap: 5px;
+  border: 1px solid var(--paper-edge-strong) !important; border-radius: var(--radius-md) !important;
+  background: var(--paper-2) !important; background-image: none !important; box-shadow: none !important;
+  list-style: none;
+}
+.tnd-modal .select2-container-multi.select2-container-active .select2-choices {
+  border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring);
+}
+/* same reason as above: select2.css gives each chip its own gradient and border */
+.tnd-modal .select2-container-multi .select2-choices .select2-search-choice {
+  margin: 3px 5px 3px 0; padding: 4px 8px 4px 22px !important;
+  border: 1px solid var(--primary) !important; border-radius: var(--radius-sm, 7px) !important;
+  background: var(--primary-tint) !important; background-image: none !important; color: var(--primary);
+  font-size: 12.5px; font-weight: 600; line-height: 1.3; box-shadow: none !important;
+}
+.tnd-modal .select2-container-multi .select2-choices .select2-search-field input {
+  height: 28px; padding: 0 4px; font: inherit; font-size: 13.5px; color: var(--ink); background: transparent;
+}
+.tnd-modal .select2-drop {
+  border: 1px solid var(--paper-edge-strong); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md, 0 10px 30px rgba(20,16,40,.13)); background: var(--paper-2);
+}
+.tnd-modal .select2-results .select2-highlighted { background: var(--primary); color: #fff; }
+
+/* jQuery Validate drops its messages in as <label class="error"> right after the field */
+.tnd-modal label.error {
+  display: block; margin: 6px 0 0; font-size: 11.5px; font-weight: 600; color: var(--critical);
+}
+.tnd-modal .tnd-req { color: var(--critical); margin-left: 2px; }
+
+.tnd-modal .tnd-modal-foot {
+  display: flex; align-items: center; justify-content: flex-end; gap: 9px;
+  padding: 14px 22px; background: var(--cream); border-top: 1px solid var(--paper-edge);
+}
+.tnd-modal .tnd-mbtn {
+  display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 17px;
+  border-radius: var(--radius-md); border: 1px solid var(--paper-edge-strong);
+  background: var(--paper-2); font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+  color: var(--ink-2); cursor: pointer; white-space: nowrap; box-shadow: none; text-shadow: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tnd-modal .tnd-mbtn:hover { background: var(--cream-2); color: var(--ink); }
+.tnd-modal .tnd-mbtn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+.tnd-modal .tnd-mbtn--primary { background: var(--primary); border-color: var(--primary); color: var(--paper-2); }
+.tnd-modal .tnd-mbtn--primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: var(--paper-2); }
+.tnd-modal .tnd-mbtn[disabled] { opacity: 0.6; pointer-events: none; }
+
+@media (max-width: 600px) {
+  .tnd-modal .tnd-modal-dialog { margin: 20px auto; }
+  .tnd-modal .tnd-modal-foot { flex-direction: column-reverse; align-items: stretch; }
+  .tnd-modal .tnd-mbtn { justify-content: center; }
+}
+
+/* ============================================================
+   9b. BUS TIMELINE MODAL (#child_timeline)
+   ------------------------------------------------------------
+   The one modal the reskin never reached, because until the row menu's Bus timeline item was
+   repaired nothing on a reskinned page could open it. Its markup lives in common/template.php and
+   is SHARED with the legacy bus-route and attendance reports, and its body is built as a string of
+   Bootstrap grid markup by window.child_timeline, so this is written to restyle that markup as it
+   stands rather than to require it to change. Selectors lead with the id: the legacy `style.css`
+   and `custom_bootstrap.css` both have opinions about `.modal`, `.form-control` and `.close`, and
+   an id out-specifies them without a single !important.
+   Not scoped under `.tendi-skin` for the same reason as section 9 above: the modal is a body-level
+   sibling of the page container. The tokens are declared on :root, so they still resolve.
+   ============================================================ */
+.tnd-tlmodal .modal-dialog { width: 620px; max-width: calc(100vw - 32px); margin: 48px auto; }
+#child_timeline .modal-content {
+  background: var(--paper-2); border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-2xl); box-shadow: var(--shadow-overlay);
+  font-family: var(--font-sans); color: var(--ink); overflow: hidden;
+}
+
+/* Header. Flex with explicit `order` rather than a markup group, because child_timeline APPENDS
+   the refresh button to `.modal-header` on every open: it always arrives as the last child, and
+   ordering is what puts it back beside the close button without touching that JS. */
+#child_timeline .modal-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 18px 20px 15px; border-bottom: 1px solid var(--paper-edge); min-height: 0;
+}
+#child_timeline .modal-title {
+  order: 1; flex: 1; min-width: 0; margin: 0;
+  font-family: var(--font-display); font-size: 18px; font-weight: 700;
+  letter-spacing: -0.015em; line-height: 1.2; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#child_timeline #refresh_child_timeline { order: 2; }
+#child_timeline .close { order: 3; }
+/* Both header controls read as one set. `.close` needs the Bootstrap look actively undone:
+   it ships a floated 21px bold "x" with an opacity and a text-shadow.
+   `margin: 0` is the load-bearing one, and it is why the refresh icon sat above the close button
+   rather than beside it. After appending the button, window.child_timeline adds the CLASS
+   `refresh_child_timeline`, and legacy style.css gives that class
+   `float: right; margin-top: -18px; margin-right: 15px`, the nudges that dragged a floated icon
+   back up into the old header. The id out-specifies `float`, but a margin that is never restated
+   here simply survives: the negative top margin lifted the icon 9px off the flex line and the
+   right margin widened the 6px gap to 21px. Bootstrap does the same to `.close` on a smaller
+   scale (`.modal-header .close { margin-top: -2px }`), so zeroing it centres that one too. */
+#child_timeline .modal-header > button {
+  flex: none; width: 30px; height: 30px; padding: 0; margin: 0; float: none;
+  display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink-4);
+  opacity: 1; text-shadow: none; font-size: 0; line-height: 0;
+  cursor: pointer; transition: background 0.13s, color 0.13s;
+}
+#child_timeline .modal-header > button:hover { background: var(--cream-2); color: var(--ink); opacity: 1; }
+#child_timeline .modal-header > button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+#child_timeline .modal-header > button > svg { width: 16px; height: 16px; }
+/* The legacy spinner class rotates the BUTTON, which drags its hover background round with it.
+   Kept working, moved onto the icon. */
+#child_timeline #refresh_child_timeline.rotate_animation { animation: none; }
+#child_timeline #refresh_child_timeline.rotate_animation > svg { animation: rotate 2s linear infinite; }
+
+#child_timeline .modal-body { padding: 18px 20px 20px; }
+
+/* The body is Bootstrap grid markup built in JS. Flatten the floats and drive it with flex, so
+   the two attendance columns still sit side by side and collapse cleanly when there is no room. */
+#child_timeline_body_wrapper { display: flex; flex-wrap: wrap; gap: 0; }
+#child_timeline_body_wrapper [class*="col-sm-"] {
+  float: none; width: auto; padding: 0; margin-left: 0; min-width: 0;
+}
+/* The gutter between the two attendance columns is `column-gap` on the parent, NOT padding on the
+   second column: the builder gives that column `no-padding`, and legacy style.css defines that as
+   `padding: 0 !important`, so a padding gutter is silently dropped and the left column's value
+   ends up touching the right column's label ("7:42 amBus:"). A gap cannot be overridden by it. */
+#child_timeline_body_wrapper .col-sm-12 {
+  flex: 1 1 100%; display: flex; flex-wrap: wrap; column-gap: 30px; row-gap: 0;
+}
+#child_timeline_body_wrapper .col-sm-6 { flex: 1 1 230px; }
+
+/* Date picker row, the one control in here. Centred on its own line above the timeline. */
+#child_timeline_body_wrapper .col-sm-offset-3 {
+  flex: 1 1 100%; display: flex; justify-content: center; margin: 2px 0 4px;
+}
+#child_timeline #filtr_date {
+  width: 100%; max-width: 210px; height: 38px; padding: 0 13px; text-align: center;
+  border: 1px solid var(--paper-edge-strong); border-radius: var(--radius-md);
+  background: var(--paper-2); box-shadow: none;
+  font-family: var(--font-sans); font-size: 13.5px; font-weight: 600; color: var(--ink);
+  cursor: pointer; transition: border-color 0.13s, box-shadow 0.13s;
+}
+#child_timeline #filtr_date:hover { border-color: var(--primary); }
+#child_timeline #filtr_date:focus {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Section heading ("Pick-up" / "Drop-off"). The markup nests a <strong> inside an <h4> that also
+   carries grid and margin utilities, so the weight is set here and the utilities are overridden. */
+#child_timeline_body_wrapper h4 {
+  flex: 1 1 100%; margin: 18px 0 10px; padding: 0;
+  font-family: var(--font-sans); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-4);
+}
+#child_timeline_body_wrapper h4 strong { font-weight: 700; }
+#child_timeline_body_wrapper > .col-sm-12 > .col-sm-12:first-child h4 { margin-top: 6px; }
+
+/* One fact per row: muted label, value carried by the <strong> the builder already emits. */
+#child_timeline_body_wrapper .attendance-item {
+  display: flex; align-items: baseline; gap: 8px; justify-content: space-between;
+  margin: 0; padding: 7px 0; border-bottom: 1px dashed var(--paper-edge);
+  font-size: 13px; line-height: 1.45; color: var(--ink-2);
+}
+#child_timeline_body_wrapper .col-sm-6 .attendance-item:last-child { border-bottom: 0; }
+#child_timeline_body_wrapper .item-label {
+  margin: 0; flex: none; font-size: 12px; font-weight: 500; color: var(--ink-4);
+}
+#child_timeline_body_wrapper .attendance-item strong { font-weight: 600; color: var(--ink); }
+#child_timeline_body_wrapper .attendance-item a { color: var(--primary); text-decoration: none; }
+#child_timeline_body_wrapper .attendance-item a:hover { text-decoration: underline; }
+
+/* The dashed rule the builder asks for between Pick-up and Drop-off. */
+#child_timeline_body_wrapper .border-dashed-top {
+  border-top: 1px solid var(--paper-edge); margin-top: 16px; padding-top: 4px;
+}
+
+/* "Child is absent." and "Oops! Something went wrong." both arrive as `label.error`, and the
+   common one is a plain statement of fact rather than a failure, so this reads as a quiet empty
+   state instead of the raw red the legacy `.error` class paints. */
+#child_timeline_body_wrapper label.error {
+  flex: 1 1 100%; display: block; margin: 0; padding: 30px 16px 24px;
+  text-align: center; font-family: var(--font-sans); font-size: 13.5px; font-weight: 500;
+  color: var(--ink-4); line-height: 1.5;
+}
+#child_timeline_body_wrapper .text-center { flex: 1 1 100%; text-align: center; }
+
+@media (max-width: 620px) {
+  .tnd-tlmodal .modal-dialog { margin: 20px auto; }
+  #child_timeline_body_wrapper .col-sm-12 { column-gap: 0; }
+}
+
+/* ---------- 10. responsive ---------- */
+/* Below ~1180 the bar cannot hold everything on one line. It wraps rather than scrolls, so nothing
+   becomes unreachable; search keeps the full width of its row. */
+@media (max-width: 1180px) {
+  .tendi-skin .tnd-chl-bar { flex-wrap: wrap; }
+  .tendi-skin .tnd-chl-search { order: -1; flex-basis: 100%; min-width: 0; }
+  .tendi-skin .tnd-chl-div { display: none; }
+}
+@media (max-width: 720px) {
+  .tendi-skin .tnd-fpop { width: min(92vw, 640px); }
+  .tendi-skin .tnd-fpop-body { grid-template-columns: 1fr; }
+  .tendi-skin .tnd-fgroup:nth-child(2) { border-top: 1px solid var(--paper-edge); padding-top: 15px; }
+  .tendi-skin .tnd-fgroup:first-child { padding-top: 0; border-top: 0; }
+  .tendi-skin .tnd-seldock { left: 12px; right: 12px; transform: none; overflow-x: auto; }
+  .tendi-skin .tnd-seldock.is-on { transform: none; }
+}
+
+/* B4. The size of each view, in its own menu row. Muted and tabular: it is a fact about the row,
+   not a call to action, and the numbers have to line up when they sit above one another. Pushed to
+   the right so the labels stay left-aligned and scannable.
+   Only built-in views carry one. A saved view's filter set is arbitrary, so counting it would mean
+   running the user's whole query to label a menu row. */
+.tendi-skin .tnd-chl-mi.viewrow .sp { display: flex; align-items: baseline; gap: 8px; }
+.tendi-skin .tnd-chl-mi.viewrow .viewcount {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-4);
+}
+.tendi-skin .tnd-chl-mi.viewrow.is-active .viewcount { color: var(--primary); }
+
+/* ============================================================
+   CHILD FORM, Parents Details: the messaging controls
+   Card https://trello.com/c/OGg5n7yt
+   ------------------------------------------------------------
+   The nine controls on that tab (two "Use X phone for messages" boxes with their SMS / Voice /
+   SMS & Voice radios, plus "Send Notifications") were the only ones on the child form that got no
+   reskin, and the reason was a markup convention rather than a missing style: tendi-skin.css chips
+   a checkbox or radio only through `label:has(> input[type=...])`, and this block put the input
+   BESIDE the label instead. So the labels computed cursor:default with no padding, no border and
+   no hover, which is what "the text is not clickable" looks like even though label-for was wired
+   the whole time. The markup now wraps, and these rules are the chip.
+
+   NOT scoped to .tnd-drawer, and that is the point. tendi-skin.css chips only inside the drawer,
+   but this same form also renders OUTSIDE it: every `#children/edit/<id>` deep link (Payments, the
+   audit log, the waiting list, the branch movement report, the duplicate-child warning) loads it
+   into `.tendi-skin .tnd-form-page`, where a drawer-scoped fix paints nothing. Scoping to the
+   component instead covers both. This file loads after tendi-skin.css, so where the drawer's own
+   chip rules also match, the two agree and ties fall this way.
+   ============================================================ */
+/* clear + full width, because `display:flex` makes this a block formatting context and a BFC will
+   not flow around the floated .col-sm-3 / .col-sm-4 the loose inline markup used to sit beside. Left
+   as-is it was squeezed into whatever gutter the two columns left over (measured 270px for ~255px of
+   chips on the form page, so it wrapped under 1280px). Its own row instead, indented to line up with
+   the field it belongs to. The drawer sets every col to width:100%;float:none, so there the clear is
+   a no-op and the offset is overridden back to 0 below. */
+.tendi-skin .tnd-msg-opts { display: flex; flex-wrap: wrap; align-items: center; clear: both; width: 100%; margin: 9px 0 0; }
+/* compound, not descendant: the form page puts both classes on ONE element
+   (`<div class="row-fluid tendi-skin tnd-form-page">`, children.php), so `.tendi-skin .tnd-form-page`
+   matches nothing. The drawer really is nested, so that one stays a descendant. */
+.tendi-skin.tnd-form-page .tnd-msg-opts { width: 75%; margin-left: 25%; }   /* clears the col-sm-3 label gutter, so the chips line up under the field */
+.tendi-skin .tnd-drawer .tnd-msg-opts { width: 100%; margin-left: 0; }
+/* the channels take the whole next line, which is what puts the on/off alone on the first one.
+   Done from the channels' side so the on/off pill keeps its natural width: stretching it to the
+   full column reads as a banner or a button, not as the checkbox it is. */
+.tendi-skin .tnd-msg-opts .tnd-msg-methods { display: flex; flex-wrap: wrap; align-items: center; flex: 0 0 100%; }
+.tendi-skin .tnd-msg-opts label.tnd-msg-opt {
+  display: inline-flex; align-items: center; width: auto; margin: 0 8px 8px 0; padding: 8px 15px;
+  border-radius: var(--radius-full); background: var(--paper-2); border: 1px solid var(--paper-edge-strong);
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--ink-3);
+  text-transform: none; letter-spacing: 0; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tendi-skin .tnd-msg-opts label.tnd-msg-opt > span { user-select: none; }
+/* the native control still carries the state, the submit and the focus; the pill is what shows it */
+.tendi-skin .tnd-msg-opts label.tnd-msg-opt > input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; pointer-events: none; }
+.tendi-skin .tnd-msg-opts label.tnd-msg-opt:hover { border-color: var(--primary); color: var(--ink); }
+.tendi-skin .tnd-msg-opts label.tnd-msg-opt:has(> input:checked) { background: var(--primary-tint); border-color: var(--primary); color: var(--primary); }
+/* the hidden input cannot show its own ring, so the pill wears it */
+.tendi-skin .tnd-msg-opts label.tnd-msg-opt:has(> input:focus-visible) { box-shadow: 0 0 0 3px var(--focus-ring); }
+/* channels while the box is unticked: the setting does not apply, so it reads as unavailable
+   rather than as an empty choice the operator forgot to make */
+.tendi-skin .tnd-msg-opts label.tnd-msg-opt:has(> input:disabled) { cursor: not-allowed; opacity: 0.45; }
+.tendi-skin .tnd-msg-opts label.tnd-msg-opt:has(> input:disabled):hover { border-color: var(--paper-edge-strong); color: var(--ink-3); }

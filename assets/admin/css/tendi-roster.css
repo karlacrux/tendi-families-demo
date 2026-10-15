@@ -1,0 +1,440 @@
+/* ============================================================
+   TENDI ROSTER: bespoke "Elevated Roster" component system for the
+   Branches & Classes admin pages (reskin). Ported verbatim from the
+   owner-approved mockup reskin-harness/classes-branches-B-roster.html.
+
+   SCOPING: every rule is scoped under `.tnd-roster` (a page-only hook)
+   so these bespoke components can never leak into the other reskinned
+   pages (Payments/Users/etc.). The page wraps content in
+   `<div class="tendi-skin tnd-roster">`: `.tendi-skin` supplies the
+   shared scoped reset; `.tnd-roster` supplies these components. Loaded
+   AFTER tendi-skin.css so the few overlapping names (tnd-btn) win here.
+
+   Tokens come from tendi-tokens.css (the single source of truth), no
+   hardcoded hex except the standard #fff text-on-color and per-record
+   identity colours injected inline as `--rec`.
+   ============================================================ */
+.tnd-roster{font-size:14px;color:var(--ink)}
+.tnd-roster svg{display:block}
+
+/* ---- page header lockup (icon tile + title + subtitle + primary Add) ---- */
+.tnd-roster .pay-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:22px}
+.tnd-roster .pay-head .ico{flex:none;width:46px;height:46px;border-radius:var(--radius-lg);background:var(--primary-tint);
+  color:var(--primary);display:grid;place-items:center}
+.tnd-roster .pay-head .ico svg{width:24px;height:24px}
+.tnd-roster .pay-head .htext{flex:1;min-width:0}
+.tnd-roster .pay-head h1{font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1.05;letter-spacing:-.022em;margin:0 0 6px;color:var(--ink)}
+.tnd-roster .pay-head p{margin:0;font-size:14px;color:var(--ink-4);line-height:1.5}
+.tnd-roster .pay-head .head-actions{display:flex;gap:9px;flex:none;padding-top:5px}
+
+/* ---- buttons ---- */
+.tnd-roster .tnd-btn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-sans);font-weight:600;
+  font-size:13px;line-height:1;padding:9px 15px;border-radius:var(--radius-md);border:1px solid var(--paper-edge-strong);
+  background:var(--paper-2);color:var(--ink-2);cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s,color .15s}
+.tnd-roster .tnd-btn svg{width:15px;height:15px;color:var(--ink-4)}
+.tnd-roster .tnd-btn:hover{background:var(--cream-2);border-color:var(--paper-edge-strong);color:var(--ink)}
+.tnd-roster .tnd-btn:hover svg{color:var(--ink-3)}
+.tnd-roster .tnd-btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--focus-ring)}
+.tnd-roster .tnd-btn--primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.tnd-roster .tnd-btn--primary svg{color:#fff}
+.tnd-roster .tnd-btn--primary:hover{background:var(--primary-hover);border-color:var(--primary-hover);color:#fff}
+.tnd-roster .tnd-btn--primary:hover svg{color:#fff}
+
+/* ---- flat stat cards ---- */
+.tnd-roster .pay-stats{display:flex;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.tnd-roster .pay-stat{flex:1;min-width:210px;background:var(--paper-2);border:1px solid var(--paper-edge);
+  border-radius:var(--radius-xl);padding:18px 20px;display:flex;gap:15px;align-items:flex-start}
+.tnd-roster .pay-stat .si{flex:none;width:38px;height:38px;border-radius:var(--radius-md);display:grid;place-items:center;
+  background:var(--primary-tint);color:var(--primary)}
+.tnd-roster .pay-stat .si svg{width:19px;height:19px}
+.tnd-roster .pay-stat.is-ok .si{background:var(--ok-tint);color:var(--ok)}
+.tnd-roster .pay-stat.is-neg .si{background:var(--critical-tint);color:var(--critical)}
+.tnd-roster .pay-stat.is-amber .si{background:var(--attention-tint);color:var(--attention)}
+.tnd-roster .pay-stat .sbody{flex:1;min-width:0}
+.tnd-roster .pay-stat .lbl{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin:0 0 7px}
+.tnd-roster .pay-stat .val{font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.tnd-roster .pay-stat .val.is-ok{color:var(--ok)}
+.tnd-roster .pay-stat .val.is-neg{color:var(--critical)}
+.tnd-roster .pay-stat .val.is-amber{color:var(--attention)}
+.tnd-roster .pay-stat .sub{font-size:11px;color:var(--ink-4);margin-top:5px;font-weight:500}
+
+/* ---- toolbar: search + segmented + filter chips ---- */
+.tnd-roster .pay-toolbar{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.tnd-roster .seg{display:inline-flex;background:var(--cream-2);border:1px solid var(--paper-edge);border-radius:var(--radius-lg);padding:4px;gap:4px}
+.tnd-roster .seg button{border:1px solid transparent;background:transparent;color:var(--ink-3);font-weight:600;font-size:12.5px;font-family:var(--font-sans);
+  padding:8px 16px;border-radius:var(--radius-md);cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.14s}
+.tnd-roster .seg button svg{width:14px;height:14px;color:var(--ink-4)}
+.tnd-roster .seg button:not(.is-active):hover{color:var(--ink-2);background:rgba(255,255,255,.6)}
+.tnd-roster .seg button.is-active{background:var(--paper-2);color:var(--primary);border-color:var(--paper-edge-strong);box-shadow:var(--shadow-overlay-sm)}
+.tnd-roster .seg button.is-active svg{color:var(--primary)}
+
+.tnd-roster .pay-search{position:relative;flex:1;min-width:230px;max-width:320px}
+.tnd-roster .pay-search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink-4)}
+.tnd-roster .pay-search input{width:100%;height:42px;padding:0 38px 0 38px;border:1px solid var(--paper-edge-strong);
+  border-radius:var(--radius-md);background:var(--paper-2);font:inherit;font-size:13.5px;color:var(--ink)}
+.tnd-roster .pay-search input::placeholder{color:var(--ink-4)}
+.tnd-roster .pay-search input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--focus-ring)}
+.tnd-roster .pay-search kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--font-sans);
+  font-size:11px;color:var(--ink-4);border:1px solid var(--paper-edge-strong);border-radius:6px;padding:1px 6px;background:var(--cream)}
+
+/* filter chips (toggleable pills, a couple pre-selected) */
+.tnd-roster .chipbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tnd-roster .fchip{display:inline-flex;align-items:center;gap:7px;height:42px;padding:0 14px;border-radius:var(--radius-md);
+  border:1px solid var(--paper-edge-strong);background:var(--paper-2);color:var(--ink-3);font-size:12.5px;font-weight:600;
+  font-family:var(--font-sans);cursor:pointer;white-space:nowrap;transition:.14s}
+.tnd-roster .fchip svg{width:14px;height:14px;color:var(--ink-4)}
+.tnd-roster .fchip:hover{background:var(--cream-2);color:var(--ink-2);border-color:var(--paper-edge-strong)}
+.tnd-roster .fchip.is-on{background:var(--primary-tint);border-color:transparent;color:var(--primary)}
+.tnd-roster .fchip.is-on svg{color:var(--primary)}
+.tnd-roster .fchip .cnt{font-variant-numeric:tabular-nums;font-weight:700;opacity:.75}
+
+/* ---- rst-select (neighborhood / branch filter, a real native <select> styled as a pill) ---- */
+.tnd-roster .rst-select{height:42px;min-width:170px;padding:0 34px 0 13px;border:1px solid var(--paper-edge-strong);
+  border-radius:var(--radius-md);background-color:var(--paper-2);color:var(--ink-2);font-family:var(--font-sans);
+  font-size:13.5px;font-weight:500;cursor:pointer;transition:border-color .15s;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;background-repeat:no-repeat;
+  background-position:right 12px center;background-size:15px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6480' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")}
+.tnd-roster .rst-select:hover{border-color:var(--primary)}
+.tnd-roster .rst-select:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--focus-ring)}
+
+/* ============================================================
+   ELEVATED ROSTER: the enriched table (.rst-* vocabulary)
+   Starts from the users-reskin .pay-table look (sticky band, hairline
+   rows, no zebra) then enriches cells: leading identity swatch, inline
+   capacity meter, flag badges, grouped/collapsible branch headers.
+   ============================================================ */
+.tnd-roster .rst-wrap{background:var(--paper-2);border:1px solid var(--paper-edge);border-radius:var(--radius-xl);overflow:hidden}
+.tnd-roster .rst-scroll{overflow:auto;max-height:none}
+.tnd-roster table.rst-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.tnd-roster .rst-table thead th{position:sticky;top:0;z-index:3;background:var(--cream-2);color:var(--ink-3);text-align:left;
+  font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:11px 12px;white-space:nowrap;
+  border-bottom:1px solid var(--paper-edge)}
+.tnd-roster .rst-table thead th.sortable{cursor:pointer;user-select:none}
+.tnd-roster .rst-table thead th.sortable:hover{color:var(--ink-2)}
+.tnd-roster .rst-table thead th .car{display:inline-block;margin-left:5px;color:var(--ink-5);vertical-align:-1px;font-size:10px}
+.tnd-roster .rst-table thead th.is-sorted{color:var(--primary)}
+.tnd-roster .rst-table thead th.is-sorted .car{color:var(--primary)}
+.tnd-roster .rst-table thead th.num,.tnd-roster .rst-table td.num{font-variant-numeric:tabular-nums;text-align:right}
+.tnd-roster .rst-table tbody td{padding:12px 12px;border-bottom:1px solid var(--paper-edge);vertical-align:middle;color:var(--ink-2)}
+.tnd-roster .rst-table tbody tr.rst-row{cursor:pointer;transition:background .12s}
+.tnd-roster .rst-table tbody tr.rst-row:hover{background:var(--cream)}
+.tnd-roster td.rst-actcell{white-space:nowrap;text-align:right}
+
+/* leading identity swatch: the branch/class custom color, from real data */
+.tnd-roster .rst-namecell{display:flex;align-items:center;gap:12px}
+.tnd-roster .rst-swatch{flex:none;width:10px;align-self:stretch;min-height:34px;border-radius:var(--radius-full);
+  background:var(--rec,var(--ink-5))}
+.tnd-roster .rst-name{font-weight:600;color:var(--ink);font-size:13.5px;line-height:1.2}
+.tnd-roster .rst-name .heb{font-family:var(--font-sans);font-weight:600;color:var(--ink-3);direction:rtl;unicode-bidi:isolate}
+.tnd-roster .rst-name .sub{display:block;font-size:11.5px;color:var(--ink-4);font-weight:500;margin-top:2px}
+
+/* two-line contact / address cells */
+.tnd-roster .rst-stack{line-height:1.45}
+.tnd-roster .rst-stack .l1{color:var(--ink-2);font-weight:500}
+.tnd-roster .rst-stack .l2{font-size:11.5px;color:var(--ink-4)}
+
+/* flag badges: Transportation / Nap / Kitchen (quiet icon chips) */
+.tnd-roster .rst-flags{display:inline-flex;gap:6px;flex-wrap:wrap}
+.tnd-roster .rst-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;letter-spacing:.005em;
+  color:var(--ink-3);background:var(--cream-2);padding:3px 9px;border-radius:var(--radius-full);white-space:nowrap}
+.tnd-roster .rst-badge svg{width:12px;height:12px;color:var(--ink-4)}
+.tnd-roster .rst-badge.is-bus{color:var(--sky-deep);background:var(--info-tint)}
+.tnd-roster .rst-badge.is-bus svg{color:var(--sky-deep)}
+.tnd-roster .rst-badge.is-nap{color:var(--plum-deep);background:var(--primary-tint)}
+.tnd-roster .rst-badge.is-nap svg{color:var(--plum-deep)}
+.tnd-roster .rst-badge.is-kitchen{color:var(--sage-deep);background:var(--ok-tint)}
+.tnd-roster .rst-badge.is-kitchen svg{color:var(--sage-deep)}
+.tnd-roster .rst-badge.is-off{color:var(--ink-5);background:transparent;border:1px dashed var(--paper-edge-strong)}
+.tnd-roster .rst-badge.is-off svg{color:var(--ink-5)}
+
+/* Type / Extended-care pills */
+.tnd-roster .rst-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  color:var(--ink-3);background:var(--cream-2);padding:3px 10px;border-radius:var(--radius-full);white-space:nowrap}
+.tnd-roster .rst-pill.is-standby{color:var(--attention);background:var(--attention-tint)}
+.tnd-roster .rst-pill.is-extended{color:var(--primary);background:var(--primary-tint)}
+.tnd-roster .rst-pill.is-extended svg{width:12px;height:12px;color:var(--primary)}
+
+/* status pill (branch open/closed) */
+.tnd-roster .rst-status{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12px;
+  padding:4px 11px;border-radius:var(--radius-full);border:1px solid transparent}
+.tnd-roster .rst-status .dot{width:6px;height:6px;border-radius:var(--radius-full);background:currentColor;flex:none}
+.tnd-roster .rst-status.is-active{color:var(--ok);background:var(--ok-tint);border-color:rgba(31,122,77,.16)}
+.tnd-roster .rst-status.is-paused{color:var(--ink-3);background:var(--cream-2)}
+
+/* lead-teacher, initials avatar + name */
+.tnd-roster .rst-teacher{display:inline-flex;align-items:center;gap:9px}
+.tnd-roster .rst-av{flex:none;width:28px;height:28px;border-radius:var(--radius-full);display:grid;place-items:center;
+  font-family:var(--font-display);font-weight:700;font-size:11px;color:#fff;letter-spacing:-.01em}
+.tnd-roster .rst-av.acc-plum{background:var(--plum-deep)}
+.tnd-roster .rst-av.acc-teal{background:var(--teal-deep)}
+.tnd-roster .rst-av.acc-rose{background:var(--rose-deep)}
+.tnd-roster .rst-av.acc-sage{background:var(--sage-deep)}
+.tnd-roster .rst-av.acc-sky{background:var(--sky-deep)}
+.tnd-roster .rst-av.acc-apricot{background:var(--apricot-deep)}
+.tnd-roster .rst-av.acc-lavender{background:var(--lavender-deep)}
+.tnd-roster .rst-av.acc-coral{background:var(--coral-deep)}
+.tnd-roster .rst-av.acc-sun{background:var(--sun-deep)}
+.tnd-roster .rst-av.acc-mint{background:var(--mint-deep)}
+.tnd-roster .rst-teacher .tname{font-weight:600;color:var(--ink-2);font-size:12.5px}
+.tnd-roster .rst-teacher.is-empty .rst-av{background:var(--cream-3);color:var(--ink-4)}
+.tnd-roster .rst-teacher.is-empty .tname{color:var(--ink-5);font-weight:500;font-style:italic}
+
+/* ===== THE VISUAL HOOK: inline capacity meter ===== */
+.tnd-roster .rst-cap{display:flex;flex-direction:column;gap:5px;min-width:132px}
+.tnd-roster .rst-cap-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.tnd-roster .rst-cap-nums{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-2);font-size:12.5px}
+.tnd-roster .rst-cap-nums b{font-weight:700;color:var(--ink)}
+.tnd-roster .rst-cap-pct{font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;color:var(--ink-3)}
+.tnd-roster .rst-meter{height:7px;border-radius:var(--radius-full);background:var(--cream-3);overflow:hidden;position:relative}
+.tnd-roster .rst-meter i{position:absolute;left:0;top:0;bottom:0;border-radius:var(--radius-full);
+  width:var(--fill,0%);background:var(--ok);transition:width .3s}
+/* amber near-full, red over: driven by a state class on the cell */
+.tnd-roster .rst-cap.is-amber .rst-meter i{background:var(--attention)}
+.tnd-roster .rst-cap.is-amber .rst-cap-pct{color:var(--attention)}
+.tnd-roster .rst-cap.is-over .rst-meter i{background:var(--critical)}
+.tnd-roster .rst-cap.is-over .rst-cap-pct{color:var(--critical)}
+.tnd-roster .rst-cap.is-over .rst-cap-nums b{color:var(--critical)}
+.tnd-roster .rst-cap.is-light .rst-cap-pct{color:var(--ink-4)}
+
+/* count cell (classrooms / children): big tabular number + label */
+.tnd-roster .rst-count{font-variant-numeric:tabular-nums;font-family:var(--font-display);font-weight:700;
+  font-size:16px;color:var(--ink);letter-spacing:-.01em}
+.tnd-roster .rst-count .u{font-family:var(--font-sans);font-size:11px;font-weight:600;color:var(--ink-4);margin-left:4px}
+
+/* kebab row-action */
+.tnd-roster .rst-kebab{width:30px;height:30px;border-radius:var(--radius-sm);border:1px solid var(--paper-edge-strong);
+  background:var(--paper-2);color:var(--ink-3);cursor:pointer;display:grid;place-items:center;transition:.13s}
+.tnd-roster .rst-kebab svg{width:15px;height:15px}
+.tnd-roster .rst-kebab:hover{background:var(--cream-2);border-color:var(--primary);color:var(--primary)}
+.tnd-roster .rst-rowmenu{position:relative;display:inline-flex}
+.tnd-roster .rst-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:184px;background:var(--paper-2);
+  border:1px solid var(--paper-edge);border-radius:var(--radius-md);box-shadow:var(--shadow-overlay);padding:6px;z-index:3050;
+  opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top right;pointer-events:none;transition:opacity .14s,transform .14s}
+.tnd-roster .rst-rowmenu.is-open .rst-menu{opacity:1;transform:none;pointer-events:auto}
+.tnd-roster .rst-rowmenu.is-open .rst-kebab{background:var(--cream-2);border-color:var(--primary);color:var(--primary)}
+.tnd-roster .rst-menu-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:1px solid transparent;
+  background:transparent;border-radius:var(--radius-sm);font-family:var(--font-sans);font-size:13px;font-weight:500;
+  color:var(--ink-2);cursor:pointer;white-space:nowrap;text-align:left;transition:background .12s,color .12s}
+.tnd-roster .rst-menu-item svg{width:15px;height:15px;color:var(--ink-4);flex:none}
+.tnd-roster .rst-menu-item:hover{background:var(--cream-2);color:var(--ink)}
+.tnd-roster .rst-menu-item:hover svg{color:var(--ink-3)}
+.tnd-roster .rst-menu-item.danger{color:var(--critical)}
+.tnd-roster .rst-menu-item.danger svg{color:var(--critical)}
+.tnd-roster .rst-menu-item.danger:hover{background:var(--critical-tint);color:var(--critical)}
+.tnd-roster .rst-menu-sep{height:1px;background:var(--paper-edge);margin:5px 2px}
+
+/* ===== branch GROUP HEADER (Classes table): sticky, minimal, collapsible ===== */
+/* A contained, rounded, fully-bordered bar (inset from the card edges so its left/right
+   borders + radius read), separated from the group above by a clean whitespace gap.
+   Deliberately MINIMAL colour: the branch's identity shows only as the small dot. */
+.tnd-roster .rst-grouphead > td{padding:0 8px;background:var(--paper-2)}
+.tnd-roster .rst-grouphead:not(:first-of-type) > td{border-top:14px solid var(--paper-2)}
+.tnd-roster .rst-ghead{position:sticky;top:34px;z-index:2;display:flex;align-items:center;gap:11px;
+  padding:11px 15px;background:var(--cream-2);cursor:pointer;
+  border:1px solid var(--paper-edge-strong);border-radius:var(--radius-md);transition:background .13s,border-color .13s}
+/* the WHOLE bar is the collapse toggle: signal it on hover */
+.tnd-roster .rst-ghead:hover{background:var(--cream-3)}
+.tnd-roster .rst-ghead:hover .caret{border-color:var(--primary);color:var(--primary)}
+.tnd-roster .rst-ghead .caret{flex:none;width:22px;height:22px;padding:0;border-radius:var(--radius-sm);
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--ink-3);background:var(--paper-2);border:1px solid var(--paper-edge-strong);cursor:pointer;transition:.14s}
+.tnd-roster .rst-ghead .caret svg{width:13px;height:13px;transition:transform .18s}
+.tnd-roster .rst-ghead .caret:hover{color:var(--primary);border-color:var(--primary)}
+.tnd-roster .rst-grouphead.is-collapsed .rst-ghead .caret svg{transform:rotate(-90deg)}
+.tnd-roster .rst-ghead .gdot{flex:none;width:12px;height:12px;border-radius:var(--radius-full);background:var(--rec,var(--ink-5))}
+.tnd-roster .rst-ghead .gname{font-family:var(--font-display);font-weight:700;font-size:14px;letter-spacing:-.01em;color:var(--ink)}
+.tnd-roster .rst-ghead .gnbhd{font-size:11.5px;color:var(--ink-4);font-weight:500}
+.tnd-roster .rst-ghead .spacer{flex:1}
+.tnd-roster .rst-ghead .gsub{display:inline-flex;align-items:center;gap:14px}
+.tnd-roster .rst-ghead .gstat{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-3);
+  font-variant-numeric:tabular-nums}
+.tnd-roster .rst-ghead .gstat svg{width:13px;height:13px;color:var(--ink-4)}
+.tnd-roster .rst-ghead .gstat b{color:var(--ink);font-weight:700}
+.tnd-roster .rst-ghead .gmeter{width:110px;height:6px;border-radius:var(--radius-full);background:var(--cream-3);overflow:hidden;position:relative}
+.tnd-roster .rst-ghead .gmeter i{position:absolute;inset:0 auto 0 0;width:var(--fill,0%);border-radius:var(--radius-full);background:var(--primary)}
+.tnd-roster .rst-ghead .gmeter.is-amber i{background:var(--attention)}
+.tnd-roster .rst-ghead .gmeter.is-over i{background:var(--critical)}
+/* collapse behaviour */
+.tnd-roster tr.rst-classrow.is-hidden{display:none}
+/* rows stay clean, no colored rail, and the per-class colour swatch is hidden on class
+   rows (kept intentionally minimal). Branch identity lives in the group header's small
+   dot; capacity status lives in the meter. The sticky header holds context on scroll. */
+.tnd-roster tr.rst-classrow td:first-child{box-shadow:none}
+.tnd-roster .rst-classrow .rst-swatch{display:none}
+
+.tnd-roster .pay-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:14px 4px 0}
+.tnd-roster .pay-foot .info{font-size:12px;color:var(--ink-4)}
+.tnd-roster .pager{display:inline-flex;gap:6px}
+.tnd-roster .pager button{min-width:30px;height:30px;padding:0 9px;border:1px solid var(--paper-edge-strong);background:var(--paper-2);
+  color:var(--ink-3);font:inherit;font-size:12.5px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer}
+.tnd-roster .pager button:hover{background:var(--cream-2);color:var(--ink)}
+.tnd-roster .pager button.is-active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+@media (max-width:900px){
+  .tnd-roster .pay-stat{min-width:45%}
+}
+
+/* ============================================================
+   SIDE PANE (drawer). Click a branch row → its classrooms → a class.
+   Right-anchored; the class pane stacks OVER the branch pane (Back returns).
+   JS-populated; reuses .rst-av / .rst-pill / .rst-badge / .rst-status / .tnd-btn.
+   ============================================================ */
+html.rst-noscroll{overflow:hidden}
+.tnd-roster .rst-scrim{position:fixed;inset:0;background:rgba(31,26,46,.42);opacity:0;pointer-events:none;
+  transition:opacity .25s;z-index:3000}
+.tnd-roster .rst-scrim.is-open{opacity:1;pointer-events:auto}
+.tnd-roster .rst-pane{position:fixed;top:0;right:0;bottom:0;width:min(456px,94vw);background:var(--paper-2);
+  border-left:1px solid var(--paper-edge);box-shadow:var(--shadow-overlay);z-index:3001;display:flex;flex-direction:column;
+  transform:translateX(101%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.tnd-roster .rst-pane.is-open{transform:translateX(0)}
+.tnd-roster .rst-pane--sub{z-index:3002}
+.tnd-roster .pn-head{flex:none;padding:18px 20px 15px;border-bottom:1px solid var(--paper-edge);background:var(--paper)}
+.tnd-roster .pn-htop{display:flex;align-items:flex-start;gap:12px}
+.tnd-roster .pn-dot{flex:none;width:36px;height:36px;border-radius:var(--radius-md);background:var(--rec,var(--ink-5));
+  display:grid;place-items:center;color:#fff}
+.tnd-roster .pn-dot svg{width:18px;height:18px}
+.tnd-roster .pn-htext{flex:1;min-width:0}
+.tnd-roster .pn-name{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-.01em;color:var(--ink);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;line-height:1.15}
+.tnd-roster .pn-name .heb{font-family:var(--font-sans);font-size:12px;font-weight:500;color:var(--ink-4)}
+.tnd-roster .pn-sub{margin-top:3px;font-size:12.5px;color:var(--ink-4)}
+.tnd-roster .pn-x{flex:none;width:30px;height:30px;border-radius:var(--radius-sm);border:1px solid var(--paper-edge-strong);
+  background:var(--paper-2);color:var(--ink-3);cursor:pointer;display:grid;place-items:center;transition:.13s}
+.tnd-roster .pn-x:hover{background:var(--cream-2);color:var(--ink);border-color:var(--primary)}
+.tnd-roster .pn-x svg{width:15px;height:15px}
+.tnd-roster .pn-back{display:inline-flex;align-items:center;gap:5px;margin-bottom:12px;padding:5px 11px 5px 7px;
+  border:1px solid var(--paper-edge-strong);border-radius:var(--radius-full);background:var(--paper-2);color:var(--ink-3);
+  font-family:var(--font-sans);font-size:12px;font-weight:600;cursor:pointer;transition:.13s;max-width:100%}
+.tnd-roster .pn-back:hover{background:var(--cream-2);color:var(--primary);border-color:var(--primary)}
+.tnd-roster .pn-back svg{width:14px;height:14px;flex:none}
+.tnd-roster .pn-actions{display:flex;gap:8px;margin-top:14px}
+.tnd-roster .pn-actions .tnd-btn{flex:1;justify-content:center}
+.tnd-roster .pn-body{flex:1;overflow:auto;padding:18px 20px 22px}
+.tnd-roster .pn-sect{margin-top:22px}
+.tnd-roster .pn-sect:first-child{margin-top:0}
+.tnd-roster .pn-sect-t{font-family:var(--font-label);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ink-4);margin:0 0 11px;display:flex;align-items:center;gap:8px}
+.tnd-roster .pn-sect-t .n{color:var(--primary);background:var(--primary-tint);font-weight:700;font-size:11px;
+  padding:1px 8px;border-radius:var(--radius-full);letter-spacing:0}
+.tnd-roster .pn-capcard{background:var(--cream);border:1px solid var(--paper-edge);border-radius:var(--radius-lg);padding:14px 16px}
+.tnd-roster .pn-caprow{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.tnd-roster .pn-caprow .lbl{font-size:12px;color:var(--ink-4);font-weight:600}
+.tnd-roster .pn-caprow .val{font-family:var(--font-display);font-weight:700;font-size:14.5px;color:var(--ink);font-variant-numeric:tabular-nums}
+.tnd-roster .pn-meter{height:8px;border-radius:var(--radius-full);background:var(--cream-3);overflow:hidden;position:relative;width:100%}
+.tnd-roster .pn-meter i{position:absolute;left:0;top:0;bottom:0;border-radius:var(--radius-full);width:var(--fill,0%);background:var(--ok)}
+.tnd-roster .pn-meter.is-amber i{background:var(--attention)}
+.tnd-roster .pn-meter.is-over i{background:var(--critical)}
+.tnd-roster .pn-mini-stats{display:flex;gap:20px;margin-top:13px;padding-top:13px;border-top:1px solid var(--paper-edge);align-items:center}
+.tnd-roster .pn-mini{display:flex;flex-direction:column;gap:2px}
+.tnd-roster .pn-mini b{font-family:var(--font-display);font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+.tnd-roster .pn-mini span{font-size:11px;color:var(--ink-4)}
+.tnd-roster .pn-info .row{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--paper-edge)}
+.tnd-roster .pn-info .row:last-child{border-bottom:none}
+.tnd-roster .pn-info .ic{flex:none;width:30px;height:30px;border-radius:var(--radius-sm);background:var(--cream-2);color:var(--ink-3);display:grid;place-items:center}
+.tnd-roster .pn-info .ic svg{width:15px;height:15px}
+.tnd-roster .pn-info .kv{flex:1;min-width:0}
+.tnd-roster .pn-info .k{font-size:10.5px;color:var(--ink-4);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.tnd-roster .pn-info .v{font-size:13px;color:var(--ink-2);margin-top:2px;word-break:break-word;line-height:1.4}
+.tnd-roster .pn-clslist{display:flex;flex-direction:column;gap:8px}
+.tnd-roster .pn-cls{display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;
+  background:var(--paper-2);border:1px solid var(--paper-edge);border-radius:var(--radius-md);padding:10px 12px;
+  font-family:var(--font-sans);transition:border-color .13s,background .13s}
+.tnd-roster .pn-cls:hover{border-color:var(--primary);background:var(--cream)}
+.tnd-roster .pn-cls .cdot{flex:none;width:9px;height:38px;border-radius:var(--radius-full);background:var(--rec,var(--ink-5))}
+.tnd-roster .pn-cls .cmain{flex:1;min-width:0}
+.tnd-roster .pn-cls .cname{font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:7px}
+.tnd-roster .pn-cls .csub{font-size:11.5px;color:var(--ink-4);margin-top:1px}
+.tnd-roster .pn-cls .cteach{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--ink-3);font-weight:500}
+.tnd-roster .pn-cls .cteach .rst-av{width:19px;height:19px;font-size:9px}
+.tnd-roster .pn-cls .ccap{flex:none;width:92px;display:flex;flex-direction:column;gap:5px}
+.tnd-roster .pn-cls .ccap .nums{font-size:11px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums;text-align:right}
+.tnd-roster .pn-cls .ccap .nums b{color:var(--ink)}
+.tnd-roster .pn-cls .cgo{flex:none;color:var(--ink-5);transition:color .13s,transform .13s}
+.tnd-roster .pn-cls:hover .cgo{color:var(--primary);transform:translateX(2px)}
+.tnd-roster .pn-cls .cgo svg{width:16px;height:16px}
+.tnd-roster .pn-foot{flex:none;padding:13px 20px;border-top:1px solid var(--paper-edge);background:var(--paper);display:flex;gap:8px}
+.tnd-roster .pn-foot .tnd-btn{flex:1;justify-content:center}
+
+/* ---- integration helpers (real app; not in the standalone mockup) ---- */
+.tnd-roster-branches .rst-row{cursor:pointer}
+.tnd-roster .rst-row.rst-filtered,.tnd-roster .rst-grouphead.rst-filtered{display:none}
+.tnd-roster .pn-empty{font-size:13px;color:var(--ink-4);padding:10px 2px}
+/* the SPA injects fragments into a Bootstrap shell: keep its base table/reset off our bespoke table */
+.tnd-roster .rst-table,.tnd-roster .rst-table td,.tnd-roster .rst-table th{background-image:none}
+.tnd-roster .rst-table>tbody>tr>td,.tnd-roster .rst-table>thead>tr>th{border-top:0}
+
+/* ============================================================
+   PAGE RHYTHM: same reused list-page spacing system as the other
+   reskinned pages (tokens --list-top / --list-gutter / --list-bottom).
+   Scoped to [data-roster] so the portalled pane wrapper gets none.
+   ============================================================ */
+.tendi-skin.tnd-roster[data-roster]{padding:var(--list-top) var(--list-gutter) var(--list-bottom);background:var(--cream)}
+
+/* ---- kitchen-sink .tnd-select in the roster toolbar (TndSelect.enhance of the
+   native filter <select>): component behavior from tendi-skin/tendi-dropdown,
+   sized here to the toolbar's 42px control rhythm. ---- */
+.tnd-roster .chipbar .tnd-select{width:auto;min-width:190px}
+.tnd-roster .chipbar .tnd-select-trigger{height:42px;padding:0 14px;background:var(--paper-2);
+  border-color:var(--paper-edge-strong);border-radius:var(--radius-md)}
+.tnd-roster .chipbar .tnd-select .tnd-select-menu{min-width:100%;width:max-content;max-width:320px;right:auto}
+/* pre-enhancement flash guard: the native select is replaced on init */
+.tnd-roster select.rst-select{height:42px;min-width:190px;border:1px solid var(--paper-edge-strong);
+  border-radius:var(--radius-md);background:var(--paper-2);color:var(--ink-2);font-family:var(--font-sans);
+  font-size:13.5px;font-weight:500;padding:0 13px}
+
+/* ============================================================
+   GRID VIEW (Branches · the toolbar's Table/Grid segmented control)
+   Cards reuse the row vocabulary (.rst-namecell/.rst-flags/.rst-cap/
+   .rst-status/.rst-rowmenu) so both views stay in lockstep.
+   ============================================================ */
+.tnd-roster .rst-grid{display:none;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.tnd-roster-branches.is-grid .rst-grid{display:grid}
+.tnd-roster-branches.is-grid .rst-wrap{display:none}
+.tnd-roster .rst-card{background:var(--paper-2);border:1px solid var(--paper-edge);border-radius:var(--radius-xl);
+  padding:16px 16px 14px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:border-color .13s,background .13s}
+.tnd-roster .rst-card:hover{border-color:var(--primary)}
+.tnd-roster .rst-card .rc-head{display:flex;align-items:flex-start;gap:11px}
+.tnd-roster .rst-card .rc-head .rst-namecell{flex:1;min-width:0}
+.tnd-roster .rst-card .rc-head .rst-actcell{white-space:nowrap}
+.tnd-roster .rst-card .rc-loc{font-size:12.5px;color:var(--ink-3);line-height:1.45}
+.tnd-roster .rst-card .rc-loc .l2{font-size:11.5px;color:var(--ink-4);margin-top:1px}
+.tnd-roster .rst-card .rst-cap{min-width:0}
+.tnd-roster .rst-card .rc-foot{display:flex;align-items:center;gap:16px;padding-top:12px;border-top:1px solid var(--paper-edge)}
+.tnd-roster .rst-card .rc-foot .rst-count{font-size:14px}
+.tnd-roster .rst-card .rc-foot .rst-status{margin-left:auto}
+
+/* ============================================================
+   FLAT "Table" VIEW (Classes · the Table/Grouped segmented control)
+   Group headers fold away; every row shows its branch tag instead;
+   collapsed rows re-appear (a fold only makes sense when grouped).
+   ============================================================ */
+.tnd-roster-classes .rst-classrow{cursor:pointer}
+.tnd-roster-classes .rst-branchtag{display:none;align-items:center;gap:6px;margin:4px 0 0 8px;
+  font-size:11px;font-weight:600;color:var(--ink-4);vertical-align:1px}
+.tnd-roster-classes .rst-branchtag i{width:8px;height:8px;border-radius:var(--radius-full);
+  background:var(--gcol,var(--ink-5));display:inline-block;flex:none}
+.tnd-roster-classes.is-flat tr.rst-grouphead{display:none}
+.tnd-roster-classes.is-flat tr.rst-classrow.is-hidden:not(.rst-filtered){display:table-row}
+.tnd-roster-classes.is-flat .rst-branchtag{display:inline-flex}
+
+/* ============================================================
+   PANE EDIT MODE: inline quick-edit form (the Users-pane pattern).
+   Saved via the whitelist quick_save endpoints; the full legacy form
+   stays reachable as "Full editor".
+   ============================================================ */
+.tnd-roster .pn-form{display:flex;flex-direction:column;gap:14px}
+.tnd-roster .pn-form .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tnd-roster .pn-field label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--ink-4);margin:0 0 6px}
+.tnd-roster .pn-field input{width:100%;height:40px;padding:0 12px;border:1px solid var(--paper-edge-strong);
+  border-radius:var(--radius-md);background:var(--paper-2);font-family:var(--font-sans);font-size:13.5px;color:var(--ink)}
+.tnd-roster .pn-field input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--focus-ring)}
+.tnd-roster .pn-field input::placeholder{color:var(--ink-5)}
+/* the Type select renders as the kitchen-sink .tnd-select (enhanced). Its native fallback: */
+.tnd-roster .pn-field select{width:100%;height:40px;padding:0 12px;border:1px solid var(--paper-edge-strong);
+  border-radius:var(--radius-md);background:var(--paper-2);font-family:var(--font-sans);font-size:13.5px;color:var(--ink)}
+.tnd-roster .pn-checks{display:flex;flex-direction:column;gap:10px;padding:2px 0}
+.tnd-roster .pn-check{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer}
+.tnd-roster .pn-check input{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex:none}
+.tnd-roster .pn-foot [data-save][disabled]{opacity:.6;cursor:default}

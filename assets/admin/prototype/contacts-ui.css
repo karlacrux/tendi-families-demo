@@ -1,0 +1,101 @@
+/* PROTOTYPE — contacts panel + add-contact modal. Sandbox only, never deployed.
+   Uses the product's own tokens (tendi-tokens.css): violet #5a3fc2, lavender
+   canvas, flat surfaces, hairline borders. Shadow only on the modal, which is a
+   true floating overlay — the design bible allows it there and nowhere else. */
+
+.pc-panel{border:1px dashed rgba(31,122,77,.45);background:rgba(31,122,77,.05);
+  border-radius:12px;margin:6px 0 18px 0;overflow:hidden;
+  font-family:"Inter",-apple-system,sans-serif;color:#1f1a2e}
+.pc-head{display:flex;align-items:center;gap:12px;padding:13px 16px}
+.pc-head b{display:block;font-size:13.5px;font-weight:700}
+.pc-head span span,.pc-head>div>span{display:block;font-size:11.5px;color:#5b5470;margin-top:3px;line-height:1.45}
+.pc-head>div{flex-grow:1}
+.pc-head i{font-style:normal;font-weight:600}
+.pc-add{font-family:inherit;font-size:12.5px;font-weight:600;background:#1f7a4d;color:#fff;
+  border:none;border-radius:9px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.pc-add:hover{background:#186039}
+
+.pc-row{display:flex;align-items:center;gap:12px;padding:11px 16px;
+  border-top:1px solid rgba(31,122,77,.18);background:rgba(255,255,255,.72)}
+.pc-av{width:32px;height:32px;border-radius:9999px;color:#fff;display:flex;
+  align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.pc-av.sm{width:28px;height:28px;font-size:10px}
+.pc-who{flex-grow:1;min-width:0;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pc-who b{font-size:13px;font-weight:600}
+.pc-who>span{display:block;width:100%;font-size:11.5px;color:#6b6480;margin-top:1px}
+.pc-type{font-style:normal;font-size:10.5px;font-weight:600;background:#eeecfa;color:#483397;
+  padding:2px 8px;border-radius:9999px}
+.pc-scope{font-style:normal;font-size:9.5px;font-weight:600;background:#f4eef9;color:#5b5470;
+  padding:2px 7px;border-radius:5px;letter-spacing:.05em;text-transform:uppercase}
+.pc-perm{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:330px}
+.pc-perm i{font-style:normal;font-size:10.5px;font-weight:500;background:#e4f3ea;color:#1f7a4d;
+  padding:3px 8px;border-radius:9999px;white-space:nowrap}
+.pc-perm i.mute{background:#f4eef9;color:#6b6480}
+.pc-foot{padding:11px 16px;border-top:1px solid rgba(31,122,77,.18);
+  font-size:11.5px;color:#5b5470;line-height:1.5;background:rgba(255,255,255,.45)}
+
+/* modal */
+.pc-back{position:fixed;inset:0;z-index:100000;background:rgba(31,26,46,.42);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  font-family:"Inter",-apple-system,sans-serif;color:#1f1a2e}
+.pc-modal{width:660px;max-height:88vh;background:#fff;border-radius:16px;
+  box-shadow:0 20px 56px rgba(31,26,46,.26);display:flex;flex-direction:column;overflow:hidden}
+.pc-mhead{display:flex;align-items:center;padding:17px 22px;border-bottom:1px solid rgba(95,67,178,.12)}
+.pc-mhead b{flex-grow:1;font-family:'Plus Jakarta Sans',"Inter",sans-serif;font-size:16px;font-weight:700}
+.pc-x{background:none;border:none;font-size:22px;line-height:1;color:#6b6480;cursor:pointer;padding:0 4px}
+.pc-mbody{padding:18px 22px;overflow:auto;display:flex;flex-direction:column;gap:9px}
+.pc-sec{font-size:12.5px;font-weight:700;margin-top:6px}
+.pc-sec i{font-style:normal;font-weight:500;color:#6b6480;font-size:11px}
+.pc-opts{display:flex;gap:9px}
+.pc-opt{flex-grow:1;display:flex;gap:9px;align-items:flex-start;padding:11px 13px;
+  border:1px solid rgba(95,67,178,.14);border-radius:10px;background:#fbfaff;cursor:pointer}
+.pc-opt.on{border-color:#5a3fc2;background:#eeecfa}
+.pc-opt b{display:block;font-size:12.5px;font-weight:600}
+.pc-opt i{display:block;font-style:normal;font-size:11px;color:#5b5470;margin-top:3px;line-height:1.45}
+.pc-dot{width:15px;height:15px;border-radius:9999px;border:1px solid rgba(95,67,178,.32);
+  background:#fff;flex-shrink:0;margin-top:1px}
+.pc-opt.on .pc-dot{border:5px solid #5a3fc2}
+.pc-search{width:100%;box-sizing:border-box;background:#fbfaff;border:1px solid rgba(95,67,178,.16);
+  border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;color:#1f1a2e}
+.pc-search:focus{outline:none;border-color:#5a3fc2;background:#fff;box-shadow:0 0 0 3px rgba(90,63,194,.14)}
+.pc-results{border:1px solid rgba(95,67,178,.12);border-radius:10px;overflow:hidden;min-height:56px}
+.pc-hint{padding:14px 14px;font-size:12px;color:#6b6480}
+.pc-hit{display:flex;align-items:center;gap:11px;padding:9px 13px;border-bottom:1px solid rgba(95,67,178,.09)}
+.pc-hit .pc-who b{font-size:12.5px}
+.pc-link{font-family:inherit;font-size:11.5px;font-weight:600;background:#5a3fc2;color:#fff;
+  border:none;border-radius:8px;padding:6px 13px;cursor:pointer}
+.pc-link:hover{background:#483397}
+.pc-new{display:flex;align-items:center;gap:10px;padding:10px 13px;background:#fcfbff}
+.pc-new span{flex-grow:1;font-size:12px;color:#6b6480}
+.pc-newbtn{font-family:inherit;font-size:11.5px;font-weight:600;background:#fff;color:#332e47;
+  border:1px solid rgba(95,67,178,.22);border-radius:8px;padding:6px 13px;cursor:pointer}
+.pc-note{font-size:11.5px;color:#5b5470;line-height:1.55;background:#fbfaff;
+  border-radius:9px;padding:11px 13px}
+.pc-mfoot{display:flex;align-items:center;gap:11px;padding:13px 22px;
+  border-top:1px solid rgba(95,67,178,.12);background:#fcfbff}
+.pc-mfoot span{flex-grow:1;font-size:11.5px;color:#6b6480}
+.pc-cancel{font-family:inherit;font-size:12.5px;font-weight:600;background:#fff;color:#332e47;
+  border:1px solid rgba(95,67,178,.22);border-radius:9px;padding:8px 16px;cursor:pointer}
+
+/* The contacts panel stays visible with the annotations off: it is the proposal. */
+
+.pc-scope.own{background:#f6ecd8;color:#9d6b10}
+.pc-more{background:none;border:none;font-size:17px;line-height:1;color:#6b6480;cursor:pointer;
+  padding:2px 6px;border-radius:6px;flex-shrink:0}
+.pc-more:hover{background:rgba(95,67,178,.09);color:#1f1a2e}
+.pc-menu{position:fixed;z-index:100001;width:268px;background:#fff;
+  border:1px solid rgba(95,67,178,.18);border-radius:11px;
+  box-shadow:0 12px 34px rgba(31,26,46,.18);padding:6px;
+  font-family:"Inter",-apple-system,sans-serif}
+.pc-menu button{display:block;width:100%;text-align:left;font-family:inherit;font-size:12.5px;
+  font-weight:500;color:#1f1a2e;background:none;border:none;border-radius:7px;
+  padding:8px 10px;cursor:pointer}
+.pc-menu button:hover{background:#f4eef9}
+.pc-menu button.warn{color:#9d6b10;font-weight:600}
+.pc-menu button.warn:hover{background:#f6ecd8}
+.pc-menu button.danger{color:#d94538;font-weight:600}
+.pc-menu button.danger:hover{background:#fbe7e5}
+.pc-menu button[disabled]{color:#9a93ad;cursor:not-allowed;font-weight:500}
+.pc-menu button[disabled]:hover{background:none}
+.pc-sep{height:1px;background:rgba(95,67,178,.12);margin:5px 4px}
+.pc-why{font-size:10.5px;color:#6b6480;line-height:1.45;padding:0 10px 7px 10px}

@@ -1,0 +1,221 @@
+/* ============================================================================
+   Live Route Monitor: reskin of admin/bus_routes/report (the old "Bus Reports")
+   Additive: layered over the legacy view. All selectors scoped under
+   `.tendi-skin .rmon` (page) and the portalled `.rmon-drawer`. Tokens come from
+   tendi-tokens.css (v4). Fully flat, shadows only on the drawer/scrim overlay.
+   Derived from reskin-harness/live-route-monitor-simple.html (validated mockup).
+   ============================================================================ */
+
+/* the reskinned surface sits inside the legacy .box-content; neutralise its chrome */
+.tendi-skin .rmon{font-size:14px;color:var(--ink)}
+.tendi-skin .rmon svg{display:block}
+.tendi-skin .rmon .num{font-variant-numeric:tabular-nums}
+/* hide the legacy ongoing DataTable, cards replace it, but it stays in the DOM (visually
+   hidden, still live) as the data source + the host for the row action anchors the cards proxy-click.
+   Unscoped on purpose: #bus_tracking_table_view is a sibling of .rmon, not a descendant. */
+.rmon-legacy{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;margin:-1px;padding:0;border:0}
+
+/* ---- header row: title + live cluster --------------------------------- */
+.tendi-skin .rmon-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.tendi-skin .rmon-title{display:flex;align-items:center;gap:11px;flex:none}
+.tendi-skin .rmon-title .ico{width:40px;height:40px;border-radius:var(--radius-lg);background:var(--primary-tint);color:var(--primary);display:grid;place-items:center;flex:none}
+.tendi-skin .rmon-title .ico svg{width:22px;height:22px}
+.tendi-skin .rmon-title h2{font-family:var(--font-display);font-weight:700;font-size:22px;line-height:1.05;letter-spacing:-.02em;margin:0;color:var(--ink)}
+.tendi-skin .rmon-title p{margin:2px 0 0;font-size:12.5px;color:var(--ink-4)}
+.tendi-skin .rmon-head .rmon-tail{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tendi-skin .rmon-live{display:flex;align-items:center;gap:8px;height:38px;padding:0 13px;border-radius:var(--radius-full);background:var(--ok-tint);border:1px solid color-mix(in srgb,var(--ok) 22%,transparent)}
+.tendi-skin .rmon-live .gd{width:9px;height:9px;border-radius:50%;background:var(--ok);position:relative;flex:none}
+.tendi-skin .rmon-live .gd::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid var(--ok);animation:rmon-pulse 1.9s ease-out infinite}
+@keyframes rmon-pulse{0%{transform:scale(.7);opacity:.8}100%{transform:scale(2);opacity:0}}
+.tendi-skin .rmon-live .lt{font-size:12px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.tendi-skin .rmon-live .lt small{color:var(--ink-4);font-weight:500}
+.tendi-skin .rmon-live.is-hist{background:var(--cream-2);border-color:var(--paper-edge)}
+.tendi-skin .rmon-live.is-hist .gd{background:var(--ink-5)}
+.tendi-skin .rmon-live.is-hist .gd::after{display:none}
+.tendi-skin .rmon-live.is-hist .lt{color:var(--ink-3)}
+
+/* ---- one-line summary ------------------------------------------------- */
+.tendi-skin .rmon-summary{margin:0 0 18px;font-size:13.5px;color:var(--ink-3);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tendi-skin .rmon-summary b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.tendi-skin .rmon-summary .sep{color:var(--ink-5)}
+.tendi-skin .rmon-summary .attn{color:var(--attention);font-weight:600;display:inline-flex;align-items:center;gap:5px}
+.tendi-skin .rmon-summary .attn svg{width:14px;height:14px}
+
+/* ---- section label ---------------------------------------------------- */
+.tendi-skin .rmon-sec{display:flex;align-items:center;gap:9px;margin:0 0 12px}
+.tendi-skin .rmon-sec h3{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0}
+.tendi-skin .rmon-sec .n{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-4);background:var(--cream-2);border-radius:var(--radius-full);padding:1px 9px}
+.tendi-skin .rmon-sec .n.warn{color:var(--attention);background:var(--attention-tint)}
+.tendi-skin .rmon-sec .more{margin-left:auto;font-size:11.5px;font-weight:600;color:var(--ink-4);text-decoration:none}
+.tendi-skin .rmon-sec .more:hover{color:var(--primary)}
+.tendi-skin .rmon-block{margin-bottom:24px}
+.tendi-skin .rmon-hist-note{display:flex;align-items:center;gap:9px;margin:0 0 20px;padding:10px 13px;border-radius:var(--radius-md);font-size:12.5px;color:var(--ink-3);background:var(--info-tint);border:1px solid color-mix(in srgb,var(--info) 22%,transparent)}
+.tendi-skin .rmon-hist-note svg{width:16px;height:16px;color:var(--info);flex:none}
+.tendi-skin .rmon-hist-note b{color:var(--ink-2);font-weight:600}
+
+/* ---- needs attention -------------------------------------------------- */
+.tendi-skin .rmon-attn{border:1px solid var(--paper-edge);border-radius:var(--radius-lg);background:var(--paper-2);overflow:hidden}
+.tendi-skin .rmon-attn-row{display:flex;align-items:center;gap:12px;padding:12px 14px;--f:var(--attention)}
+.tendi-skin .rmon-attn-row+.rmon-attn-row{border-top:1px solid var(--paper-edge)}
+.tendi-skin .rmon-attn-row.crit{--f:var(--critical)}
+.tendi-skin .rmon-attn-row .ai{flex:none;width:30px;height:30px;border-radius:var(--radius-md);display:grid;place-items:center;color:var(--f);background:color-mix(in srgb,var(--f) 12%,var(--paper-2))}
+.tendi-skin .rmon-attn-row .ai svg{width:16px;height:16px}
+.tendi-skin .rmon-attn-row .atx{flex:1;min-width:0;font-size:13px;color:var(--ink-2)}
+.tendi-skin .rmon-attn-row .atx b{color:var(--ink);font-weight:700}
+.tendi-skin .rmon-attn-row .atx small{display:block;font-size:11.5px;color:var(--ink-4);margin-top:1px}
+.tendi-skin .rmon-attn-row .aact{flex:none;display:flex;gap:7px}
+
+/* shared small button */
+.tendi-skin .rmon .rmon-mini{display:inline-flex;align-items:center;gap:5px;height:29px;padding:0 11px;border-radius:var(--radius-sm);border:1px solid var(--paper-edge);background:var(--paper-2);font:inherit;font-size:12px;font-weight:600;color:var(--ink-3);cursor:pointer;text-decoration:none;transition:.13s;white-space:nowrap}
+.tendi-skin .rmon .rmon-mini svg{width:13px;height:13px;color:var(--ink-4)}
+.tendi-skin .rmon .rmon-mini:hover{border-color:var(--primary);color:var(--primary);background:var(--cream-2)}
+.tendi-skin .rmon .rmon-mini:hover svg{color:var(--primary)}
+.tendi-skin .rmon .rmon-mini.crit{color:var(--critical);border-color:color-mix(in srgb,var(--critical) 26%,transparent)}
+.tendi-skin .rmon .rmon-mini.crit svg{color:var(--critical)}
+.tendi-skin .rmon .rmon-mini.crit:hover{background:var(--critical-tint)}
+
+/* ============================================================
+   FLEET: dark "wallboard" of per-bus cards (click → detail drawer)
+   ============================================================ */
+.tendi-skin .rmon-wall{background:var(--ink);border:1px solid rgba(255,255,255,.10);border-radius:var(--radius-xl);padding:18px 18px 20px;margin-bottom:24px}
+.tendi-skin .rmon-wall .rmon-sec{margin-bottom:14px}
+.tendi-skin .rmon-wall .rmon-sec h3{color:rgba(255,255,255,.92)}
+.tendi-skin .rmon-wall .rmon-sec .n{color:rgba(255,255,255,.62);background:rgba(255,255,255,.10)}
+.tendi-skin .rmon-wall .rmon-sec .more{color:rgba(255,255,255,.6)}
+.tendi-skin .rmon-wall .rmon-sec .more:hover{color:#fff}
+.tendi-skin .rmon-fleet{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:12px}
+.tendi-skin .rmon-empty{padding:26px;text-align:center;font-size:13px;color:rgba(255,255,255,.6)}
+
+.tendi-skin .rmon-bus{border:1px solid rgba(255,255,255,.10);border-radius:var(--radius-lg);background:rgba(255,255,255,.06);padding:15px 16px 14px;cursor:pointer;transition:border-color .13s,background .13s}
+.tendi-skin .rmon-bus:hover{border-color:rgba(255,255,255,.26);background:rgba(255,255,255,.09)}
+.tendi-skin .rmon-bus:focus-visible{outline:none;border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.20)}
+.tendi-skin .rmon-bus.is-warn{background:color-mix(in srgb,var(--attention) 16%,var(--ink));border-color:color-mix(in srgb,var(--attention) 46%,transparent)}
+.tendi-skin .rmon-bus.is-exc{background:color-mix(in srgb,var(--critical) 20%,var(--ink));border-color:color-mix(in srgb,var(--critical) 58%,transparent)}
+.tendi-skin .rmon-bus.is-done{background:rgba(255,255,255,.035)}
+.tendi-skin .rmon-bus.is-cancel{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.09)}
+
+.tendi-skin .rmon-bus .bt{display:flex;align-items:center;gap:9px}
+.tendi-skin .rmon-bus .bt .av{flex:none;width:20px;height:20px;border-radius:var(--radius-full);display:grid;place-items:center;color:#fff;font-size:9px;font-weight:700}
+.tendi-skin .rmon-bus .bt .nm{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-.01em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tendi-skin .rmon-bus.is-cancel .nm{color:rgba(255,255,255,.72)}
+.tendi-skin .rmon-bus .bt .st{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:var(--radius-full);white-space:nowrap}
+.tendi-skin .rmon-bus .bt .st svg{width:12px;height:12px}
+.tendi-skin .rmon-bus .st--enroute{background:color-mix(in srgb,var(--ok) 30%,var(--ink));color:#9be8bd}
+.tendi-skin .rmon-bus .st--done{background:rgba(255,255,255,.10);color:rgba(255,255,255,.7)}
+.tendi-skin .rmon-bus .st--soon{background:color-mix(in srgb,var(--info) 34%,var(--ink));color:#a8c7e6}
+.tendi-skin .rmon-bus .st--cancel{background:color-mix(in srgb,var(--critical) 26%,var(--ink));color:#f7a9a0}
+
+.tendi-skin .rmon-bus .bg{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:13px}
+.tendi-skin .rmon-bus .cnt{font-family:var(--font-display);font-weight:700;font-size:26px;line-height:1;letter-spacing:-.02em;color:#fff;font-variant-numeric:tabular-nums}
+.tendi-skin .rmon-bus.is-cancel .cnt{color:rgba(255,255,255,.6)}
+.tendi-skin .rmon-bus .cnt span{font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
+.tendi-skin .rmon-bus .eta{text-align:right;flex:none}
+.tendi-skin .rmon-bus .eta .l{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:2px}
+.tendi-skin .rmon-bus .eta .t{font-size:15px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tendi-skin .rmon-bus .eta .t.late{color:#f3d39a}
+.tendi-skin .rmon-bus .bar{height:6px;border-radius:var(--radius-full);background:rgba(255,255,255,.14);overflow:hidden;margin:11px 0 12px}
+.tendi-skin .rmon-bus .bar i{display:block;height:100%;border-radius:var(--radius-full);background:var(--ok)}
+.tendi-skin .rmon-bus .bar i.late{background:var(--attention)}
+.tendi-skin .rmon-bus .sub{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.6)}
+.tendi-skin .rmon-bus .sub .dvr{display:inline-flex;align-items:center;gap:6px;margin-left:auto;min-width:0}
+.tendi-skin .rmon-bus .sub .dvr b{color:rgba(255,255,255,.82);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.tendi-skin .rmon-bus .flag{display:flex;align-items:center;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:600;color:#f3d39a}
+.tendi-skin .rmon-bus .flag.crit{color:#f7a9a0}
+.tendi-skin .rmon-bus .flag svg{width:15px;height:15px;flex:none}
+
+/* ---- upcoming routes (compact reskinned list; buttons keep legacy classes so their handlers fire) ---- */
+.tendi-skin .rmon-up{margin-bottom:8px}
+.tendi-skin .rmon-up-list{border:1px solid var(--paper-edge);border-radius:var(--radius-lg);background:var(--paper-2);overflow:hidden}
+.tendi-skin .rmon-up-row{display:flex;align-items:center;gap:12px;padding:11px 14px}
+.tendi-skin .rmon-up-row+.rmon-up-row{border-top:1px solid var(--paper-edge)}
+.tendi-skin .rmon-up-row .ut{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink);font-size:13px;flex:none;width:82px}
+.tendi-skin .rmon-up-row .ux{flex:1;min-width:0}
+.tendi-skin .rmon-up-row .ux .un{font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tendi-skin .rmon-up-row .ux .um{font-size:11.5px;color:var(--ink-4)}
+.tendi-skin .rmon-up-row .uact{margin-left:auto;display:flex;gap:7px;flex:none}
+.tendi-skin .rmon-up-empty{padding:22px 14px;text-align:center;font-size:12.5px;color:var(--ink-4)}
+.tendi-skin .rmon-up-row .view-child-btn,.tendi-skin .rmon-up-row .export-upcoming-routes{display:inline-flex;align-items:center;gap:5px;height:29px;padding:0 11px;border-radius:var(--radius-sm);border:1px solid var(--paper-edge);background:var(--paper-2);font:inherit;font-size:12px;font-weight:600;color:var(--ink-3);cursor:pointer;white-space:nowrap;transition:.13s;line-height:1}
+.tendi-skin .rmon-up-row .view-child-btn:hover,.tendi-skin .rmon-up-row .export-upcoming-routes:hover{border-color:var(--primary);color:var(--primary);background:var(--cream-2)}
+.tendi-skin .rmon-up-row .view-child-btn i,.tendi-skin .rmon-up-row .export-upcoming-routes i{font-size:11px}
+.tendi-skin .rmon-up-row .view-child-btn svg,.tendi-skin .rmon-up-row .export-upcoming-routes svg{width:13px;height:13px;flex:none}
+
+/* ============================================================
+   ROUTE DETAIL DRAWER: portalled to <body> inside .tendi-skin
+   ============================================================ */
+.tendi-skin .rmon-scrim{position:fixed;inset:0;background:rgba(31,26,46,.44);opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s;z-index:1200}
+.tendi-skin .rmon-scrim.is-open{opacity:1;visibility:visible}
+.tendi-skin .rmon-drawer{position:fixed;top:0;right:0;bottom:0;width:456px;max-width:94vw;background:var(--paper-2);border-left:1px solid var(--paper-edge);box-shadow:var(--shadow-overlay);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);z-index:1201;display:flex;flex-direction:column}
+.tendi-skin .rmon-drawer.is-open{transform:none}
+.tendi-skin .rmon-dw-hd{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--paper-edge);background:var(--paper)}
+.tendi-skin .rmon-dw-hd .di{width:40px;height:40px;border-radius:var(--radius-md);background:var(--primary-tint);color:var(--primary);display:grid;place-items:center;flex:none}
+.tendi-skin .rmon-dw-hd .di svg{width:22px;height:22px}
+.tendi-skin .rmon-dw-hd .dh-t{flex:1;min-width:0}
+.tendi-skin .rmon-dw-hd h3{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-.01em;margin:0;color:var(--ink);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.tendi-skin .rmon-dw-hd .dsub{font-size:12.5px;color:var(--ink-4);margin-top:4px}
+.tendi-skin .rmon-dw-hd .st{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:var(--radius-full);white-space:nowrap}
+.tendi-skin .rmon-dw-hd .st svg{width:12px;height:12px}
+.tendi-skin .rmon-dw-hd .st--enroute{background:var(--ok-tint);color:var(--ok)}
+.tendi-skin .rmon-dw-hd .st--done{background:var(--cream-2);color:var(--ink-3)}
+.tendi-skin .rmon-dw-hd .st--soon{background:var(--info-tint);color:var(--info)}
+.tendi-skin .rmon-dw-hd .st--cancel{background:var(--critical-tint);color:var(--critical)}
+.tendi-skin .rmon-dw-x{flex:none;width:32px;height:32px;border-radius:var(--radius-sm);border:1px solid var(--paper-edge-strong);background:var(--paper-2);color:var(--ink-3);cursor:pointer;display:grid;place-items:center}
+.tendi-skin .rmon-dw-x svg{width:16px;height:16px}
+.tendi-skin .rmon-dw-x:hover{background:var(--cream-2);color:var(--ink)}
+.tendi-skin .rmon-dw-bd{flex:1;overflow:auto;padding:16px 18px 20px}
+.tendi-skin .rmon-dw-sec{margin-bottom:18px}
+.tendi-skin .rmon-dw-sec>.h{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-4);margin:0 0 9px}
+.tendi-skin .rmon-dw-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tendi-skin .rmon-dw-stat{border:1px solid var(--paper-edge);border-radius:var(--radius-md);background:var(--cream);padding:10px 12px}
+.tendi-skin .rmon-dw-stat .l{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-5);margin-bottom:5px}
+.tendi-skin .rmon-dw-stat .v{font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tendi-skin .rmon-dw-stat .v.late{color:var(--attention)}
+.tendi-skin .rmon-dw-bar{height:6px;border-radius:var(--radius-full);background:var(--cream-2);overflow:hidden;margin-top:12px}
+.tendi-skin .rmon-dw-bar i{display:block;height:100%;border-radius:var(--radius-full);background:var(--ok)}
+.tendi-skin .rmon-dw-bar i.late{background:var(--attention)}
+.tendi-skin .rmon-dw-times{margin-top:11px;font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:7px;font-variant-numeric:tabular-nums}
+.tendi-skin .rmon-dw-times svg{width:14px;height:14px;color:var(--ink-4);flex:none}
+.tendi-skin .rmon-dw-times b{color:var(--ink-2);font-weight:600}
+.tendi-skin .rmon-dw-cancel{display:flex;align-items:flex-start;gap:9px;margin-top:11px;padding:11px 13px;border-radius:var(--radius-md);font-size:12.5px;color:var(--critical);background:color-mix(in srgb,var(--critical) 7%,var(--paper-2));border:1px solid color-mix(in srgb,var(--critical) 24%,transparent)}
+.tendi-skin .rmon-dw-cancel[hidden]{display:none}
+.tendi-skin .rmon-dw-cancel svg{width:16px;height:16px;flex:none;margin-top:1px}
+.tendi-skin .rmon-dw-cancel b{color:var(--ink);font-weight:700}
+.tendi-skin .rmon-dw-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--paper-edge)}
+.tendi-skin .rmon-dw-row:last-child{border-bottom:0}
+.tendi-skin .rmon-dw-row .rl{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-5);width:76px;flex:none}
+.tendi-skin .rmon-dw-row .rv{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);font-weight:600;min-width:0}
+.tendi-skin .rmon-dw-row .rv .av{flex:none;width:20px;height:20px;border-radius:var(--radius-full);display:grid;place-items:center;color:#fff;font-size:9px;font-weight:700}
+.tendi-skin .rmon-dw-row .rv svg{width:14px;height:14px;color:var(--ink-4);flex:none}
+.tendi-skin .rmon-dw-row .redit{margin-left:auto}
+.tendi-skin .rmon-dw-group{margin-bottom:11px}
+.tendi-skin .rmon-dw-group:last-child{margin-bottom:0}
+.tendi-skin .rmon-dw-group .gh{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;margin-bottom:8px}
+.tendi-skin .rmon-dw-group.acc .gh{color:var(--ok)}
+.tendi-skin .rmon-dw-group.wait .gh{color:var(--attention)}
+.tendi-skin .rmon-dw-group .gh svg{width:13px;height:13px}
+.tendi-skin .rmon-dw-chips{display:flex;flex-wrap:wrap;gap:6px}
+.tendi-skin .rmon-dw-chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--ink-2);background:var(--cream);border:1px solid var(--paper-edge);border-radius:var(--radius-full);padding:3px 9px 3px 4px;cursor:pointer}
+.tendi-skin .rmon-dw-chip:hover{border-color:var(--primary);background:var(--primary-tint)}
+.tendi-skin .rmon-dw-chip .av{flex:none;width:20px;height:20px;border-radius:var(--radius-full);display:grid;place-items:center;color:#fff;font-size:9px;font-weight:700}
+.tendi-skin .rmon-dw-chip.empty{color:var(--ink-4);font-weight:500;padding:3px 10px;cursor:default}
+.tendi-skin .rmon-dw-chip .cf{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:var(--radius-full);--c:var(--attention);color:#fff;background:var(--c)}
+.tendi-skin .rmon-dw-chip .cf svg{width:9px;height:9px}
+.tendi-skin .rmon-dw-chip .cf.wb{--c:var(--critical)}
+.tendi-skin .rmon-dw-chip .cf.bc{--c:var(--primary)}
+.tendi-skin .rmon-dw-chip .cf.dl{--c:var(--attention)}
+.tendi-skin .rmon-dw-note{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:var(--radius-md);font-size:12.5px;font-weight:600;--n:var(--ok);color:var(--n);background:color-mix(in srgb,var(--n) 8%,var(--paper-2));border:1px solid color-mix(in srgb,var(--n) 22%,transparent)}
+.tendi-skin .rmon-dw-note.skip{--n:var(--attention)}
+.tendi-skin .rmon-dw-note svg{width:16px;height:16px;flex:none}
+.tendi-skin .rmon-dw-note .insp-play{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--ok);cursor:pointer;text-decoration:none}
+.tendi-skin .rmon-dw-note .insp-play svg{width:13px;height:13px}
+.tendi-skin .rmon-dw-ft{display:flex;gap:8px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--paper-edge);background:var(--paper)}
+.tendi-skin .rmon-dw-ft .rmon-btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:var(--radius-md);border:1px solid var(--paper-edge-strong);background:var(--paper-2);color:var(--ink-2);font:inherit;font-weight:600;font-size:13px;cursor:pointer;transition:.13s}
+.tendi-skin .rmon-dw-ft .rmon-btn svg{width:15px;height:15px;color:var(--ink-4)}
+.tendi-skin .rmon-dw-ft .rmon-btn:hover{background:var(--cream-2);border-color:var(--primary)}
+.tendi-skin .rmon-dw-ft .rmon-btn:hover svg{color:var(--primary)}
+.tendi-skin .rmon-dw-ft .rmon-btn--primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.tendi-skin .rmon-dw-ft .rmon-btn--primary svg{color:#fff}
+.tendi-skin .rmon-dw-ft .rmon-btn--primary:hover{background:var(--primary-hover);border-color:var(--primary-hover)}
+.tendi-skin .rmon-dw-ft .rmon-btn--primary:hover svg{color:#fff}
+.tendi-skin .rmon-dw-loading{display:grid;place-items:center;padding:40px}
+.tendi-skin .rmon-spin{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--cream-3);border-top-color:var(--primary);animation:rmon-spin .7s linear infinite}
+@keyframes rmon-spin{to{transform:rotate(360deg)}}

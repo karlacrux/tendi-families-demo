@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tendi Families Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700&display=swap">
+<style>
+:root{--rail-top:#5d44c4;--rail-bottom:#3f2c8c;--primary:#5a3fc2;--primary-hover:#483397;--ink:#1f1a2e;--ink-3:#5b5470;--ink-4:#6b6480;--edge:rgba(95,67,178,.2);--paper:#fcfbff;--critical:#d94538;--focus:rgba(90,63,194,.18);color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;color:var(--ink);background:#fff;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.brand{background:linear-gradient(160deg,var(--rail-top),var(--rail-bottom));color:#fff;padding:32px 40px;display:flex;flex-direction:column;justify-content:space-between}
+.brand .logo{font-family:"Plus Jakarta Sans",sans-serif;font-weight:700;font-size:22px;letter-spacing:-.02em}
+.brand h1{font-family:"Plus Jakarta Sans",sans-serif;font-size:32px;line-height:1.15;margin:0 0 10px;letter-spacing:-.02em}
+.brand p{margin:0;color:rgba(255,255,255,.8);max-width:36ch;line-height:1.5}
+.brand small{color:rgba(255,255,255,.6);font-size:12px}
+.form{display:grid;place-items:center;padding:32px 24px}
+form{width:min(100%,360px);display:flex;flex-direction:column;gap:14px}
+form h2{margin:0;font-size:18px;font-weight:600}
+form p{margin:0;color:var(--ink-3);font-size:14px}
+label{font-size:12.5px;font-weight:500;color:var(--ink-4)}
+input{width:100%;font:inherit;font-size:15px;padding:11px 13px;border:1px solid var(--edge);border-radius:10px;background:var(--paper);outline:none;margin-top:6px}
+input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--focus);background:#fff}
+button{font:inherit;font-weight:600;font-size:15px;border:0;border-radius:10px;padding:11px;background:var(--primary);color:#fff;cursor:pointer}
+button:hover{background:var(--primary-hover)}
+.err{color:var(--critical);font-size:13px;min-height:18px}
+@media (max-width:760px){body{grid-template-columns:minmax(0,1fr)}.brand{padding:24px}.brand h1{font-size:24px}}
+</style>
+</head>
+<body>
+<section class="brand">
+  <div class="logo">Tendi.</div>
+  <div><h1>Families module</h1><p>A clickable prototype of the new Families area and the changes to Children.</p></div>
+  <small>Prototype · sample data · nothing is saved</small>
+</section>
+<section class="form">
+  <form id="gate" autocomplete="off">
+    <h2>Enter the access code</h2>
+    <p>Ask your Tendi contact if you don’t have it.</p>
+    <label for="code">Access code<input id="code" name="code" type="password" required autofocus></label>
+    <div class="err" id="err" role="alert"></div>
+    <button type="submit">Open the prototype</button>
+  </form>
+</section>
+<script>
+(function () {
+  var HASH = 'cbdb13937d9e56dd7b194113c6c6c23f7dd185beffab31351707b0bdd4b2905f', PREFIX = '/tendi-families-demo', KEY = 'tendi-families-proto';
+  var next = PREFIX + '/admin/dashboard.html#families';
+  function ok() { try { return localStorage.getItem(KEY) === HASH; } catch (e) { return false; } }
+  if (ok()) { location.replace(next); return; }
+  document.getElementById('gate').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = document.getElementById('code').value.trim();
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)).then(function (buf) {
+      var hex = Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+      if (hex === HASH) {
+        try { localStorage.setItem(KEY, HASH); } catch (err) {}
+        location.replace(next);
+      } else {
+        document.getElementById('err').textContent = 'That code is not right. Check it and try again.';
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+/* ---------------------------------------------------------------------------
+   PROTOTYPE — the Families page (Children > Families). Sandbox only, never
+   deployed.
+
+   Styled with the product's own tokens (tendi-tokens.css) so it reads as part
+   of the app rather than as a mockup pasted on top: violet #5a3fc2, lavender
+   canvas, flat surfaces, hairline borders. The drawer is a true floating
+   overlay, which is the one place the design bible allows a shadow.
+
+   Everything here is READ-ONLY. The page renders 120 households derived from
+   the sandbox database; it saves nothing and posts nothing.
+--------------------------------------------------------------------------- */
+
+#tndFamiliesPage{
+  font-family:var(--font-sans,"Inter",-apple-system,sans-serif);
+  color:var(--ink,#1f1a2e);
+  padding:var(--list-top,32px) var(--list-gutter,32px) var(--list-bottom,28px);
+}
+
+/* ---- header ------------------------------------------------------------ */
+
+.fam-crumbs{font-size:12px;color:var(--ink-4,#6b6480);margin-bottom:14px}
+.fam-crumbs a{color:var(--ink-4,#6b6480);text-decoration:none}
+.fam-crumbs a:hover{color:var(--primary,#5a3fc2)}
+.fam-crumbs .sep{margin:0 7px;color:var(--ink-5,#9a93ad)}
+.fam-crumbs .current{color:var(--ink-2,#332e47);font-weight:600}
+
+.fam-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px}
+.fam-head-ico{width:44px;height:44px;border-radius:var(--radius-lg,14px);flex-shrink:0;
+  background:var(--primary-tint,#eeecfa);color:var(--primary,#5a3fc2);
+  display:flex;align-items:center;justify-content:center}
+.fam-head-ico svg{width:23px;height:23px}
+.fam-head-text{flex-grow:1;min-width:0}
+.fam-head h1{font-family:var(--font-display,"Plus Jakarta Sans",sans-serif);
+  font-size:25px;font-weight:700;margin:0;line-height:1.2;color:var(--ink,#1f1a2e)}
+.fam-head p{font-size:13px;color:var(--ink-4,#6b6480);margin:6px 0 0;line-height:1.5;max-width:70ch}
+
+/* ---- the provenance note ------------------------------------------------
+   This page is the ONLY place in the prototype showing data that does not come
+   from a column, so it says so where it is read rather than in a footnote. */
+
+.fam-note{display:flex;gap:11px;align-items:flex-start;
+  border:1px dashed rgba(31,122,77,.45);background:rgba(31,122,77,.05);
+  border-radius:var(--radius-md,10px);padding:12px 14px;margin-bottom:20px}
+.fam-note b{display:block;font-size:12.5px;font-weight:700;color:var(--ok,#1f7a4d);margin-bottom:3px}
+.fam-note span{font-size:12px;color:var(--ink-3,#5b5470);line-height:1.55}
+.fam-note i{font-style:normal;font-weight:600;color:var(--ink-2,#332e47)}
+
+/* ---- the four measurements --------------------------------------------- */
+
+.fam-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.fam-stat{background:#fff;border:1px solid var(--paper-edge,rgba(95,67,178,.13));
+  border-radius:var(--radius-md,10px);padding:13px 15px}
+.fam-stat b{display:block;font-family:var(--font-display,"Plus Jakarta Sans",sans-serif);
+  font-size:22px;font-weight:700;line-height:1.1;color:var(--ink,#1f1a2e)}
+.fam-stat span{display:block;font-size:11.5px;color:var(--ink-4,#6b6480);margin-top:5px;line-height:1.4}
+
+/* ---- search: Manage Children's own .tnd-chl-bar / .tnd-chl-search ------ */
+.fam-bar{margin-bottom:10px}
+
+
+/* ---- the list ----------------------------------------------------------- */
+
+.fam-table{background:#fff;border:1px solid var(--paper-edge,rgba(95,67,178,.13));
+  border-radius:var(--radius-lg,14px);overflow:hidden}
+.fam-th,.fam-row{display:grid;grid-template-columns:minmax(170px,1.1fr) minmax(150px,1.3fr) minmax(170px,1.5fr) 128px minmax(190px,1.5fr) 40px;
+  gap:14px;align-items:center;padding:12px 18px}
+.fam-th{background:var(--cream,#faf8fd);border-bottom:1px solid var(--paper-edge,rgba(95,67,178,.13));
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4,#6b6480)}
+.fam-row{border-top:1px solid var(--paper-edge,rgba(95,67,178,.10));cursor:pointer;
+  background:#fff;text-align:left;width:100%;font-family:inherit;border-left:0;border-right:0;border-bottom:0}
+.fam-row:first-of-type{border-top:0}
+.fam-row:hover{background:var(--primary-tint,#eeecfa)}
+.fam-row.is-open{background:var(--primary-tint,#eeecfa)}
+
+.fam-name{display:flex;align-items:center;gap:10px;min-width:0}
+.fam-av{width:30px;height:30px;border-radius:var(--radius-full,9999px);flex-shrink:0;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+.fam-name b{font-size:13.5px;font-weight:600;color:var(--ink,#1f1a2e);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.fam-addr{font-size:12px;color:var(--ink-3,#5b5470);line-height:1.4;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fam-phone{font-size:12.5px;color:var(--ink-2,#332e47);white-space:nowrap}
+.fam-phone.none{color:var(--ink-5,#9a93ad);font-style:italic}
+
+.fam-kids{display:flex;align-items:center;gap:8px;min-width:0}
+.fam-kidn{font-style:normal;font-size:11.5px;font-weight:600;color:var(--primary,#5a3fc2);flex-shrink:0;
+  background:var(--primary-tint,#eeecfa);border-radius:var(--radius-full,9999px);padding:3px 10px}
+.fam-kidnames{display:flex;gap:4px;flex-wrap:wrap;overflow:hidden;max-height:24px;min-width:0}
+.fam-kid{font-size:11px;font-weight:500;background:var(--cream-2,#f4eef9);color:var(--ink-3,#5b5470);
+  padding:3px 8px;border-radius:var(--radius-full,9999px);white-space:nowrap}
+.fam-kid.more{background:transparent;color:var(--ink-4,#6b6480);padding-left:2px}
+
+
+.fam-empty{padding:44px 18px;text-align:center;font-size:13px;color:var(--ink-4,#6b6480)}
+.fam-empty b{display:block;font-size:14px;color:var(--ink-2,#332e47);margin-bottom:5px}
+
+/* ---- the household drawer ----------------------------------------------- */
+
+
+
+
+
+
+
+
+
+@media (max-width:1100px){
+  .fam-stats{grid-template-columns:repeat(2,1fr)}
+  .fam-th,.fam-row{grid-template-columns:minmax(150px,1fr) minmax(130px,1.2fr) minmax(140px,1.3fr) 118px 52px 40px}
+  .fam-kidnames{display:none}
+  .fam-th--people,.fam-row--people{grid-template-columns:minmax(150px,1.2fr) minmax(90px,.8fr) minmax(110px,1fr) 60px 118px 40px}
+  .fam-th--people>*:nth-child(6),.fam-row--people>*:nth-child(6){display:none}
+  .fam-sub{grid-template-columns:minmax(160px,1.4fr) 130px 118px 0 0 60px}
+  .fam-sub-em,.fam-sub-scope{display:none}
+}
+
+/* The subtitle uses the app's own class (tnd-dt-subtitle), and the same size as
+   Manage Children's "142 children in this view". */
+.fam-head p.tnd-dt-subtitle{font-size:13px}
+
+/* The row menu: Manage Children's kebab, at the end of the row. */
+.fam-act{display:flex;justify-content:flex-end}
+.fam-row:focus-visible{outline:2px solid var(--primary,#5a3fc2);outline-offset:-2px}
+
+/* Row menu: a disabled item says why, on a second line. */
+.fam-rowmenu-open .tnd-chl-mi.is-disabled{opacity:.55;cursor:not-allowed}
+.fam-mi-text{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.fam-mi-why{font-size:11px;font-weight:400;color:var(--ink-4,#6b6480)}
+
+/* THE PAGE-HEAD BUTTONS. Manage Children's own rules, copied verbatim: in the
+   app they are scoped to .tnd-children-page, so on this page they did not apply
+   and the button glyphs drew at full size. Re-scoped to the Families head only,
+   rather than tagging this page as the Children page and taking every rule. */
+.tendi-skin .fam-pagehead .btnContainer{padding-top:0;align-items:center}
+.tendi-skin .fam-pagehead .tnd-btn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-sans);
+  font-weight:600;font-size:13px;line-height:1;padding:0 15px;height:38px;border-radius:var(--radius-md);
+  border:1px solid var(--paper-edge-strong);background:var(--paper-2);color:var(--ink-2);cursor:pointer;
+  white-space:nowrap;text-decoration:none;box-shadow:none;text-shadow:none;
+  transition:background .15s,border-color .15s,color .15s}
+.tendi-skin .fam-pagehead .tnd-btn svg{width:15px;height:15px;display:block;color:var(--ink-4);flex:0 0 auto}
+.tendi-skin .fam-pagehead .tnd-btn:hover{background:var(--cream-2);color:var(--ink)}
+.tendi-skin .fam-pagehead .tnd-btn:hover svg{color:var(--ink-3)}
+.tendi-skin .fam-pagehead .tnd-btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--focus-ring)}
+.tendi-skin .fam-pagehead .btnContainer{flex-wrap:wrap;justify-content:flex-end;gap:8px}
+
+/* Parents: first names when the surname is the household's, one line. */
+.fam-parents{font-size:12.5px;color:var(--ink-2,#332e47);line-height:1.4;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.fam-parents.none{color:var(--ink-5,#9a93ad);font-style:italic}
+
+/* One scrollbar: while a side panel is open the page behind it does not scroll. The gutter is
+   kept so the page does not shift sideways when its scrollbar goes. */
+html:has(#tndFamiliesPage){scrollbar-gutter:stable}
+html:has(#tndFamiliesPage):has(.fam-portal),
+html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
+
+/* ---- FAM-FAM-7: a household expanded in place --------------------------- */
+.fam-chev{width:22px;height:22px;flex-shrink:0;border:0;background:transparent;padding:0;margin-left:-4px;
+  border-radius:6px;color:var(--ink-4,#6b6480);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.fam-chev svg{width:14px;height:14px;transition:transform .15s}
+.fam-chev:hover{background:var(--paper-2,#fff);color:var(--primary,#5a3fc2)}
+.fam-chev:focus-visible{outline:2px solid var(--primary,#5a3fc2);outline-offset:1px}
+.fam-chev[aria-expanded="true"] svg{transform:rotate(90deg)}
+.fam-row.is-expanded{background:var(--cream,#faf8fd)}
+.fam-members{background:var(--cream,#faf8fd);border-top:1px solid var(--paper-edge,rgba(95,67,178,.10));
+  padding:4px 18px 12px 50px}
+.fam-sub-label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-4,#6b6480);padding:10px 0 4px}
+.fam-sub{display:grid;grid-template-columns:minmax(180px,1.4fr) 140px 128px minmax(150px,1.3fr) minmax(110px,.9fr) 64px;
+  gap:14px;align-items:center;padding:7px 10px;margin:0 -10px;border-radius:8px}
+.fam-sub:hover{background:var(--paper-2,#fff)}
+.fam-sub.is-hit{background:var(--primary-tint,#eeecfa);box-shadow:inset 3px 0 0 var(--primary,#5a3fc2)}
+.fam-sub-who{display:flex;align-items:center;gap:10px;min-width:0}
+.fam-sub-av{width:26px;height:26px;border-radius:999px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:600;color:var(--ink-2,#332e47);background:var(--cream-2,#f4eef9)}
+.fam-sub-av.is-kid{background:var(--primary-tint,#eeecfa);color:var(--primary,#5a3fc2)}
+.fam-sub-nm{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.fam-sub-nm b{font-size:13px;font-weight:600;color:var(--ink,#1f1a2e);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fam-sub-nm small{font-size:11.5px;color:var(--ink-4,#6b6480)}
+.fam-sub .cm-permnote{font-size:10.5px;padding:3px 9px}
+.fam-sub-ph,.fam-sub-em{font-size:12.5px;color:var(--ink-2,#332e47);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.fam-sub-ph.none,.fam-sub-em.none{color:var(--ink-5,#9a93ad);font-style:italic}
+.fam-sub-scope{font-size:12px;color:var(--ink-4,#6b6480);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fam-sub-status{font-size:12px;font-weight:600;color:var(--primary,#5a3fc2);grid-column:2 / span 3;white-space:nowrap}
+.fam-sub-status.wait{color:var(--ink-3,#5b5470)}
+.fam-sub-status.off{color:var(--ink-5,#9a93ad);font-weight:500}
+.fam-sub-go{display:flex;justify-content:flex-end}
+#tndFamiliesPage .fam-sub-btn,.fam-portal .fam-sub-btn{font-family:inherit;font-size:12px;font-weight:600;color:var(--primary,#5a3fc2);background:var(--paper-2,#fff);
+  border:1px solid var(--paper-edge-strong,rgba(95,67,178,.22));border-radius:8px;padding:5px 12px;cursor:pointer}
+#tndFamiliesPage .fam-sub-btn:hover,.fam-portal .fam-sub-btn:hover{border-color:var(--primary,#5a3fc2)}
+#tndFamiliesPage .fam-sub-btn:disabled{color:var(--ink-5,#9a93ad);cursor:not-allowed;border-color:var(--paper-edge,rgba(95,67,178,.13))}
+.fam-expall{margin-left:auto;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--primary,#5a3fc2);
+  background:transparent;border:0;padding:6px 4px;cursor:pointer;white-space:nowrap}
+.fam-expall:hover{text-decoration:underline}
+.fam-bar{display:flex;align-items:center;gap:12px}
+.fam-bar .tnd-chl-search{flex:1 1 auto}
+
+/* ---- FAM-FAM-6: the People view ------------------------------------------ */
+.fam-viewbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.fam-chips{display:flex;gap:6px;flex-wrap:wrap}
+.fam-chips[hidden]{display:none}
+.fam-chip{display:inline-flex;align-items:center;gap:7px;font-family:inherit;font-size:12.5px;font-weight:600;
+  padding:7px 13px;border-radius:999px;border:1px solid var(--paper-edge-strong,rgba(95,67,178,.22));
+  background:var(--paper-2,#fff);color:var(--ink-2,#332e47);cursor:pointer;white-space:nowrap}
+.fam-chip:hover{border-color:var(--primary,#5a3fc2);color:var(--primary,#5a3fc2)}
+.fam-chip.is-on{background:var(--primary,#5a3fc2);border-color:var(--primary,#5a3fc2);color:#fff}
+.fam-chip-n{font-size:11px;font-weight:600;opacity:.75}
+.fam-th--people,.fam-row--people{grid-template-columns:minmax(170px,1.3fr) minmax(110px,.9fr) minmax(130px,1fr) 70px 128px minmax(170px,1.3fr) 40px}
+.fam-av--p{color:var(--ink-2,#332e47)}
+.fam-rel,.fam-hh{font-size:12.5px;color:var(--ink-2,#332e47);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.fam-hh b{font-weight:600}
+.fam-email{font-size:12.5px;color:var(--ink-2,#332e47);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.fam-email.none{color:var(--ink-5,#9a93ad);font-style:italic}
+.fam-unver{font-style:normal;font-size:10.5px;font-weight:600;color:var(--ink-3,#5b5470);background:var(--cream-2,#f4eef9);
+  border-radius:999px;padding:2px 7px;margin-left:4px;white-space:nowrap}
+
+/* Panels: the person, the merge, the household's contacts. */
+.fam-panel-note{font-size:12px;color:var(--ink-4,#6b6480);margin:10px 2px 0;line-height:1.5}
+.fam-shared-note{font-size:12.5px;line-height:1.5;color:var(--ink-2,#332e47);background:var(--primary-tint,#eeecfa);
+  border-radius:10px;padding:11px 14px;margin:4px 0 14px}
+.fam-shared-note b{color:var(--primary,#5a3fc2)}
+.fam-confirm{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--ink-2,#332e47);margin:4px 0 12px;cursor:pointer}
+.fam-hsum{font-size:12.5px;color:var(--ink-3,#5b5470);margin:-4px 0 6px 24px}
+.fam-hsum[hidden],.fam-ownaddr[hidden]{display:none}
+.fam-mq{margin-bottom:10px}
+.fam-mlist{max-height:360px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.fam-mcand{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;margin:0;font-weight:400}
+.fam-mcand[hidden]{display:none}
+.fam-mcand:hover{background:var(--cream,#faf8fd)}
+.fam-mcand span{display:flex;flex-direction:column;line-height:1.3}
+.fam-mcand b{font-size:13px;font-weight:600;color:var(--ink,#1f1a2e)}
+.fam-mcand small{font-size:11.5px;color:var(--ink-4,#6b6480)}
+.fam-cedit{border:1px solid var(--paper-edge,rgba(95,67,178,.13));border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--paper-2,#fff)}
+.fam-cedit.is-removed{opacity:.5}
+.fam-cedit.is-removed .fam-cfields,.fam-cedit.is-removed .fam-cshared{display:none}
+.fam-cedit-head{display:flex;align-items:center;gap:10px}
+.fam-cedit-head .fam-ctype{width:auto;min-width:170px;height:36px}
+.fam-cremove{font-family:inherit;font-size:12px;font-weight:600;color:var(--ink-4,#6b6480);background:transparent;border:0;cursor:pointer;padding:4px}
+.fam-cremove:hover{color:#b3261e}
+.fam-cshared{font-size:12px;color:var(--ink-4,#6b6480);margin:8px 0 0}
+.fam-cfields{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:12px}
+.fam-cf label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3,#5b5470);margin-bottom:4px}
+.fam-cf-name{display:none}
+.fam-cfields.is-pro .fam-cf-name{display:block;grid-column:1 / -1}
+.fam-cfields.is-pro .fam-cf-first,.fam-cfields.is-pro .fam-cf-last{display:none}
+.fam-ckid{display:flex;align-items:center;gap:12px;padding:8px 2px;border-bottom:1px solid var(--paper-edge,rgba(95,67,178,.10))}
+.fam-ckid b{font-size:13px;font-weight:600;color:var(--ink,#1f1a2e);flex:1 1 auto}
+.fam-ckid span{font-size:12px;color:var(--ink-4,#6b6480)}
+.fam-linked{margin-bottom:10px}
+.fam-linked .cm-permnote{font-size:10px;padding:2px 8px;vertical-align:middle;text-transform:none;letter-spacing:0}
+.fam-sub.is-child .fam-sub-go{grid-column:6}
+#tndFamiliesPage .fam-sub-more{display:block;margin:10px 0 0;padding:0;border:0;background:transparent;font-family:inherit;
+  font-size:12.5px;font-weight:600;color:var(--primary,#5a3fc2);cursor:pointer}
+#tndFamiliesPage .fam-sub-more:hover{text-decoration:underline}
+.fam-sub-em{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.fam-sub-em .fam-unver{margin-left:0}
+#tndFamiliesPage .fam-av--p{background:var(--cream-2,#f4eef9);color:var(--ink-2,#332e47)}
+.fam-cedit-head .fam-ctype{flex:0 1 220px}
+.fam-cedit-head .fam-badge,.fam-cedit-head .fam-cremove{white-space:nowrap;flex-shrink:0}
+.fam-cedit-head .up-head-spacer{flex:1 1 auto}
+@media (max-width:1100px){
+  #tndFamiliesPage .fam-sub{grid-template-columns:minmax(150px,1.4fr) 130px 118px 64px}
+  #tndFamiliesPage .fam-sub-em,#tndFamiliesPage .fam-sub-scope{display:none}
+  #tndFamiliesPage .fam-sub-status{grid-column:2 / span 2}
+  #tndFamiliesPage .fam-sub.is-child .fam-sub-go{grid-column:4}
+  #tndFamiliesPage .fam-members{padding-left:24px}
+}
+/* The view switch sits in the search row, at its left. */
+#tndFamiliesPage .fam-bar .fam-seg{flex:0 0 auto}
+#tndFamiliesPage .tnd-dt-toolbar .tnd-page-head{margin-bottom:14px}
+#tndFamiliesPage .fam-chips{margin:0 0 12px}
+@media (max-width:1280px){
+  #tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{grid-template-columns:minmax(150px,1.3fr) minmax(100px,.9fr) minmax(110px,1fr) 64px 124px 40px}
+  #tndFamiliesPage .fam-th--people>*:nth-child(6),#tndFamiliesPage .fam-row--people>*:nth-child(6){display:none}
+}
+@media (max-width:1100px){
+  #tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{gap:10px;
+    grid-template-columns:minmax(130px,1.3fr) minmax(80px,.8fr) minmax(96px,1fr) 56px 118px 40px}
+}
+@media (max-width:1100px){
+  #tndFamiliesPage .fam-th:not(.fam-th--people),#tndFamiliesPage .fam-row:not(.fam-row--people){gap:10px;
+    grid-template-columns:minmax(130px,1.1fr) minmax(100px,1.1fr) minmax(100px,1.2fr) 112px 44px 40px}
+}
+/* Same vertical rhythm as Manage Children: no extra top padding on #content, the
+   toolbar block flush, 14px from the page head to the search bar. */
+#content:has(#tndFamiliesPage){padding-top:0}
+#tndFamiliesPage .tnd-dt-toolbar{margin-bottom:0}
+#tndFamiliesPage .fam-bar .fam-seg{order:-2}
+#tndFamiliesPage .fam-bar .fam-seg + .tnd-chl-div{order:-1}
+/* Header row as Manage Children's: icon, title and buttons on one row, centred;
+   the title keeps its width and the buttons wrap among themselves on the right. */
+.tendi-skin .fam-pagehead{flex-wrap:nowrap;align-items:center}
+.tendi-skin .fam-pagehead .tnd-page-head-text{flex:0 0 auto}
+.tendi-skin .fam-pagehead .btnContainer{flex:1 1 0;min-width:0}
+/* Member rows: the ⋮ shows only while the row is hovered, focused into, or its menu is open.
+   Hidden with opacity, not display, so the column keeps its width and keyboard focus still reaches it. */
+#tndFamiliesPage .fam-sub .tnd-kebab{opacity:0;transition:opacity .12s}
+#tndFamiliesPage .fam-sub:hover .tnd-kebab,
+#tndFamiliesPage .fam-sub:focus-within .tnd-kebab,
+#tndFamiliesPage .fam-sub .tnd-kebab[aria-expanded="true"]{opacity:1}
+@media (hover:none){#tndFamiliesPage .fam-sub .tnd-kebab{opacity:1}}
+/* Edit person: the households they are linked to. */
+.fam-plink{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--paper-edge,rgba(95,67,178,.10))}
+.fam-plink.is-removed .fam-plink-hh,.fam-plink.is-removed .fam-ptype{opacity:.45}
+.fam-plink-hh{display:flex;flex-direction:column;flex:1 1 auto;min-width:0;line-height:1.3}
+.fam-plink-hh b{font-size:13px;font-weight:600;color:var(--ink,#1f1a2e)}
+.fam-plink-hh small{font-size:11.5px;color:var(--ink-4,#6b6480)}
+.fam-plink .fam-ptype{flex:0 0 170px;width:170px;height:36px}
+.fam-plink .fam-cremove{white-space:nowrap;flex-shrink:0}
+.fam-padd{margin-top:10px}
+.fam-padd-pick[hidden],.fam-padd-btn[hidden]{display:none}
+.fam-padd-list{display:flex;flex-direction:column;gap:2px;margin-top:8px;max-height:280px;overflow:auto}
+.fam-padd-hit{display:flex;flex-direction:column;align-items:flex-start;text-align:left;font-family:inherit;border:0;background:transparent;
+  padding:8px 10px;border-radius:8px;cursor:pointer;line-height:1.3}
+.fam-padd-hit:hover{background:var(--primary-tint,#eeecfa)}
+.fam-padd-hit b{font-size:13px;font-weight:600;color:var(--ink,#1f1a2e)}
+.fam-padd-hit small{font-size:11.5px;color:var(--ink-4,#6b6480)}
+/* People filter dropdown: one choice, a tick on the current one, its count on the right. */
+#tndFamiliesPage .fam-psel[hidden]{display:none}
+#tndFamiliesPage .fam-psel .tnd-chl-menu{min-width:240px}
+#tndFamiliesPage .fam-pmi{display:flex;align-items:center;gap:10px;width:100%}
+#tndFamiliesPage .fam-pmi .sp{flex:1 1 auto;text-align:left}
+#tndFamiliesPage .fam-pmi-n{font-size:11.5px;font-weight:600;color:var(--ink-4,#6b6480)}
+#tndFamiliesPage .fam-pmi.is-on{color:var(--primary,#5a3fc2);font-weight:600}
+#tndFamiliesPage .fam-pmi.is-on .sp::after{content:' \2713'}
+/* People: Children is a count, so header and pill are centred in a column wide
+   enough for the header, instead of a narrow slot pressed against Phone. */
+#tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{
+  grid-template-columns:minmax(170px,1.3fr) minmax(110px,.9fr) minmax(120px,.9fr) 92px 128px minmax(170px,1.3fr) 40px}
+#tndFamiliesPage .fam-th--people>*:nth-child(4){text-align:center}
+#tndFamiliesPage .fam-row--people .fam-kids{justify-content:center}
+@media (max-width:1280px){
+  #tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{grid-template-columns:minmax(150px,1.3fr) minmax(100px,.9fr) minmax(110px,1fr) 84px 124px 40px}
+}
+@media (max-width:1100px){
+  #tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{grid-template-columns:minmax(130px,1.3fr) minmax(80px,.8fr) minmax(96px,1fr) 76px 118px 40px}
+}
+/* A person with a different relationship in each family: one line per family. */
+#tndFamiliesPage .fam-rel.is-multi{display:flex;flex-direction:column;gap:2px;white-space:normal}
+#tndFamiliesPage .fam-rel-line{font-size:12px;color:var(--ink-3,#5b5470);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tndFamiliesPage .fam-rel-line b{font-weight:600;color:var(--ink-2,#332e47)}
+/* Relationship holds "Mother · Thornley" lines: give it room before the name. */
+#tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{
+  grid-template-columns:minmax(160px,1.1fr) minmax(170px,1.2fr) minmax(110px,.8fr) 92px 128px minmax(160px,1.1fr) 40px}
+@media (max-width:1280px){
+  #tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{grid-template-columns:minmax(140px,1fr) minmax(160px,1.2fr) minmax(96px,.8fr) 76px 120px 40px}
+}
+@media (max-width:1100px){
+  #tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{gap:10px;
+    grid-template-columns:minmax(110px,1fr) minmax(150px,1.3fr) 92px 60px 112px 40px}
+}
+/* Relationship is one line again ("Mother, Aunt"): back to the narrower column. */
+#tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{
+  grid-template-columns:minmax(170px,1.3fr) minmax(110px,.9fr) minmax(120px,.9fr) 92px 128px minmax(170px,1.3fr) 40px}
+@media (max-width:1280px){
+  #tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{grid-template-columns:minmax(150px,1.3fr) minmax(100px,.9fr) minmax(110px,1fr) 84px 124px 40px}
+}
+@media (max-width:1100px){
+  #tndFamiliesPage .fam-th--people,#tndFamiliesPage .fam-row--people{gap:10px;
+    grid-template-columns:minmax(130px,1.3fr) minmax(80px,.8fr) minmax(96px,1fr) 76px 118px 40px}
+}
+/* Edit household: contacts listed, opened one at a time in the creation card. */
+.fam-crow,.fam-cnew{border:1px solid var(--paper-edge,rgba(95,67,178,.13));border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--paper-2,#fff)}
+.fam-crow.is-removed{opacity:.5}
+.fam-crow.is-removed .fam-crow-card,.fam-crow.is-removed .fam-cedit-btn{display:none}
+.fam-crow-main,.fam-cnew-head{display:flex;align-items:center;gap:10px}
+.fam-crow-who{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.fam-crow-who b{font-size:13.5px;font-weight:600;color:var(--ink,#1f1a2e)}
+.fam-crow-who small{font-size:11.5px;color:var(--ink-4,#6b6480)}
+.fam-crow .cm-permnote{font-size:10.5px;padding:3px 9px;white-space:nowrap}
+.fam-crow .fam-cremove,.fam-cnew .fam-cremove{white-space:nowrap}
+.fam-crow-facts{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0 0 36px;font-size:12.5px;color:var(--ink-2,#332e47)}
+.fam-crow-facts i{color:var(--ink-5,#9a93ad)}
+.fam-crow.is-editing .fam-crow-facts{display:none}
+.fam-crow-card:empty{display:none}
+.fam-crow-card{margin-top:12px;border-top:1px solid var(--paper-edge,rgba(95,67,178,.10));padding-top:12px}
+.fam-cnew-head{margin-bottom:10px}
+.fam-cnew-head b{font-size:13px;font-weight:600;color:var(--ink,#1f1a2e)}
+.fam-portal .cm-extra{border:0;padding:0;margin:0;box-shadow:none;background:transparent}
+.fam-crow-who{flex:1 1 auto}
+.fam-crow-main{flex-wrap:nowrap}
+.fam-crow.is-editing .fam-crow-main .cm-permnote{display:none}
+/* Applies to, in Edit household: whole family, or the children ticked. */
+.fam-portal .fam-scope{margin:10px 0 2px}
+.fam-scope-kids{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
+.fam-scope-kids[hidden]{display:none}
+.fam-scope-kid{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2,#332e47);margin:0;cursor:pointer}
+.fam-reach{color:var(--primary,#5a3fc2);font-weight:600}
+/* One relationship, one badge: while a contact's card is open, the row above it
+   keeps only the name (and where else the person is). */
+.fam-crow-who small span + span::before{content:' \00b7  '}
+.fam-crow.is-editing .fam-crow-rel{display:none}
+.fam-crow.is-editing .fam-crow-who small span + span::before{content:''}
+.fam-crow.is-editing .fam-crow-main .cm-permnote{display:none}
+/* Unsaved changes: clicking outside nudges the panel instead of closing it. */
+@keyframes famNudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-10px)}75%{transform:translateX(6px)}}
+.fam-portal .tnd-pane.fam-nudge{animation:famNudge .3s ease}
+.fam-crow.is-editing .fam-crow-facts{display:none}
+/* Edit contact: each family is a block like a contact in Edit household. */
+.fam-plink.fam-crow{display:block;padding:12px 14px;border:1px solid var(--paper-edge,rgba(95,67,178,.13));border-bottom:1px solid var(--paper-edge,rgba(95,67,178,.13));margin-bottom:10px}

@@ -1,0 +1,534 @@
+/* ============================================================
+   Tendi HISTORY LOG reskin: the audit-trail slide-over.
+   Design 1 (editorial timeline: spine + cards + colour-coded actions) with
+   Design 2's filter chips. Owns the `.change_history` / `.side_drawer` drawer
+   that opens from the topbar History Log button.
+
+   Markup + behaviour: application/views/admin/common/inc/audit_log.php.
+   Loaded globally from inc/head.php AFTER tendi-shell.css so it overrides the
+   legacy devoops `.side_drawer` geometry (style.css). Tokens: tendi-tokens.css.
+   Shell-agent lane (see docs/reskin/AGENT-COORDINATION.md).
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. DRAWER shell: beat the legacy .side_drawer geometry (style.css ~5558)
+   ------------------------------------------------------------ */
+.side_drawer.tnd-hist {
+  top: 56px;                                   /* under the reskinned 56px topbar (was 50) */
+  right: -660px;
+  width: 600px;
+  max-width: 100%;
+  height: calc(100vh - 56px);
+  padding: 0;
+  background: var(--paper-2);
+  border-left: 1px solid var(--paper-edge);
+  box-shadow: var(--shadow-overlay);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1050;
+  transition: right 0.34s cubic-bezier(0.32, 0.72, 0.18, 1);
+}
+.side_drawer.tnd-hist.visible { right: 0; }
+
+/* ------------------------------------------------------------
+   2. HEADER
+   ------------------------------------------------------------ */
+.tnd-hist .tnd-hist-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--paper-edge);
+}
+.tnd-hist .tnd-hist-ico {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  display: grid;
+  place-items: center;
+  background: var(--primary-tint);
+  color: var(--primary);
+  font-size: 16px;
+}
+.tnd-hist .tnd-hist-eye {
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-4);
+  margin-bottom: 3px;
+}
+.tnd-hist .tnd-hist-titles h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 0;
+}
+/* the close button: override legacy .side_drawer .close (absolute) into the flow */
+.tnd-hist .tnd-hist-x.close {
+  position: static;
+  margin-left: auto;
+  width: 34px;
+  height: 34px;
+  line-height: normal;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  color: var(--ink-4);
+  background: none;
+  opacity: 1;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.tnd-hist .tnd-hist-x.close:hover { background: var(--cream-2); color: var(--ink); }
+
+/* ------------------------------------------------------------
+   3. FILTERS: search + chip row (Design 2)
+   ------------------------------------------------------------ */
+.tnd-hist .tnd-hist-filters {
+  flex-shrink: 0;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--paper-edge);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tnd-hist .tnd-hist-search { position: relative; }
+.tnd-hist .tnd-hist-search > i {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-4);
+  font-size: 12px;
+  pointer-events: none;
+}
+.tnd-hist .tnd-hist-search input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-md);
+  background: var(--paper-2);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+}
+.tnd-hist .tnd-hist-search input::placeholder { color: var(--ink-4); }
+.tnd-hist .tnd-hist-search input:focus {
+  outline: none;
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 3px var(--primary-tint);
+}
+
+/* row 1: change-type chips on the left, "Reset filters" text on the right */
+.tnd-hist .tnd-hist-typerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tnd-hist .tnd-hist-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+/* "Reset filters": plain text button, never underlined */
+.tnd-hist .tnd-hist-reset {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none !important;
+}
+.tnd-hist .tnd-hist-reset:hover,
+.tnd-hist .tnd-hist-reset:focus,
+.tnd-hist .tnd-hist-reset:active {
+  color: var(--primary);
+  background: var(--cream-2);
+  text-decoration: none !important;
+  outline: none;
+}
+.tnd-hist .thchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-full);
+  background: var(--paper-2);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.tnd-hist .thchip > i { font-size: 10px; color: var(--ink-4); }
+.tnd-hist .thchip:hover { border-color: var(--paper-edge-strong); color: var(--ink); }
+
+/* action chips: selected fills with the action colour */
+.tnd-hist .thchip-action.is-on { background: var(--primary); border-color: var(--primary); color: #fff; }
+.tnd-hist .thchip-action.is-on > i { color: #fff; }
+.tnd-hist .thchip-action.a-create.is-on { background: var(--ok); border-color: var(--ok); }
+.tnd-hist .thchip-action.a-update.is-on { background: var(--primary); border-color: var(--primary); }
+.tnd-hist .thchip-action.a-delete.is-on { background: var(--critical); border-color: var(--critical); }
+
+/* row 2: Table / Column / User custom .tnd-select dropdowns (kitchen sink),
+   three equal columns filling the row; override tendi-skin's default full-width */
+.tnd-hist .tnd-hist-selects { display: flex; gap: 6px; align-items: stretch; }
+.tnd-hist .tnd-hist-selects.tendi-skin { font-family: var(--font-sans); }
+.tnd-hist .tnd-select { flex: 1 1 0; width: auto; min-width: 0; }
+.tnd-hist .tnd-select .tnd-select-trigger { height: 34px; border-radius: var(--radius-full); font-size: 12px; }
+.tnd-hist .tnd-select .tnd-select-label { font-weight: 600; }
+
+/* row 3: date range */
+.tnd-hist .tnd-hist-dates { display: flex; align-items: center; gap: 8px; }
+.tnd-hist .tnd-hist-dash { color: var(--ink-4); font-size: 13px; }
+.tnd-hist .tnd-hist-dates .thchip-date > input { width: 78px; }
+
+/* select / date chips: wrap a native control inside a pill */
+.tnd-hist .thchip-sel { padding: 0 6px 0 12px; position: relative; cursor: default; }
+.tnd-hist .thchip-sel > select,
+.tnd-hist .thchip-sel > input {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  height: 30px;
+  padding: 0 18px 0 0;
+  cursor: pointer;
+  max-width: 150px;
+}
+.tnd-hist .thchip-sel > select:focus,
+.tnd-hist .thchip-sel > input:focus { outline: none; }
+.tnd-hist .thchip-sel > select::-ms-expand { display: none; }
+.tnd-hist .thchip-sel::after {
+  content: "\f078";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 8px;
+  color: var(--ink-4);
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.tnd-hist .thchip-date { padding-right: 12px; }
+.tnd-hist .thchip-date::after { content: none; }
+.tnd-hist .thchip-date > input { width: 64px; padding-right: 0; cursor: text; }
+.tnd-hist .thchip-date > input::placeholder { color: var(--ink-4); font-weight: 500; }
+
+/* The date fields run TndDate (tendi-datepicker.js), which wraps the input in a
+   `.tnd-datewrap` span and appends its own calendar icon on the right. Two things follow,
+   and both were visible: the input stops being a direct child of .thchip-sel, so the
+   appearance/border reset above no longer reached it and it drew as a bordered box sitting
+   inside the pill; and the pill ended up with two calendars, its own on the left and the
+   wrapper's on the right. So the wrapper is made transparent, its icon is dropped, and the
+   pill itself becomes the control: one border, one icon, one focus ring.
+   The `.thchip-date > input` selectors are kept alongside for the unwrapped fallback (no
+   flatpickr on the page), so the field looks the same either way. */
+.tnd-hist .tnd-hist-dates .thchip-date { cursor: pointer; }
+.tnd-hist .tnd-hist-dates .thchip-date > i { pointer-events: none; }
+.tnd-hist .tnd-hist-dates .thchip-date > .tnd-datewrap {
+  display: inline-flex;
+  align-items: center;
+  position: static;                 /* the pill stays the positioning context */
+}
+.tnd-hist .tnd-hist-dates .thchip-date > .tnd-datewrap > .tnd-datewrap-icon { display: none; }
+.tnd-hist .tnd-hist-dates .thchip-date > .tnd-datewrap > input,
+.tnd-hist .tnd-hist-dates .thchip-date > input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 86px;                      /* fits mm/dd/yyyy without clipping */
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.tnd-hist .tnd-hist-dates .thchip-date > .tnd-datewrap > input::placeholder,
+.tnd-hist .tnd-hist-dates .thchip-date > input::placeholder { color: var(--ink-4); font-weight: 500; }
+.tnd-hist .tnd-hist-dates .thchip-date > .tnd-datewrap > input:focus,
+.tnd-hist .tnd-hist-dates .thchip-date > input:focus {
+  outline: none;
+  border: 0;
+  box-shadow: none;
+  cursor: text;
+}
+/* the ring belongs to the pill, so a focused field reads as one object */
+.tnd-hist .tnd-hist-dates .thchip-date:focus-within {
+  border-color: var(--lavender);
+  box-shadow: 0 0 0 3px var(--primary-tint);
+}
+.tnd-hist .tnd-hist-dates .thchip-date:focus-within > i { color: var(--primary); }
+/* text the picker could not read: colour the pill, never draw a second box inside it */
+.tnd-hist .tnd-hist-dates .thchip-date > .tnd-datewrap > input.tnd-date-bad { border: 0; }
+.tnd-hist .tnd-hist-dates .thchip-date:has(input.tnd-date-bad) { border-color: var(--critical); }
+.tnd-hist .tnd-hist-dates .thchip-date:has(input.tnd-date-bad) > i { color: var(--critical); }
+/* TndDate drops its "use mm/dd/yyyy" note in beside the field; float it under the pill
+   instead of letting it stretch the filter row */
+.tnd-hist .tnd-hist-dates .thchip-date > .tnd-date-note {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 5px);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 500;
+  z-index: 2;
+}
+
+/* ------------------------------------------------------------
+   4. TIMELINE: override legacy .history_drawer ul.messages + li.item
+   ------------------------------------------------------------ */
+.tnd-hist ul.messages.tnd-tl {
+  flex: 1;
+  max-height: none;
+  margin: 0;
+  padding: 16px 20px 26px;
+  list-style: none;
+  overflow-y: auto;
+  position: relative;
+}
+/* spine: drawn PER ITEM (a segment from each node down to the next) so it spans
+   the full scrolling content; a single ::before on the scroll container would
+   only cover the visible height and stop after a few items. */
+
+.tnd-hist ul.messages li.item.tnd-tl-item {
+  float: none;
+  width: auto;
+  border: 0 !important;          /* beat legacy li.item border:…!important */
+  border-radius: 0;
+  background: transparent;        /* kill legacy li.item background:#EFF3FD */
+  overflow: visible;              /* don't clip the node ring + spine */
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 14px;
+  cursor: default;
+  position: relative;
+}
+.tnd-hist ul.messages li.item.tnd-tl-item.is-link { cursor: pointer; }
+.tnd-hist .tnd-tl-item:last-child { margin-bottom: 0; }
+
+/* connector segment: each item draws the spine from its node down to the next,
+   so it spans the full scrolling content (the node + its 4px ring mask the line). */
+.tnd-hist .tnd-tl-item::before {
+  content: "";
+  position: absolute;
+  left: 14px;            /* centre of the 30px node column */
+  top: 15px;             /* node centre */
+  bottom: -16px;         /* reach through the 16px margin gap to the next node */
+  width: 2px;
+  background: var(--paper-edge-strong);
+  z-index: 0;
+}
+.tnd-hist .tnd-tl-item:last-child::before { display: none; }
+
+.tnd-hist .tnd-tl-node {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  z-index: 1;
+  background: var(--ct, var(--primary-tint));
+  color: var(--c, var(--primary));
+  box-shadow: 0 0 0 4px var(--paper-2);
+}
+/* action colour vars on the item */
+.tnd-hist .tnd-tl-item.a-create { --c: var(--ok); --ct: var(--ok-tint); }
+.tnd-hist .tnd-tl-item.a-update { --c: var(--primary); --ct: var(--primary-tint); }
+.tnd-hist .tnd-tl-item.a-delete { --c: var(--critical); --ct: var(--critical-tint); }
+
+.tnd-hist .tnd-tl-card {
+  background: var(--paper-2);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-lg);
+  padding: 13px 15px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.tnd-hist .tnd-tl-item.is-link .tnd-tl-card:hover {
+  border-color: var(--paper-edge-strong);
+  box-shadow: var(--shadow-overlay-sm);
+}
+
+.tnd-hist .tnd-tl-top { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.tnd-hist .tnd-tl-pill {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: var(--cream-2);
+  color: var(--ink-3);
+}
+.tnd-hist .tnd-tl-tag {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: var(--ct);
+  color: var(--c);
+}
+.tnd-hist .tnd-tl-time {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.tnd-hist .tnd-tl-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.25;
+  margin-bottom: 9px;
+}
+.tnd-hist .tnd-tl-name .tnd-tl-go { color: var(--ink-5); font-size: 11px; transition: transform 0.15s ease, color 0.15s ease; }
+.tnd-hist .tnd-tl-item.is-link .tnd-tl-card:hover .tnd-tl-go { color: var(--primary); transform: translateX(2px); }
+
+/* the change body */
+.tnd-hist .tnd-tl-change {
+  padding: 9px 11px;
+  border-radius: var(--radius-md);
+  background: var(--cream);
+  border: 1px dashed var(--paper-edge-strong);
+  margin-bottom: 10px;
+}
+.tnd-hist .tnd-tl-change.tnd-tl-note {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  border-style: solid;
+}
+.tnd-hist .tnd-tl-note b { color: var(--c); font-weight: 700; }
+
+.tnd-hist .tnd-diff { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tnd-hist .tnd-diff .k {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-4);
+}
+.tnd-hist .tnd-diff .v {
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+.tnd-hist .tnd-diff .v.old {
+  background: var(--critical-tint);
+  color: #9a3328;
+  text-decoration: line-through;
+  text-decoration-color: rgba(154, 51, 40, 0.5);
+}
+.tnd-hist .tnd-diff .v.new { background: var(--ok-tint); color: #185f3c; }
+.tnd-hist .tnd-diff .arr { color: var(--ink-5); font-size: 11px; }
+/* values can carry HTML from the backend (colour swatches etc.): keep them inline */
+.tnd-hist .tnd-diff .v img,
+.tnd-hist .tnd-diff .v span { vertical-align: middle; }
+
+/* extra_data rows */
+.tnd-hist .tnd-tl-extras { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.tnd-hist .tnd-tl-extra { display: flex; gap: 8px; font-size: 12px; }
+.tnd-hist .tnd-tl-extra .k {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-4);
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+.tnd-hist .tnd-tl-extra .ev { color: var(--ink-2); font-weight: 500; }
+
+.tnd-hist .tnd-tl-foot { display: flex; align-items: center; gap: 8px; }
+.tnd-hist .tnd-tl-av {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--lavender), var(--plum));
+}
+.tnd-hist .tnd-tl-foot .by { font-size: 12px; color: var(--ink-3); }
+.tnd-hist .tnd-tl-foot .by b { color: var(--ink-2); font-weight: 600; }
+
+/* empty state */
+.tnd-hist .tnd-hist-empty {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--ink-4);
+}
+.tnd-hist .tnd-hist-empty i { font-size: 30px; color: var(--ink-5); }
+.tnd-hist .tnd-hist-empty span { font-size: 13.5px; font-weight: 500; }
+
+/* scrollbar */
+.tnd-hist ul.messages.tnd-tl::-webkit-scrollbar { width: 9px; }
+.tnd-hist ul.messages.tnd-tl::-webkit-scrollbar-track { background: transparent; }
+.tnd-hist ul.messages.tnd-tl::-webkit-scrollbar-thumb {
+  background: var(--cream-3);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--paper-2);
+}
+
+/* mobile */
+@media (max-width: 767px) {
+  .side_drawer.tnd-hist { top: 112px; height: calc(100vh - 112px); width: 100%; right: -100%; }
+  .tnd-hist .thchip-sel > select { max-width: 116px; }
+}

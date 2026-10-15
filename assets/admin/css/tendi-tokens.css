@@ -1,0 +1,111 @@
+/* ============================================================
+   TENDI DESIGN TOKENS: the single source of truth (v4 · "lavender paper + violet")
+   ------------------------------------------------------------
+   This is the ONE place colors, shadows, radii, and type are defined.
+   `tendi-skin.css` consumes them via var(--token), never hardcode a hex.
+
+   v4 direction (2026-06-19): realigned to the Tendi-Global reference app
+   (apps/admin · packages/ui) which this dashboard will eventually become.
+   A COOL lavender near-white canvas, crisp white cards, a cool purple-black
+   ink ramp, and a single rich VIOLET accent (#5a3fc2) for primary actions,
+   icon tiles, pills and interactive states. Fully FLAT, no gradients on work
+   surfaces or chrome (a gradient is reserved for the login front-door only).
+   (v3's warm "paper + forest green / indigo" was the wrong temperature.)
+
+   NOTE on names: the surface tokens keep their legacy names (--cream*, --paper*)
+   so the whole skin re-themes by editing values here, with no churny rename
+   across the 1200-line skin. They now name COOL lavender surfaces, not warm
+   paper: read them as the surface FAMILY (canvas → hover → track), not literal
+   "cream". Layering, lightest → deepest:
+     --paper-2 (white card) ▸ --paper (surface-2) ▸ --cream (canvas) ▸ --cream-2 (hover) ▸ --cream-3 (track)
+   ============================================================ */
+:root {
+  /* ---- surfaces (cool lavender canvas; crisp white cards float on it) ---- */
+  --cream: #fbfaff;     /* MAIN BACKGROUND, cool lavender near-white                  */
+  --cream-2: #f4eef9;   /* hover / table-header band / tile-neutral fill (light lilac) */
+  --cream-3: #e7e0f3;   /* dividers, toggle-off track                                  */
+  --paper: #fcfbff;     /* secondary surface (pane sections, foot), a hair off white  */
+  --paper-2: #ffffff;   /* cards, brightest layer                                     */
+  --paper-edge: rgba(95, 67, 178, 0.11);        /* faint lavender hairline             */
+  --paper-edge-strong: rgba(95, 67, 178, 0.20);
+
+  /* ---- ink (cool purple-black ramp) ---- */
+  --ink: #1f1a2e;
+  --ink-2: #332e47;
+  --ink-3: #5b5470;
+  --ink-4: #6b6480;   /* muted label text, AA ~5.6:1 on white */
+  --ink-5: #9a93ad;   /* lightest step, decorative marks ONLY (dots, dividers, handles) */
+
+  /* ---- accent ramp (dusty; base = light tone, deep = white-text-safe ≥4.5:1) ---- */
+  --lavender: #b8a3d6;  --lavender-deep: #6b54a3;
+  --plum: #a77fc7;      --plum-deep: #74539f;
+  --rose: #d99ac4;      --rose-deep: #9c4f80;
+  --coral: #e58fb0;     --coral-deep: #a84d6a;
+  --apricot: #e5b48b;   --apricot-deep: #8a5a30;
+  --sun: #e8d68f;       --sun-deep: #836a2b;
+  --sage: #a8d5b8;      --sage-deep: #45805a;
+  --mint: #8fd5c4;      --mint-deep: #357f6d;
+  --teal: #7cc4d4;      --teal-deep: #3a7686;
+  --sky: #7cb0e8;       --sky-deep: #4574b5;
+
+  /* ---- brand (logo lockup) ---- */
+  --brand-logo: #5a3fc2;
+
+  /* ---- primary = Tendi violet (primary ACTIONS, icon tiles, pills, focus) ---- */
+  --primary: #5a3fc2;
+  --primary-hover: #483397;
+  --primary-tint: #eeecfa;   /* soft violet, icon-tile + pill + nav-active backgrounds */
+  --focus-ring: rgba(90, 63, 194, 0.18);   /* violet focus ring (the primary at low alpha) */
+
+  /* ---- semantic status (solids kept AA-dark for text; pale companion tints) ---- */
+  --critical: #d94538;
+  --critical-tint: #fbe7e5;
+  --attention: #9d6b10;     /* amber, money owed / balances (dark enough for text AA) */
+  --attention-tint: #f6ecd8;
+  --ok: #1f7a4d;
+  --ok-tint: #e4f3ea;
+  --info: #3f6f99;
+  --info-tint: #e7eef6;
+
+  /* ---- elevation (cool slate, hairline + soft, matches Tendi-Global) ---- */
+  --shadow-sm: none;   /* flat SURFACES (cards/table/buttons), no shadow */
+  --shadow-md: none;
+  --shadow-lg: none;
+  /* OVERLAYS only (floating menus, dropdowns, popups, the side pane/drawer) get soft elevation
+     so they read as lifted above the flat surfaces, surfaces stay shadowless. */
+  --shadow-overlay: 0 14px 38px -10px rgba(31,26,46,0.26), 0 5px 14px -6px rgba(31,26,46,0.14);
+  --shadow-overlay-sm: 0 8px 22px -8px rgba(31,26,46,0.22), 0 3px 8px -4px rgba(31,26,46,0.12);
+
+  /* ---- radius scale (matches Tendi-Global packages/ui radius tokens) ---- */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-full: 9999px;
+
+  /* ---- typography (Plus Jakarta Sans for display headings; Inter for body/labels) ---- */
+  --font-display: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-label:   "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ---- spacing scale (4px base · the single source for margins / padding / gaps) ----
+     Stop hardcoding magic numbers in the skin. Every structural gap should resolve to
+     one of these. Type micro-gaps (e.g. a 6px title↔subtitle pairing) may sit between
+     steps by design, but page rhythm and component spacing live here. */
+  --space-1: 4px;    --space-2: 8px;    --space-3: 12px;   --space-4: 16px;
+  --space-5: 20px;   --space-6: 24px;   --space-7: 28px;   --space-8: 32px;
+  --space-10: 40px;  --space-12: 48px;  --space-16: 64px;
+
+  /* ---- list-page rhythm (the REUSED header + page-edge system; consumed by .tnd-list-page) ----
+     One place that defines how every list/manage page breathes. The golden reference
+     (Users) is wired to these now; rolling them to the other list pages later is just a
+     selector widen, not a re-tune. */
+  --list-gutter: var(--space-8);          /* 32 · L/R page-edge inset */
+  --list-top: var(--space-8);             /* 32 · hero space above the page title */
+  --list-bottom: var(--space-7);          /* 28 · page bottom inset */
+  --list-head-gap: var(--space-5);        /* 20 · title block → filter row */
+  --list-head-to-table: var(--space-5);   /* 20 · header zone → table */
+  --list-title-sub-gap: 6px;              /* tight typographic title↔subtitle pairing (off-scale by design) */
+}

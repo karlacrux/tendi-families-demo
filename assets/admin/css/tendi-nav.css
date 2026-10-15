@@ -1,0 +1,356 @@
+/* ============================================================
+   Tendi NAV reskin: icon RAIL + sliding SUB-PANE.
+   Replaces the single labeled sidebar with the grouped two-column nav from
+   docs/reskin/mockups/dashboard-redesign.html: an 88px violet icon rail (one
+   item per section group) + a lifted white sub-pane that slides out with the
+   open group's pages.
+
+   Loaded globally from inc/head.php, AFTER tendi-shell.css so it overrides the
+   shell agent's labeled-sidebar rules. Visual language = the project tokens
+   (cool lavender + violet, Inter / Plus Jakarta), NOT the mockup's warm cream.
+   Markup: application/views/admin/common/template.php (#sidebar-left.tnd-rail-shell).
+   Behaviour: assets/admin/js/tendi-nav.js.
+   ============================================================ */
+
+/* Repurpose the shell rail width var (the shell uses it for #logo / #top-panel /
+   #content / #sidebar-left math) so the whole chrome reflows to an 88px rail
+   with one variable, then the sub-pane width drives the open-state content push. */
+:root {
+  --shell-rail-w: 88px;       /* was 232px (labeled sidebar) */
+  --tnd-subpane-w: 232px;
+}
+
+/* ------------------------------------------------------------
+   1. RAIL SHELL: the 88px column that holds the rail + (fixed) sub-pane
+   ------------------------------------------------------------ */
+#sidebar-left.tnd-rail-shell {
+  /* kill the legacy faux-column padding (style.css padding-bottom:3000px) so the
+     rail doesn't get a giant empty scroll region */
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+@media (min-width: 768px) {
+  /* FIXED rail: pinned under the 56px topbar, never scrolls with the page and
+     has no inner scrollbar (the 9 group items fit). The fixed sub-pane is a
+     child but is positioned to the viewport, so overflow:hidden never clips it. */
+  #sidebar-left.tnd-rail-shell {
+    position: fixed !important;
+    top: 56px;
+    left: 0;
+    width: var(--shell-rail-w) !important;
+    height: calc(100vh - 56px) !important;
+    overflow: hidden !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   2. ICON RAIL: vertical stack of group items on the violet gradient
+   (the gradient fill comes from tendi-shell.css #sidebar-left)
+   ------------------------------------------------------------ */
+.tnd-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 14px 10px 18px;
+}
+
+.tnd-rail-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 4px 8px;
+  border-radius: var(--radius-lg);
+  color: rgba(255, 255, 255, 0.80);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tnd-rail-item > i {
+  font-size: 18px;
+  line-height: 1;
+  width: 20px;
+  text-align: center;
+}
+
+.tnd-rail-label {
+  font-family: var(--font-sans);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tnd-rail-item:hover,
+.tnd-rail-item:focus {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  outline: none;
+}
+
+/* a group whose sub-pane is currently OPEN but isn't the active page */
+.tnd-rail-item.open {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* the group of the CURRENT page: frosted pill + left tick */
+.tnd-rail-item.active {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+
+.tnd-rail-item.active::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 22px;
+  background: #ffffff;
+  border-radius: 0 3px 3px 0;
+}
+
+/* ------------------------------------------------------------
+   3. SUB-PANE: lifted white panel, fixed below the 56px topbar, slides from
+   behind the rail. Overlays the canvas; content is pushed via body.tnd-pane-open.
+   ------------------------------------------------------------ */
+.tnd-subpane {
+  position: fixed;
+  top: 56px;
+  left: var(--shell-rail-w);
+  bottom: 0;
+  width: var(--tnd-subpane-w);
+  z-index: 28;                          /* above #content (z:10), below modals */
+  display: flex;
+  flex-direction: column;
+  /* soft lavender wash: a notch darker than the --cream content canvas, far
+     lighter than the violet rail. Derived from the theme --primary so it tracks
+     re-themes automatically (fallback --cream-2 for no color-mix support). */
+  background: var(--cream-2);
+  background: color-mix(in srgb, var(--primary) 7%, var(--cream));
+  border-right: 1px solid var(--shell-hairline, #ebe4f3);
+  box-shadow: var(--shadow-overlay);
+  transform: translateX(-104%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0.18, 1), opacity 0.20s ease;
+}
+
+.tnd-subpane[data-open="true"] {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tnd-subpane-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--shell-hairline, #ebe4f3);
+}
+
+.tnd-subpane-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-4);
+  margin-bottom: 5px;
+}
+
+.tnd-subpane-head h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.tnd-subpane-collapse {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  /* resting tint = the old hover bg; hover now steps a bit darker */
+  background: color-mix(in srgb, var(--primary) 13%, var(--cream));
+  color: var(--ink-4);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tnd-subpane-collapse:hover {
+  background: color-mix(in srgb, var(--primary) 20%, var(--cream));
+  color: var(--ink);
+}
+
+.tnd-subpane-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.tnd-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tnd-subnav[hidden] {
+  display: none;
+}
+
+/* A count on a nav item: bus change requests waiting for the office (2026-09-23). Red, like the
+   Alerts badge in the header, but darkened so white text clears 4.5:1. On the rail it sits on
+   the icon's top-right corner; in the sub-pane it is pushed to the end of the row. */
+.tnd-nav-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--critical, #d94538) 84%, #000);
+  color: #ffffff;
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.tnd-nav-count[hidden] { display: none; }
+.tnd-sub-item .tnd-nav-count { margin-left: auto; }
+.tnd-nav-count--rail {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.18);
+}
+
+.tnd-sub-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink-2);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* hover + active sit ON the tinted pane, so their steps are raised to stay
+   readable against it: all kept on the --primary ramp so they re-theme too */
+.tnd-sub-item:hover,
+.tnd-sub-item:focus {
+  background: color-mix(in srgb, var(--primary) 13%, var(--cream));
+  color: var(--ink);
+  outline: none;
+}
+
+.tnd-sub-item.active {
+  background: color-mix(in srgb, var(--primary) 18%, var(--cream));
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.tnd-sub-bullet {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-5);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.tnd-sub-item:hover .tnd-sub-bullet,
+.tnd-sub-item.active .tnd-sub-bullet {
+  background: var(--primary);
+  transform: scale(1.4);
+}
+
+.tnd-sub-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* never underline nav links (legacy a:hover/active text-decoration leaks in) */
+.tnd-rail-item,
+.tnd-rail-item:hover,
+.tnd-rail-item:focus,
+.tnd-rail-item:active,
+.tnd-sub-item,
+.tnd-sub-item:hover,
+.tnd-sub-item:focus,
+.tnd-sub-item:active,
+.tnd-sub-item.active {
+  text-decoration: none !important;
+}
+
+/* sub-pane scrollbar: thin lavender (matches the shell flyouts) */
+.tnd-subpane-scroll::-webkit-scrollbar { width: 8px; }
+.tnd-subpane-scroll::-webkit-scrollbar-track { background: transparent; }
+.tnd-subpane-scroll::-webkit-scrollbar-thumb {
+  background: var(--cream-3);
+  border-radius: var(--radius-full);
+}
+
+/* ------------------------------------------------------------
+   4. CONTENT OFFSET: push the page right while the sub-pane is open
+   ------------------------------------------------------------ */
+@media (min-width: 768px) {
+  /* the rail is position:fixed (out of flow) so content must clear it with a
+     left margin; opening the sub-pane widens that margin by the sub-pane width */
+  #content {
+    margin-left: var(--shell-rail-w) !important;
+    transition: width 0.26s ease, margin-left 0.26s ease;
+  }
+  body.tnd-pane-open #content {
+    width: calc(100% - var(--shell-rail-w) - var(--tnd-subpane-w)) !important;
+    margin-left: calc(var(--shell-rail-w) + var(--tnd-subpane-w)) !important;
+  }
+  /* (logo cell is an org monogram now, styled in tendi-header.css) */
+}
+
+/* ------------------------------------------------------------
+   5. MOBILE (<768px). The rail keeps the legacy reveal model; the sub-pane
+   overlays full-bleed-ish so it stays usable without the desktop push math.
+   ------------------------------------------------------------ */
+@media (max-width: 767px) {
+  .tnd-subpane {
+    top: 112px;                         /* legacy stacks logo + panel on mobile */
+    left: 88px;
+    width: calc(100vw - 88px);
+    max-width: 320px;
+  }
+  .tnd-rail-label { font-size: 8px; }
+}

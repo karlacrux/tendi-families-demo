@@ -1,0 +1,588 @@
+/* ============================================================
+   TENDI DASHBOARD: the reskinned "Overview" home page.
+   ------------------------------------------------------------
+   Mirrors the Tendi-Global app dashboard (apps/admin): a KPI strip, a
+   payments + attendance pair, a busiest-classes grid and an incidents feed.
+   Every value comes from tendi-tokens.css, no hardcoded hex here. All rules
+   are scoped under `.tnd-dash` (which always carries `.tendi-skin`), so this
+   file is inert on every other page.
+   ============================================================ */
+
+/* The dashboard owns a uniform top/side gutter via #content (so the footer lines
+   up too). IMPORTANT: only set top/left/right, the legacy #content keeps its
+   faux-column `padding-bottom:3000px / margin-bottom:-2980px / overflow:hidden`,
+   which is what lets the window scroll; a shorthand `padding` would wipe the
+   3000px bottom and the page would clip & stop scrolling. */
+/* BOTH classes, on the SAME element, which is what the dashboard wrapper actually carries
+   (`<div class="tendi-skin tnd-dash">`). A bare `.tnd-dash` here was a loaded gun: `:has()` scans
+   the whole body, so ANY element anywhere called tnd-dash padded the shell. The Children list
+   named its "no value" dash span `tnd-dash`, so the entire page shifted 24px left and up the
+   moment a tab happened to contain no dashes, which is what an empty tab always looks like.
+   Requiring the pair costs nothing and cannot be tripped by a utility class someone names later. */
+body:has(.tendi-skin.tnd-dash) #content {
+  padding-top: 24px !important;
+  padding-right: 24px !important;
+  padding-left: 24px !important;
+}
+body:has(.tnd-dash) #ajax-content { padding: 0 !important; margin: 0 !important; }
+
+.tnd-dash {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  width: 100%;
+  padding: 0 0 32px;   /* bottom breathing room above the footer */
+  -webkit-font-smoothing: antialiased;
+}
+.tnd-dash *,
+.tnd-dash *::before,
+.tnd-dash *::after { box-sizing: border-box; }
+
+/* shared eyebrow (uppercase micro-label) */
+.tnd-dash-eyebrow,
+.tnd-card-eyebrow,
+.tnd-kpi-label,
+.tnd-mini-label {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  color: var(--ink-4);
+  line-height: 1.2;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.tnd-dash-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.tnd-dash-eyebrow { font-size: 10px; margin-bottom: 8px; }
+.tnd-dash-title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ink);
+  margin: 0;
+}
+.tnd-dash-sub { font-size: 12.5px; color: var(--ink-4); margin: 8px 0 0; }
+/* Sits in .tnd-head-actions beside the branch scope chip (.tnd-scope, further down this file), and
+   is deliberately identical to it: same height, padding, radius, border and weight. Three controls
+   on one row, so anything that differs reads as a meaning that is not there. This was --radius-xl
+   against the chip's pill, a lighter border, and normal weight against 600.
+
+   Scoped under .tnd-dash like the .tnd-scope rules are, and not for the ancestor: `.tendi-skin a
+   { color: inherit }` is 0,1,1 and beats a bare `.tnd-dash-headbtn` at 0,1,0, so the colour was
+   losing and these links rendered in --ink while the chip beside them used --ink-2. Two classes
+   (0,2,0) takes it back. */
+.tnd-dash .tnd-dash-headbtn {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--paper-edge-strong);
+  background: var(--paper-2);
+  border-radius: var(--radius-full);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color .15s ease;
+}
+/* Matches label.tnd-scope:hover. Border only, no lift and no fill. */
+.tnd-dash .tnd-dash-headbtn:hover,
+.tnd-dash .tnd-dash-headbtn:focus-visible { border-color: var(--primary); color: var(--ink-2); text-decoration: none; }
+
+/* ── KPI strip ────────────────────────────────────────────── */
+.tnd-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.tnd-kpi {
+  background: var(--paper-2);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-2xl);
+  padding: 20px;
+  transition: border-color .15s ease;
+}
+.tnd-kpi:hover { border-color: var(--paper-edge-strong); }
+.tnd-kpi-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.tnd-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-xl);
+}
+.tnd-kpi-icon i { font-size: 17px; }
+.tnd-kpi-dot { width: 7px; height: 7px; border-radius: var(--radius-full); margin-top: 4px; }
+.tnd-kpi-dot.ok { background: var(--ok); }
+.tnd-kpi-dot.warn { background: var(--attention); }
+.tnd-kpi-dot.crit { background: var(--critical); }
+.tnd-kpi-label { font-size: 9.5px; margin-top: 18px; }
+.tnd-kpi-value {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  color: var(--ink);
+  margin-top: 7px;
+}
+.tnd-kpi-sub { font-size: 12px; color: var(--ink-4); margin-top: 7px; }
+
+/* ── Main + rail layout (rail = narrow RIGHT column, full height) ── */
+.tnd-dash-grid { display: flex; gap: 20px; align-items: stretch; }
+.tnd-dash-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 20px; order: 1; }
+.tnd-dash-rail { flex: 0 0 320px; width: 320px; display: flex; flex-direction: column; order: 2; }
+.tnd-dash-rail > .tnd-card { flex: 1 1 auto; }         /* the activity card runs top→bottom */
+.tnd-dash-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+/* a touch wider on large screens */
+@media (min-width: 1600px) { .tnd-dash-rail { flex-basis: 380px; width: 380px; } }
+@media (min-width: 1920px) { .tnd-dash-rail { flex-basis: 420px; width: 420px; } }
+
+/* ── Card shell ───────────────────────────────────────────── */
+.tnd-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--paper-2);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+}
+.tnd-card-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--paper-edge);
+}
+.tnd-card-eyebrow { font-size: 9.5px; margin-bottom: 7px; }
+.tnd-card-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: var(--ink);
+  margin: 0;
+}
+.tnd-card-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink-4);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color .15s ease;
+}
+.tnd-card-action:hover { color: var(--ink); }
+.tnd-card-action i { font-size: 10px; }
+.tnd-card-body { padding: 22px 24px 24px; flex: 1 1 auto; }
+
+/* ── Hero figure + stat grid (payments / attendance) ──────── */
+.tnd-card-hero { margin-bottom: 20px; }
+.tnd-hero-value {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ink);
+}
+.tnd-hero-eyebrow {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 600;
+  font-size: 9.5px;
+  color: var(--ink-4);
+  margin-top: 9px;
+}
+.tnd-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
+.tnd-stat { background: var(--cream); border-radius: var(--radius-lg); padding: 11px 14px; }
+.tnd-stat dt { font-size: 12px; color: var(--ink-4); }
+.tnd-stat dd {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tnd-stat dd.is-crit { color: var(--critical); }
+
+/* ── Classes grid ─────────────────────────────────────────── */
+.tnd-class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
+  gap: 14px;
+}
+.tnd-class {
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  transition: border-color .15s ease;
+}
+.tnd-class:hover { border-color: var(--paper-edge-strong); }
+.tnd-class-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
+.tnd-class-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tnd-class-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: var(--radius-full); }
+.tnd-class-idtext { min-width: 0; }
+.tnd-class-name {
+  font-size: 13.5px; font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tnd-class-meta {
+  font-size: 11px; color: var(--ink-4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tnd-class-statusdot { flex: 0 0 auto; width: 7px; height: 7px; border-radius: var(--radius-full); }
+.tnd-class-teacher { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--ink-4); margin-bottom: 13px; }
+.tnd-class-teacher i { font-size: 12px; color: var(--ink-5); }
+.tnd-class-teacher span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tnd-class-enroll { display: flex; align-items: baseline; gap: 0; margin-bottom: 10px; }
+.tnd-class-num { font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1; color: var(--ink); }
+.tnd-class-cap { font-size: 14px; color: var(--ink-5); }
+.tnd-class-word { margin-left: 6px; font-size: 12px; color: var(--ink-4); }
+.tnd-class-bar { height: 6px; border-radius: var(--radius-full); background: var(--cream-3); overflow: hidden; margin-bottom: 13px; }
+.tnd-class-fill { height: 100%; border-radius: var(--radius-full); }
+.tnd-class-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tnd-mini { background: var(--cream); border-radius: var(--radius-md); padding: 8px 10px; }
+.tnd-mini-label { font-size: 9px; }
+.tnd-mini-val { font-family: var(--font-display); font-size: 17px; font-weight: 700; line-height: 1; color: var(--ink); margin-top: 5px; }
+.tnd-mini-val.is-ok { color: var(--ok); }
+
+/* ── Incidents feed ───────────────────────────────────────── */
+.tnd-activity-list { display: flex; flex-direction: column; gap: 12px; }
+.tnd-activity { display: flex; gap: 12px; border: 1px solid var(--paper-edge); border-radius: var(--radius-xl); padding: 14px; }
+.tnd-activity-icon {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-lg);
+}
+.tnd-activity-icon i { font-size: 15px; }
+.tnd-activity-body { flex: 1 1 auto; min-width: 0; }
+.tnd-activity-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.tnd-activity-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: var(--radius-full);
+  padding: 3px 9px;
+  font-size: 10.5px; font-weight: 600;
+}
+.tnd-activity-badge i { font-size: 9px; }
+.tnd-activity-time { font-size: 11px; color: var(--ink-4); white-space: nowrap; }
+.tnd-activity-msg {
+  margin: 7px 0 0;
+  font-size: 12px; line-height: 1.55; color: var(--ink-2);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tnd-activity-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 9px; font-size: 11px; color: var(--ink-4); }
+.tnd-activity-meta i { font-size: 10px; color: var(--ink-5); }
+.tnd-activity-resolved { color: var(--ok); }
+
+.tnd-empty { font-size: 13px; color: var(--ink-4); margin: 4px 0; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .tnd-dash-grid { flex-direction: column; }
+  .tnd-dash-rail { flex: 1 1 auto; width: 100%; }   /* activity drops below the main content (order 2) */
+}
+@media (max-width: 860px) {
+  .tnd-kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .tnd-dash-pair { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .tnd-dash-headbtn { display: none; }
+  .tnd-dash-title { font-size: 24px; }
+}
+
+/* ============================================================
+   v6 OVERVIEW WIDGETS, buses (dark wallboard), safety, compliance
+   health bars, documents-due heatmap, capacity rows.
+   All scoped under .tnd-dash so they stay inert elsewhere.
+   ============================================================ */
+
+/* header scope chip + stacked sections */
+.tnd-dash .tnd-head-actions { display: flex; gap: 10px; align-items: center; }
+.tnd-dash .tnd-scope {
+  display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px;
+  border: 1px solid var(--paper-edge-strong); background: var(--paper-2); border-radius: var(--radius-full);
+  font-size: 12.5px; font-weight: 600; color: var(--ink-2);
+}
+.tnd-dash .tnd-scope i { color: var(--ink-4); font-size: 11px; }
+/* The chip now WRAPS the branch .tnd-select (TndSelect renders it next to the hidden native
+   field), so the chip supplies the pill and the dropdown sits flush inside it, no doubled
+   borders, no doubled padding. */
+.tnd-dash label.tnd-scope { padding: 0 6px 0 13px; cursor: pointer; }
+.tnd-dash label.tnd-scope:hover { border-color: var(--primary); }
+.tnd-dash .tnd-scope-ic { display: inline-flex; color: var(--ink-4); }
+.tnd-dash .tnd-scope-ic svg { width: 15px; height: 15px; display: block; }
+.tnd-dash .tnd-scope .tnd-select { min-width: 132px; }
+.tnd-dash .tnd-scope .tnd-select .tnd-select-trigger {
+  height: 34px; border: none !important; background: transparent !important; box-shadow: none !important;
+  padding-left: 0; font-size: 12.5px; font-weight: 600; color: var(--ink-2);
+}
+.tnd-dash .tnd-scope--static { cursor: default; }
+.tnd-dash .tnd-kpi-value.is-crit { color: var(--critical); }
+.tnd-dash .tnd-stack { display: flex; flex-direction: column; gap: 20px; }
+
+/* Full-width cards in the main column size to their OWN content.
+   ------------------------------------------------------------------
+   `.tnd-card` sets `height:100%` so two cards sitting side by side in `.tnd-dash-pair` come out
+   the same height. Inside `.tnd-stack` that same 100% resolves against the stack, whose height is
+   definite because the main column is stretched to the (usually taller) activity rail. Every
+   full-width card therefore asked for the whole column, and flexbox then shrank them all to fit.
+   Both faults reported on this board came out of that one line:
+     · a card with an empty state ballooned to hundreds of pixels of whitespace;
+     · the Capacity list lost its last row off the bottom edge, because `.tnd-card` sets
+       `overflow:hidden`, which makes its automatic minimum size 0, so it can be shrunk below
+       its own content and simply clips what does not fit.
+   `flex: 0 0 auto` settles both: no shrinking below content, no growing into leftover space.
+   The pair keeps `height:100%`, its cards are GRID items and stretch to the row as intended. */
+.tnd-dash .tnd-stack > .tnd-card { height: auto; flex: 0 0 auto; }
+
+/* ── BUSES: live (dark wallboard) ─────────────────────────── */
+.tnd-dash .live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ok); position: relative; margin-left: 8px; vertical-align: middle; }
+.tnd-dash .live-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--ok); animation: tnd-lrpulse 1.8s ease-out infinite; }
+@keyframes tnd-lrpulse { 0% { transform: scale(.6); opacity: .8 } 100% { transform: scale(2); opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .tnd-dash .live-dot::after { animation: none } }
+
+.tnd-dash .bus-headright { display: flex; align-items: center; gap: 24px; }
+.tnd-dash .bus-kpis { display: flex; gap: 20px; }
+.tnd-dash .bus-kpis .bk { text-align: right; }
+.tnd-dash .bus-kpis .bk b { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--ink); line-height: 1; }
+.tnd-dash .bus-kpis .bk.exc b { color: var(--critical); }
+.tnd-dash .bus-kpis .bk span { display: block; margin-top: 4px; font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-4); font-weight: 600; }
+
+.tnd-dash .bus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(264px, 1fr)); gap: 14px; }
+.tnd-dash .bus { display: flex; flex-direction: column; gap: 11px; border: 1px solid var(--paper-edge); border-radius: var(--radius-xl); background: var(--paper-2); padding: 14px; transition: border-color .15s; }
+.tnd-dash .bus:hover { border-color: var(--paper-edge-strong); }
+.tnd-dash .bus.is-late { border-color: var(--attention); }
+.tnd-dash .bus.is-exc { border-color: var(--critical); background: var(--critical-tint); }
+.tnd-dash .bus.is-done { background: var(--paper); }
+.tnd-dash .bus-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.tnd-dash .bus-eta { text-align: right; flex: none; }
+.tnd-dash .bus-eta b { display: block; font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--ink); line-height: 1; }
+.tnd-dash .bus-eta b.late { color: var(--attention); }
+.tnd-dash .bus-eta span { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-5); font-weight: 600; }
+.tnd-dash .bus-name { display: flex; align-items: center; gap: 10px; }
+.tnd-dash .bus-ic { width: 34px; height: 34px; flex: none; border-radius: var(--radius-md); background: var(--primary-tint); color: var(--primary); display: grid; place-items: center; font-size: 14px; }
+.tnd-dash .bus.is-exc .bus-ic { background: var(--paper-2); color: var(--critical); }
+.tnd-dash .bus-nm { font-size: 14px; font-weight: 700; color: var(--ink); line-height: 1.05; }
+.tnd-dash .bus-no { font-size: 11px; color: var(--ink-4); margin-top: 2px; }
+.tnd-dash .bus-crew { display: flex; gap: 16px; font-size: 11px; color: var(--ink-2); flex-wrap: wrap; }
+.tnd-dash .bus-crew .role { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-5); font-weight: 700; margin-right: 5px; }
+.tnd-dash .bus-prog { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--ink-3); }
+.tnd-dash .bus-prog .tnd-class-bar { flex: 1; margin: 0; height: 6px; }
+.tnd-dash .bus-prog b { color: var(--ink); font-weight: 700; }
+.tnd-dash .bus-flag { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 600; color: var(--critical); background: var(--paper-2); border: 1px solid var(--critical); border-radius: var(--radius-md); padding: 7px 10px; }
+.tnd-dash .bus-flag i { font-size: 12px; }
+
+/* minimized empty state, no routes running (slim light bar, not the dark board) */
+/* `.tnd-card { height:100% }` makes side-by-side cards match heights, but the main column is a
+   flex column stretched to the (taller) activity rail, so a full-width card resolves 100%
+   against all that leftover space. With no routes running the card is one short row of text,
+   which left a huge empty box. Let this one hug its content instead. */
+.tnd-dash .tnd-card.is-buses-empty { height: auto; flex: 0 0 auto; }
+.tnd-dash .bus-empty { display: flex; align-items: center; gap: 13px; padding: 4px 2px; }
+.tnd-dash .bus-empty .be-ic { width: 40px; height: 40px; flex: none; border-radius: var(--radius-md); background: var(--cream-2); color: var(--ink-4); display: grid; place-items: center; font-size: 16px; }
+.tnd-dash .bus-empty .be-tx { flex: 1; min-width: 0; }
+.tnd-dash .bus-empty .be-tx b { display: block; font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.tnd-dash .bus-empty .be-tx span { font-size: 12px; color: var(--ink-4); }
+
+/* status pills (colour + icon) */
+.tnd-dash .st { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: var(--radius-full); line-height: 1.4; white-space: nowrap; letter-spacing: .01em; }
+.tnd-dash .st i { font-size: 9px; }
+.tnd-dash .st--enroute { background: var(--ok-tint); color: var(--ok); }
+.tnd-dash .st--late { background: var(--attention-tint); color: var(--attention); }
+.tnd-dash .st--done { background: var(--cream-2); color: var(--ink-3); }
+.tnd-dash .st--soon { background: var(--info-tint); color: var(--info); }
+.tnd-dash .st--exc { background: var(--paper-2); color: var(--critical); border: 1px solid var(--critical); }
+
+/* dark "wallboard" treatment (the Buses card carries .is-wall) */
+.tnd-dash .is-wall { background: var(--ink); border-color: rgba(255,255,255,.10); }
+.tnd-dash .is-wall .tnd-card-head { border-bottom-color: rgba(255,255,255,.10); }
+.tnd-dash .is-wall .tnd-card-eyebrow { color: rgba(255,255,255,.5); }
+.tnd-dash .is-wall .tnd-card-title { color: #fff; }
+.tnd-dash .is-wall .tnd-card-action { color: rgba(255,255,255,.68); }
+.tnd-dash .is-wall .tnd-card-action:hover { color: #fff; }
+.tnd-dash .is-wall .bus-kpis .bk b { color: #fff; }
+.tnd-dash .is-wall .bus-kpis .bk span { color: rgba(255,255,255,.5); }
+.tnd-dash .is-wall .bus-kpis .bk.exc b { color: #f7a9a0; }
+.tnd-dash .is-wall .bus { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.10); }
+.tnd-dash .is-wall .bus:hover { border-color: rgba(255,255,255,.24); }
+.tnd-dash .is-wall .bus.is-late { background: color-mix(in srgb, var(--attention) 16%, var(--ink)); border-color: color-mix(in srgb, var(--attention) 46%, transparent); }
+.tnd-dash .is-wall .bus.is-exc { background: color-mix(in srgb, var(--critical) 20%, var(--ink)); border-color: color-mix(in srgb, var(--critical) 58%, transparent); }
+.tnd-dash .is-wall .bus.is-done { background: rgba(255,255,255,.035); }
+.tnd-dash .is-wall .bus-nm { color: #fff; }
+.tnd-dash .is-wall .bus-no { color: rgba(255,255,255,.55); }
+.tnd-dash .is-wall .bus-crew { color: rgba(255,255,255,.78); }
+.tnd-dash .is-wall .bus-crew .role { color: rgba(255,255,255,.42); }
+.tnd-dash .is-wall .bus-eta b { color: #fff; }
+.tnd-dash .is-wall .bus-eta b.late { color: #f3d39a; }
+.tnd-dash .is-wall .bus-eta span { color: rgba(255,255,255,.45); }
+.tnd-dash .is-wall .bus-prog { color: rgba(255,255,255,.7); }
+.tnd-dash .is-wall .bus-prog b { color: #fff; }
+.tnd-dash .is-wall .bus-ic { background: rgba(255,255,255,.10); color: #fff; }
+.tnd-dash .is-wall .bus.is-exc .bus-ic { background: color-mix(in srgb, var(--critical) 30%, var(--ink)); color: #f7a9a0; }
+.tnd-dash .is-wall .tnd-class-bar { background: rgba(255,255,255,.14); }
+.tnd-dash .is-wall .st--enroute { background: color-mix(in srgb, var(--ok) 30%, var(--ink)); color: #9be8bd; }
+.tnd-dash .is-wall .st--late { background: color-mix(in srgb, var(--attention) 32%, var(--ink)); color: #f3d39a; }
+.tnd-dash .is-wall .st--done { background: rgba(255,255,255,.10); color: rgba(255,255,255,.7); }
+.tnd-dash .is-wall .st--soon { background: color-mix(in srgb, var(--info) 34%, var(--ink)); color: #a8c7e6; }
+.tnd-dash .is-wall .st--exc { background: color-mix(in srgb, var(--critical) 32%, var(--ink)); color: #f7a9a0; border-color: color-mix(in srgb, var(--critical) 55%, transparent); }
+.tnd-dash .is-wall .bus-flag { background: color-mix(in srgb, var(--critical) 18%, var(--ink)); border-color: color-mix(in srgb, var(--critical) 55%, transparent); color: #f7a9a0; }
+
+/* ── Safety widget ─────────────────────────────────────────── */
+.tnd-dash .saf-fig { display: flex; align-items: baseline; gap: 9px; margin-bottom: 16px; }
+.tnd-dash .saf-num { font-family: var(--font-display); font-size: 40px; font-weight: 700; line-height: .9; letter-spacing: -.02em; }
+.tnd-dash .saf-num.is-crit { color: var(--critical); }
+.tnd-dash .saf-num.is-ok { color: var(--ok); }
+.tnd-dash .saf-word { font-size: 13px; color: var(--ink-3); max-width: 140px; line-height: 1.25; }
+.tnd-dash .saf-accbar { height: 8px; border-radius: var(--radius-full); background: var(--ok-tint); overflow: hidden; display: flex; }
+.tnd-dash .saf-accbar i { display: block; height: 100%; }
+.tnd-dash .saf-acclabel { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-4); margin-top: 7px; }
+.tnd-dash .saf-acclabel b { color: var(--ink-2); font-weight: 600; }
+.tnd-dash .saf-cases { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.tnd-dash .saf-case { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid var(--critical); background: var(--critical-tint); border-radius: var(--radius-lg); }
+.tnd-dash .saf-av { width: 32px; height: 32px; flex: none; border-radius: var(--radius-full); background: var(--paper-2); color: var(--critical); display: grid; place-items: center; font-size: 11px; font-weight: 700; border: 1px solid var(--critical); }
+.tnd-dash .saf-cmain { flex: 1; min-width: 0; }
+.tnd-dash .saf-cname { font-size: 13px; font-weight: 600; color: var(--ink); }
+.tnd-dash .saf-cmeta { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.tnd-dash .saf-allok { display: flex; align-items: center; gap: 10px; padding: 14px 4px 2px; color: var(--ink-3); font-size: 13px; }
+.tnd-dash .saf-allok i { width: 34px; height: 34px; border-radius: var(--radius-full); background: var(--ok-tint); color: var(--ok); display: grid; place-items: center; font-size: 15px; flex: none; }
+
+/* ── Compliance health bars ────────────────────────────────── */
+.tnd-dash .cmp-list { display: flex; flex-direction: column; gap: 17px; }
+.tnd-dash .cmp-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.tnd-dash .cmp-name { font-size: 13px; font-weight: 600; color: var(--ink-2); display: inline-flex; align-items: center; gap: 9px; }
+.tnd-dash .cmp-ic { width: 26px; height: 26px; border-radius: var(--radius-sm); display: grid; place-items: center; font-size: 12px; }
+.tnd-dash .cmp-pct { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.tnd-dash .cmp-pct.ok { color: var(--ok); } .tnd-dash .cmp-pct.warn { color: var(--attention); } .tnd-dash .cmp-pct.crit { color: var(--critical); }
+.tnd-dash .cmp-track { height: 8px; border-radius: var(--radius-full); background: var(--cream-3); overflow: hidden; }
+.tnd-dash .cmp-fill { height: 100%; border-radius: var(--radius-full); }
+.tnd-dash .cmp-fill.ok { background: var(--ok); } .tnd-dash .cmp-fill.warn { background: var(--attention); } .tnd-dash .cmp-fill.crit { background: var(--critical); }
+.tnd-dash .cmp-sub { margin-top: 7px; font-size: 11.5px; color: var(--ink-4); }
+
+/* ── Documents & compliance due: heatmap matrix ───────────── */
+.tnd-dash .cal { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid var(--paper-edge); border-radius: var(--radius-lg); overflow: hidden; }
+.tnd-dash .cal th, .tnd-dash .cal td { border-bottom: 1px solid var(--paper-edge); border-right: 1px solid var(--paper-edge); padding: 0; text-align: center; }
+.tnd-dash .cal tr:last-child th, .tnd-dash .cal tr:last-child td { border-bottom: 0; }
+.tnd-dash .cal th:last-child, .tnd-dash .cal td:last-child { border-right: 0; }
+.tnd-dash .cal thead th { background: var(--cream-2); color: var(--ink-3); font-family: var(--font-label); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; font-size: 9px; height: 34px; padding: 0 4px; }
+.tnd-dash .cal thead th.cat { text-align: left; padding-left: 14px; min-width: 150px; }
+.tnd-dash .cal thead th.od { color: var(--critical); }
+.tnd-dash .cal tbody th.cat { text-align: left; padding: 0 14px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); height: 46px; background: var(--paper-2); }
+.tnd-dash .cal tbody th.cat .ci { display: inline-flex; align-items: center; gap: 9px; }
+.tnd-dash .cal tbody th.cat i { color: var(--ink-4); font-size: 12px; width: 16px; text-align: center; }
+.tnd-dash .cal td { height: 46px; }
+.tnd-dash .cal td.od { background: color-mix(in srgb, var(--critical) 4%, transparent); }
+.tnd-dash .cell { display: inline-flex; align-items: center; gap: 5px; min-width: 30px; height: 24px; padding: 0 9px; border-radius: var(--radius-full); font-size: 12px; font-weight: 700; font-family: var(--font-display); }
+.tnd-dash .cell .d { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tnd-dash .cell.crit { background: var(--critical-tint); color: var(--critical); }
+.tnd-dash .cell.warn { background: var(--attention-tint); color: var(--attention); }
+.tnd-dash .cell.info { background: var(--info-tint); color: var(--info); }
+.tnd-dash .cell.none { color: var(--ink-5); background: transparent; font-weight: 400; }
+.tnd-dash .cal-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 11px; color: var(--ink-4); }
+.tnd-dash .cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tnd-dash .cal-legend .d { width: 9px; height: 9px; border-radius: 50%; }
+/* Nothing due: the shared `.tnd-empty` component (tendi-skin.css) at card scale. That component
+   is tuned for a full list page (54px/58px of air, meant to fill a table body); inside a card it
+   only needs enough room to read as deliberate. Everything else about it is inherited, so this
+   state still looks like every other empty state in the app. Extra specificity is on purpose:
+   it has to beat `.tendi-skin .tnd-empty` no matter which stylesheet loads first. */
+.tnd-dash .tnd-empty.tnd-due-empty { padding: 26px 16px 28px; margin: 0; }
+.tnd-dash .tnd-empty.tnd-due-empty .tnd-empty-sub { max-width: 46ch; line-height: 1.5; }
+
+/* ── Capacity rows ─────────────────────────────────────────── */
+.tnd-dash .cap-list { display: flex; flex-direction: column; gap: 2px; }
+.tnd-dash .cap-row { display: grid; grid-template-columns: 170px 1fr 72px 112px; gap: 14px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--paper-edge); }
+.tnd-dash .cap-row:last-child { border-bottom: 0; }
+.tnd-dash .cap-name { min-width: 0; }
+.tnd-dash .cap-name b { display: block; font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tnd-dash .cap-name span { font-size: 11px; color: var(--ink-4); }
+/* `.tnd-class-bar` carries a 13px bottom margin for the classes GRID, where a caption sits under
+   it. In this row it is one cell of a centred grid, so that margin only pushed the bar off centre. */
+.tnd-dash .cap-row .tnd-class-bar { margin: 0; }
+/* gap 0: the status dot moved out to `.cap-state`, and "18" / "/16" are two flex items, so any
+   gap here would print the fraction as "18 /16". */
+.tnd-dash .cap-frac { text-align: right; font-size: 12px; color: var(--ink-3); display: inline-flex; align-items: baseline; gap: 0; justify-content: flex-end; white-space: nowrap; }
+.tnd-dash .cap-frac b { font-family: var(--font-display); font-size: 15px; color: var(--ink); }
+
+/* Enrollment vs. limit, four states. The WORD is the point: hue alone cannot separate
+   "full" from "over" for a colour-blind reader, and a bar that is 100% wide in both
+   cases cannot either. Colours are the existing semantic tokens, nothing new. */
+.tnd-dash .cap-state { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+.tnd-dash .cap-state .sd { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.tnd-dash .cap-row.is-full .cap-state { color: var(--attention); }
+.tnd-dash .cap-row.is-over .cap-state { color: var(--critical); }
+.tnd-dash .cap-row.is-nolimit .cap-state,
+.tnd-dash .cap-row.is-nolimit .cap-frac { color: var(--ink-4); }
+/* No limit on the class: there is no ratio to draw, so draw no scale. An empty solid track
+   would have read as "0% full", which is a different (and wrong) statement. */
+.tnd-dash .cap-row.is-nolimit .tnd-class-bar { background: transparent; border: 1px dashed var(--paper-edge-strong); }
+
+@media (max-width: 860px) {
+  .tnd-dash .bus-headright { gap: 12px; }
+  .tnd-dash .bus-kpis { gap: 12px; }
+  .tnd-dash .cap-row { grid-template-columns: 130px 1fr 62px 100px; gap: 10px; }
+}
+
+/* ============================================================
+   Recent activity feed (audit trail + incidents) and the
+   "nothing tracked yet" states. Additive: extends .tnd-activity
+   and the existing tone classes, renames nothing.
+   ============================================================ */
+
+/* An event that links to its record. No lift on hover (house rule): the
+   affordance is the edge + a faint wash. */
+.tnd-activity.is-link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.tnd-activity.is-link:hover,
+.tnd-activity.is-link:focus-visible {
+  border-color: var(--paper-edge-strong);
+  background: var(--cream);
+  text-decoration: none;
+  color: inherit;
+}
+.tnd-activity-tags { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.tnd-activity-act { font-size: 11px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+.tnd-activity-name {
+  margin-top: 7px;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Which fields changed. Names only, never values. */
+.tnd-activity-fields { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.tnd-activity-field {
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-full);
+  background: var(--cream);
+  padding: 2px 8px;
+  font-size: 10.5px; color: var(--ink-3);
+}
+
+/* Nothing-tracked states. Deliberately neutral, never green: an empty
+   denominator is not a clean bill of health. */
+.tnd-kpi-dot.none { background: var(--ink-5); }
+.tnd-kpi-value.is-none { color: var(--ink-5); font-size: 26px; }
+.tnd-dash .saf-num.is-none { color: var(--ink-4); }
+.tnd-dash .saf-allok.is-none i { background: var(--cream-2); color: var(--ink-4); }
+.tnd-dash .cmp-pct.none {
+  font-family: var(--font-sans);
+  font-size: 11.5px; font-weight: 600; color: var(--ink-4);
+}
+.tnd-dash .cmp.is-untracked .cmp-name { color: var(--ink-3); }

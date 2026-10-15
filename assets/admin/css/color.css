@@ -1,0 +1,91 @@
+body {
+  background-color: #6AA6D6;
+}
+a {
+  color: #0073B7;
+}
+#logo {
+    background-color: #ffffff;
+    
+}
+#logo a {
+  color: #352D7D;
+}
+#sidebar-left {
+  background-color: #fff;
+}
+
+.nav.main-menu > li > a, .nav.msg-menu > li > a,
+.main-menu .dropdown-menu > li > a,
+.nav.main-menu > li > a:hover, .nav.main-menu > li > a:focus, .nav.main-menu > li.active > a, .nav.main-menu .open > a, .nav.main-menu .open > a:hover, .nav.main-menu .open > a:focus, .dropdown-menu > li > a:focus, .dropdown-menu > li > a:hover, .dropdown-menu > li.active > a,
+.nav.msg-menu > li > a:hover, .nav.msg-menu > li > a:focus, .nav.msg-menu > li.active > a, .nav.msg-menu .open > a, .nav.msg-menu .open > a:hover, .nav.msg-menu .open > a:focus {
+  color:#352D7D;
+}
+.nav.main-menu > li > a{
+  color: #4c4c50;
+  border-bottom: 1px solid #F4F3F3;
+  height: 50px;
+  padding-top: 14px;
+}
+.main-menu .dropdown-menu > li > a{
+  color: #8e8e8e;
+  height: 50px;
+  padding-top: 14px;
+}
+.dataTables_wrapper input[type="text"]:focus {
+  border-color: #66afe9;
+  -webkit-box-shadow: inset 0 1px 1px #777, 0 0 8px #66afe9;
+  box-shadow: inset 0 1px 1px #777, 0 0 8px #66afe9;
+}
+.paginate_button, .paginate_active {
+    background-color: #66aacc;
+    color: #fff;
+}
+.btn-primary, .btn-primary.disabled, .btn-primary[disabled], fieldset[disabled] .btn-primary, .btn-primary.disabled:hover, .btn-primary[disabled]:hover, fieldset[disabled] .btn-primary:hover, .btn-primary.disabled:focus, .btn-primary[disabled]:focus, fieldset[disabled] .btn-primary:focus, .btn-primary.disabled:active, .btn-primary[disabled]:active, fieldset[disabled] .btn-primary:active, .btn-primary.disabled.active, .btn-primary[disabled].active, fieldset[disabled] .btn-primary.active,
+.table > thead > tr > td.primary, .table > tbody > tr > td.primary, .table > tfoot > tr > td.primary, .table > thead > tr > th.primary, .table > tbody > tr > th.primary, .table > tfoot > tr > th.primary, .table > thead > tr.primary > td, .table > tbody > tr.primary > td, .table > tfoot > tr.primary > td, .table > thead > tr.primary > th, .table > tbody > tr.primary > th, .table > tfoot > tr.primary > th {
+/*  background-color: #6AA6D6;
+  border-color: rgba(0, 0, 0, 0.3);
+  color: #fff;*/
+    padding: 3px 30px 4px 30px;
+    background: #352D7D;
+    border: 0px;
+    font-size: 14px;
+    border-radius: 50px;
+    box-shadow: 2px 5px 9px 3px #352D7D33;
+    transition: 0.3s all;
+}
+#frmAddEditRecord .btn-primary{
+  padding: 10px 30px 11px 30px;
+}
+#frmLogin .btn-primary{
+  padding: 10px 30px 11px 30px;
+  margin-top: 20px;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active, .btn-primary.active, .open .dropdown-toggle.btn-primary,
+.table-hover > tbody > tr > td.primary:hover, .table-hover > tbody > tr > th.primary:hover, .table-hover > tbody > tr.primary:hover > td, .table-hover > tbody > tr.primary:hover > th {
+  color: #fff;
+  background-color: rgba(52, 45, 125, 0.7);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+.progress-bar-primary .ui-state-default {
+  background: #5a8db6;
+}
+.toggle-switch-primary input:checked + .toggle-switch-inner + .toggle-switch-switch {
+  border:2px solid #6AA6D6;
+  background: #6AA6D6;
+}
+.txt-primary {
+  color: #6AA6D6 !important;
+}
+
+#popup_container.alert-primary #popup_title {
+    background-color: #0866c6;
+}
+#popup_container.alert-primary #popup_content {
+    border-color: #0866c6;
+}
+#popup_container.alert-primary #popup_ok, #popup_container.alert-primary #popup_ok:hover,
+#popup_container.alert-primary #popup_cancel {
+    border-color: #0866c6;
+    color: #0866c6;
+}

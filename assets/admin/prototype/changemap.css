@@ -1,0 +1,728 @@
+/* ---------------------------------------------------------------------------
+   PROTOTYPE CHANGE MAP — local sandbox only, never deployed.
+   Paints the child add/edit form with what the family module does to each field.
+   Loaded by prototype-server.php (untracked); no application file is modified.
+
+   Colours are the product's own semantic tokens, not new ones:
+     red    #d94538  --critical    the value leaves `children`
+     amber  #9d6b10  --attention   deliberately deferred (wave 2)
+     green  #1f7a4d  --ok          new, does not exist today
+   Backgrounds are low-alpha so every field stays readable and usable.
+--------------------------------------------------------------------------- */
+
+.cm-out,
+.cm-wave2,
+.cm-new {
+  position: relative;
+  border-radius: 8px;
+  padding: 8px 10px 8px 12px !important;
+  margin-left: -12px !important;
+  margin-right: -10px !important;
+  transition: background-color .12s ease;
+}
+
+.cm-out   { background-color: rgba(217, 69, 56, .085);  box-shadow: inset 3px 0 0 #d94538; }
+.cm-wave2 { background-color: rgba(157, 107, 16, .085); box-shadow: inset 3px 0 0 #9d6b10; }
+.cm-new   { background-color: rgba(31, 122, 77, .095);  box-shadow: inset 3px 0 0 #1f7a4d; }
+
+.cm-out:hover   { background-color: rgba(217, 69, 56, .14); }
+.cm-wave2:hover { background-color: rgba(157, 107, 16, .14); }
+.cm-new:hover   { background-color: rgba(31, 122, 77, .16); }
+
+/* The tag that names what happens to the field. */
+.cm-tag {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-family: "Inter", -apple-system, sans-serif;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.cm-out   > .cm-tag { background: #fbe7e5; color: #a3322a; }
+.cm-wave2 > .cm-tag { background: #f6ecd8; color: #9d6b10; }
+.cm-new   > .cm-tag { background: #e4f3ea; color: #1f7a4d; }
+
+/* The block that does not exist today, drawn inline where it would go. */
+.cm-newblock {
+  border: 1px dashed rgba(31, 122, 77, .45);
+  background: rgba(31, 122, 77, .06);
+  border-radius: 10px;
+  padding: 14px 16px 15px 16px;
+  margin: 4px 0 16px 0;
+  font-family: "Inter", -apple-system, sans-serif;
+}
+.cm-newblock h4 {
+  margin: 0 0 3px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f1a2e;
+}
+.cm-newblock p { margin: 0 0 12px 0; font-size: 11.5px; color: #5b5470; line-height: 1.5; }
+.cm-newblock .cm-radio {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: #332e47; margin-right: 18px; cursor: pointer;
+}
+.cm-newblock .cm-dot {
+  width: 14px; height: 14px; border-radius: 9999px;
+  border: 1px solid rgba(95,67,178,.35); background: #fff; display: inline-block;
+}
+.cm-newblock .cm-radio.on .cm-dot { border: 4px solid #5a3fc2; }
+.cm-newblock .cm-sib {
+  margin-top: 11px; display: flex; align-items: center; gap: 9px;
+  background: #fff; border: 1px solid rgba(95,67,178,.14);
+  border-radius: 8px; padding: 8px 11px; font-size: 12.5px;
+}
+.cm-newblock .cm-sib b { font-weight: 600; }
+.cm-newblock .cm-sib span { color: #6b6480; font-size: 11.5px; }
+
+/* Floating legend. */
+#cmLegend {
+  position: fixed; right: 18px; bottom: 18px; z-index: 99999;
+  width: 268px; background: #fff;
+  border: 1px solid rgba(95,67,178,.18); border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(31,26,46,.16);
+  font-family: "Inter", -apple-system, sans-serif; color: #1f1a2e;
+  overflow: hidden;
+}
+#cmLegend .cm-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 13px; border-bottom: 1px solid rgba(95,67,178,.12);
+  background: #fcfbff;
+}
+#cmLegend .cm-head b { flex-grow: 1; font-size: 12.5px; font-weight: 700; }
+#cmLegend .cm-head button {
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  border: 1px solid rgba(95,67,178,.22); background: #fff; color: #332e47;
+  border-radius: 7px; padding: 4px 9px; cursor: pointer;
+}
+#cmLegend .cm-body { padding: 11px 13px; display: flex; flex-direction: column; gap: 10px; }
+#cmLegend .cm-item { display: flex; gap: 9px; align-items: flex-start; font-size: 11.5px; line-height: 1.45; }
+#cmLegend .cm-sw { width: 13px; height: 13px; border-radius: 4px; flex-shrink: 0; margin-top: 1px; }
+#cmLegend .cm-item b { display: block; font-weight: 600; font-size: 11.5px; }
+#cmLegend .cm-item span { color: #5b5470; }
+#cmLegend .cm-count {
+  padding: 9px 13px; border-top: 1px solid rgba(95,67,178,.12);
+  background: #fcfbff; font-size: 11px; color: #6b6480;
+}
+body.cm-off .cm-out,
+body.cm-off .cm-wave2,
+body.cm-off .cm-new {
+  background: none !important; box-shadow: none !important;
+  padding: 0 !important; margin-left: 0 !important; margin-right: 0 !important;
+}
+/* HIDE turns off the ANNOTATION layer only — the colour washes and the tags that
+   explain each field. What stays is the proposed interface itself: the household
+   block, the contacts panel, the registration action card. Hiding those too was a
+   mistake: it meant the only way to see the proposal without the commentary was to
+   not see it at all. */
+body.cm-off .cm-tag { display: none; }
+
+/* Fourth verdict: the field stays in the product, but sits on the wrong tab.
+   Blue, because it is not a schema change at all — it is a placement change. */
+.cm-move { background-color: rgba(63, 111, 153, .085); box-shadow: inset 3px 0 0 #3f6f99;
+  position: relative; border-radius: 8px;
+  padding: 8px 10px 8px 12px !important; margin-left: -12px !important; margin-right: -10px !important; }
+.cm-move:hover { background-color: rgba(63, 111, 153, .14); }
+.cm-move > .cm-tag { background: #e7eef6; color: #33587a; }
+body.cm-off .cm-move { background: none !important; box-shadow: none !important;
+  padding: 0 !important; margin-left: 0 !important; margin-right: 0 !important; }
+
+/* Tab renamed by the prototype: the "why" rides along in a small chip. */
+.cm-tabwhy{display:inline-block;margin-left:6px;font-size:9px;font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase;background:#e4f3ea;color:#1f7a4d;
+  padding:2px 6px;border-radius:9999px;vertical-align:middle}
+body.cm-off .cm-tabwhy{display:none}
+
+/* With the annotations off, the proposed blocks drop their "this is new" dressing
+   and read as ordinary parts of the form — which is what they would be. */
+body.cm-off .cm-newblock,
+body.cm-off .cm-actions{border-style:solid;border-color:rgba(95,67,178,.14);background:#fff}
+body.cm-off .cm-newblock h4 .cm-tag{display:none}
+
+/* The registration form as an ACTION, not a tab of fields. */
+.cm-actions{border:1px dashed rgba(31,122,77,.45);background:rgba(31,122,77,.06);
+  border-radius:11px;padding:14px 16px;margin:0 0 16px 0;
+  font-family:"Inter",-apple-system,sans-serif}
+.cm-actions b{display:block;font-size:13px;font-weight:700;color:#1f1a2e}
+.cm-actions p{margin:4px 0 12px 0;font-size:11.5px;color:#5b5470;line-height:1.5}
+.cm-actrow{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.cm-share{font-family:inherit;font-size:12.5px;font-weight:600;background:#fff;color:#332e47;
+  border:1px solid rgba(95,67,178,.22);border-radius:9px;padding:8px 14px;cursor:pointer}
+.cm-share:hover{background:#f4eef9}
+/* .cm-actions stays: it is proposed UI, not an annotation. */
+
+/* A stage heading the prototype adds inside a merged section. */
+.cm-subhead{margin-top:6px}
+
+/* The reason, beside the restated reachability rule. */
+.cm-reachwhy{color:#6b6480;font-size:.94em}
+
+/* Household fields inside the new block. */
+.cm-hfields{display:flex;gap:10px;margin:2px 0 12px 0}
+.cm-hf{flex-grow:1;display:block}
+.cm-hf span{display:block;font-size:9.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:#6b6480;margin-bottom:4px}
+.cm-hf input{width:100%;box-sizing:border-box;background:#fff;
+  border:1px solid rgba(95,67,178,.16);border-radius:9px;padding:8px 11px;
+  font-family:inherit;font-size:13px;color:#1f1a2e}
+.cm-hf input:focus{outline:none;border-color:#5a3fc2;box-shadow:0 0 0 3px rgba(90,63,194,.14)}
+
+/* Autocomplete over the households on file. */
+.cm-find{position:relative;margin-top:11px}
+.cm-findbox{width:100%;box-sizing:border-box;background:#fff;
+  border:1px solid rgba(95,67,178,.16);border-radius:9px;padding:9px 12px;
+  font-family:inherit;font-size:13px;color:#1f1a2e}
+.cm-findbox:focus{outline:none;border-color:#5a3fc2;box-shadow:0 0 0 3px rgba(90,63,194,.14)}
+.cm-findout{margin-top:5px;background:#fff;border:1px solid rgba(95,67,178,.16);
+  border-radius:10px;overflow:auto;max-height:230px}
+.cm-findout:empty{display:none}
+.cm-findhint{padding:11px 13px;font-size:11.5px;color:#6b6480}
+.cm-fhit{display:block;width:100%;text-align:left;background:none;border:none;
+  border-bottom:1px solid rgba(95,67,178,.09);padding:9px 13px;cursor:pointer;font-family:inherit}
+.cm-fhit:last-child{border-bottom:none}
+.cm-fhit:hover,.cm-fhit.act{background:#eeecfa}
+.cm-fhit.on{background:#eeecfa}
+.cm-fhit b{display:block;font-size:12.5px;font-weight:600;color:#1f1a2e}
+.cm-fhit span{display:block;font-size:11px;color:#5b5470;margin-top:1px}
+.cm-fhit i{display:block;font-style:normal;font-size:10.5px;color:#6b6480;margin-top:2px}
+
+/* Confirming which of a household's contacts come with the child. */
+.cm-pick{display:flex;align-items:center;gap:10px;padding:8px 11px;background:#fff;
+  border:1px solid rgba(95,67,178,.14);border-radius:9px;margin-bottom:6px;cursor:pointer}
+.cm-pick:last-child{margin-bottom:0}
+.cm-box{width:15px;height:15px;border-radius:4px;border:1px solid rgba(95,67,178,.32);
+  background:#fff;flex-shrink:0}
+.cm-pick.on{border-color:rgba(90,63,194,.35);background:#f7f5fd}
+.cm-pick.on .cm-box{background:#5a3fc2;border-color:#5a3fc2;
+  box-shadow:inset 0 0 0 2px #fff,inset 0 0 0 3px #5a3fc2}
+.cm-pwho{flex-grow:1;min-width:0}
+.cm-pwho b{display:block;font-size:12.5px;font-weight:600;color:#1f1a2e}
+.cm-pwho i{display:block;font-style:normal;font-size:11px;color:#6b6480;margin-top:1px}
+.cm-pnote{font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;
+  color:#6b6480;white-space:nowrap}
+.cm-pick.on .cm-pnote{color:#5a3fc2}
+
+.cm-findlead{font-size:11.5px;color:#5b5470;margin:0 0 6px 0;line-height:1.45}
+.cm-chosen{margin-top:12px;background:#fff;border:1px solid rgba(95,67,178,.20);
+  border-radius:10px;padding:12px 13px}
+.cm-chosenhead{margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.cm-chosenhead b{display:inline!important}
+/* Edit is deliberately small: correcting a found household is the exception. */
+.cm-hedit{background:none;border:0;padding:1px 2px;font-size:11px;font-weight:600;
+  color:#5a3fc2;cursor:pointer;flex-shrink:0}
+.cm-hedit:hover{text-decoration:underline}
+.cm-hacts{display:flex;align-items:center;gap:10px;flex-shrink:0}
+/* Both grey: quiet secondary actions on a record, not calls to act. They darken
+   on hover so they still read as clickable. */
+.cm-chosenhead .cm-hedit,.cm-chosenhead .cm-hexcl{color:#6b6480}
+.cm-chosenhead .cm-hedit:hover,.cm-chosenhead .cm-hexcl:hover{color:#1f1a2e}
+.cm-hexcl{background:none;border:0;padding:1px 2px;font-size:11px;font-weight:600;
+  color:#a3322a;cursor:pointer}
+
+.cm-hexcl:hover{text-decoration:underline}
+.cm-hread{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:0;font-size:12.5px}
+.cm-hread dt{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:#6b6480;align-self:center;margin:0}
+.cm-hread dd{margin:0;color:#1f1a2e}
+.cm-hread dd i{color:#6b6480}
+.cm-hfields[hidden]{display:none}
+.cm-hfields{margin-top:10px}
+.cm-chosenhead b{display:block;font-size:13px;font-weight:700;color:#1f1a2e}
+.cm-chosenhead span{display:block;font-size:11px;color:#6b6480;font-weight:600;margin-top:2px}
+.cm-chosenaddr{margin-top:9px;font-size:11.5px;color:#5b5470}
+
+/* Collapsed state: a pill that does not sit over the form. */
+#cmLegend.is-pill{width:auto;border-radius:9999px}
+#cmLegend.is-pill .cm-head,
+#cmLegend.is-pill .cm-body,
+#cmLegend.is-pill .cm-switch,
+#cmLegend.is-pill .cm-count{display:none}
+#cmLegend .cm-pill{display:none}
+#cmLegend.is-pill .cm-pill{display:flex;align-items:center;gap:8px;
+  font-family:inherit;font-size:12px;font-weight:600;color:#332e47;
+  background:none;border:none;padding:9px 15px;cursor:pointer;white-space:nowrap}
+#cmLegend.is-pill .cm-pill:hover{color:#1f1a2e}
+.cm-pilldots{display:inline-flex;gap:3px}
+.cm-pilldots i{width:8px;height:8px;border-radius:2px;display:block}
+#cmLegend .cm-head button{font-size:15px;line-height:1;padding:2px 8px}
+.cm-switch{display:flex;align-items:center;gap:8px;padding:9px 13px;cursor:pointer;
+  border-top:1px solid rgba(95,67,178,.12);font-size:11.5px;color:#332e47}
+.cm-switch input{margin:0}
+
+/* One card per parent, replacing the flat run of twenty rows. */
+.cm-person{background:#fff;border:1px solid rgba(95,67,178,.14);border-radius:12px;
+  padding:14px 16px 15px 16px;margin:0 0 14px 0}
+.cm-personhead{font-family:'Plus Jakarta Sans',"Inter",-apple-system,sans-serif;
+  font-size:13.5px;font-weight:700;color:#1f1a2e;margin-bottom:11px;
+  padding-bottom:9px;border-bottom:1px solid rgba(95,67,178,.11)}
+.cm-plabel{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:#6b6480;margin:12px 0 7px 0}
+.cm-pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 14px}
+.cm-pgrid > .form-group{margin:0!important;padding:0!important;float:none!important;
+  display:block!important}
+.cm-pgrid > .form-group > label{float:none!important;width:auto!important;
+  display:block!important;text-align:left!important;padding:0 0 4px 0!important}
+.cm-pgrid > .form-group > div{float:none!important;width:auto!important;
+  padding:0!important;margin:0!important}
+.cm-pmore{margin-top:12px;border-top:1px solid rgba(95,67,178,.11);padding-top:10px}
+.cm-pmore > summary{cursor:pointer;font-size:9.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:#6b6480;list-style:none;display:flex;align-items:center;gap:6px}
+.cm-pmore > summary::-webkit-details-marker{display:none}
+.cm-pmore > summary::after{content:'';width:5px;height:5px;border-right:1.5px solid #6b6480;
+  border-bottom:1.5px solid #6b6480;transform:rotate(45deg);margin-top:-3px}
+.cm-pmore[open] > summary::after{transform:rotate(-135deg);margin-top:1px}
+.cm-pmore > summary:hover{color:#1f1a2e}
+.cm-pmore .cm-pgrid{margin-top:10px}
+
+/* Inside a person card the fields sit two to a row, so the absolute tag no longer
+   has a corner to itself — it landed on top of the label. In here the tag becomes
+   a line under the field instead of a badge over it. */
+.cm-pgrid > .form-group{position:relative}
+.cm-pgrid > .form-group > .cm-tag{position:static;display:block;margin-top:5px;
+  text-align:left;background:none!important;padding:0;font-size:9px;letter-spacing:.05em}
+.cm-pgrid > .cm-out  > .cm-tag{color:#a3322a}
+.cm-pgrid > .cm-wave2 > .cm-tag{color:#9d6b10}
+.cm-pgrid > .cm-move > .cm-tag{color:#33587a}
+.cm-pgrid > .cm-new  > .cm-tag{color:#1f7a4d}
+.cm-pgrid > .form-group{padding:8px 10px!important;margin:0!important}
+
+/* The two old contact lists, folded into one block at the end of the tab. */
+.cm-others{background:#fff;border:1px solid rgba(95,67,178,.14);border-radius:12px;
+  padding:14px 16px 15px 16px;margin:14px 0 0 0}
+.cm-others .cm-personhead{display:flex;align-items:center}
+.cm-otherbody > .form-group{margin:0 0 10px 0!important}
+
+/* A contact added here is a card in the parents' format, nested in the block. */
+.cm-extras .cm-person{position:relative;margin:12px 0 0 0;background:#fdfcff}
+.cm-extra-remove{position:absolute;top:12px;right:14px;background:none;border:0;
+  padding:4px 6px;font-size:11.5px;color:#a3322a;cursor:pointer}
+.cm-extra-remove:hover{text-decoration:underline}
+.cm-addcontact{margin-top:12px;background:#fff;border:1px dashed rgba(95,67,178,.4);
+  border-radius:10px;padding:9px 14px;width:100%;font-size:12.5px;font-weight:600;
+  color:#5a3fc2;cursor:pointer}
+.cm-addcontact:hover{background:#f6f3ff;border-style:solid}
+.cm-extra .cm-msg{display:flex;flex-wrap:nowrap;gap:8px;margin-top:7px}
+.cm-extra .cm-msg .tnd-msg-opt{margin:0!important;white-space:nowrap}
+.cm-otherbody > .form-group:last-child{margin-bottom:0!important}
+
+/* The card rules turned .cm-tag back on: `.cm-pgrid > .form-group > .cm-tag` is
+   three classes and outweighed `body.cm-off .cm-tag`, so the percentages kept
+   showing with the annotations switched off. Hiding is stated here at a weight
+   that beats every place a tag is restyled. */
+body.cm-off .cm-tag,
+body.cm-off .cm-pgrid > .form-group > .cm-tag,
+body.cm-off .cm-others .cm-personhead > .cm-tag,
+body.cm-off .cm-newblock h4 > .cm-tag{display:none!important}
+
+/* The old children.* columns, kept visible but set apart from the fields that stay.
+   Side by side they read as two different facts; they are one fact stored twice —
+   father_name equals father_fname in 691 of 691 rows. */
+.cm-plegacy{border-top-style:dashed;border-top-color:rgba(217,69,56,.35)}
+.cm-plegacy > summary{color:#a3322a}
+.cm-plegacy > summary:hover{color:#8d2a22}
+.cm-plegacy > summary::after{border-color:#a3322a}
+.cm-plegacy > summary em{font-style:normal;font-weight:500;text-transform:none;
+  letter-spacing:0;color:#6b6480;margin-left:7px;font-size:10.5px}
+
+.cm-hlegacy{background:#fff;border:1px solid rgba(217,69,56,.25);border-radius:12px;
+  padding:12px 16px;margin:14px 0 0 0}
+
+/* The household's address, mirrored from Details. */
+.cm-haddr{margin-top:12px;padding:10px 12px;background:#fff;
+  border:1px solid rgba(95,67,178,.14);border-radius:9px}
+.cm-haddrlab{display:block;font-size:9.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:#6b6480;margin-bottom:3px}
+.cm-haddrval{display:block;font-size:12.5px;color:#1f1a2e}
+.cm-haddrempty{color:#9a93ad}
+.cm-haddrnote{display:block;font-size:10.5px;color:#6b6480;margin-top:4px}
+
+/* The household's own block, between the choice and the people. */
+.cm-hblock{background:#fff;border:1px solid rgba(95,67,178,.14);border-radius:12px;
+  padding:14px 16px 15px 16px;margin:0 0 14px 0}
+.cm-hblock .cm-plabel:first-of-type{margin-top:0}
+
+/* Contact type, on every person. */
+.cm-ptype{margin-bottom:12px}
+.cm-ptype-cap{font-size:9.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:#6b6480;margin-bottom:4px}
+.cm-ptype-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* The native arrow sat 11px from the right border — hard against it. A drawn
+   chevron with room on both sides, like the rest of the form's controls. */
+.cm-ptype select{flex:0 1 280px;min-width:0;box-sizing:border-box;
+  -webkit-appearance:none;appearance:none;
+  background:#fbfaff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%236b6480' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 14px center / 12px 12px;
+  border:1px solid rgba(95,67,178,.16);border-radius:9px;padding:8px 38px 8px 12px;
+  font-family:inherit;font-size:13px;font-weight:600;color:#1f1a2e}
+.cm-ptype select:focus{outline:none;border-color:#5a3fc2;box-shadow:0 0 0 3px rgba(90,63,194,.14)}
+
+/* The reachability rule, sitting with the parents it is about. The row itself has
+   no box: the caramel panel that wrapped it is gone. What remains is the app's own
+   purple hint (p.tnd-enroll-hint), the same one it uses for guidance elsewhere. */
+.cm-reachrow{margin:0 0 12px 0!important;padding:0!important;
+  background:none!important;border:0!important;box-shadow:none!important;
+  font-size:12px;line-height:1.5;color:#5b5470}
+.cm-reachrow > div{padding:0!important;margin:0!important;width:auto!important;float:none!important}
+.cm-reachrow strong{color:#1f1a2e}
+
+/* "Lives at the household address", the tick that stops the 688-of-688 retyping.
+   A plain checkbox on the face of the card: it is the answer to where this person
+   lives, so it needs no panel of its own and no second line explaining itself.
+
+   The app styles every checkbox in a form as a pill and hides the box itself
+   (position:absolute, opacity:0). That idiom is right for a toggle among several —
+   None / SMS / Voice — and wrong here, where the question is yes or no and the
+   answer decides whether a field appears at all. So the box comes back. */
+.cm-same{display:flex!important;align-items:center;gap:9px!important;cursor:pointer;
+  margin:12px 0 0 0!important;border-top:1px solid rgba(95,67,178,.11)!important;
+  padding:11px 0 0 0!important;background:none!important;border-left:none!important;
+  border-right:none!important;border-bottom:none!important;border-radius:0!important}
+.cm-same input{position:static!important;opacity:1!important;width:15px!important;
+  height:15px!important;margin:0!important;flex-shrink:0;accent-color:#5a3fc2}
+.cm-same span{font-size:12.5px;color:#1f1a2e!important;font-weight:400}
+.cm-same + .cm-pgrid{margin-top:9px}
+
+/* PERMISSIONS ON THE LINK, as toggles that can be clicked.
+
+   What a person may do is a tick on contact_links, not a list they belong to. The
+   app already has an idiom for a tick among several — the pill the notification row
+   uses — and these are the same kind of choice, so they take it rather than
+   inventing a second look for the same gesture. Only the spacing is ours. */
+.cm-perms{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2px}
+.cm-perms > label{margin:0!important}
+
+/* Main responsible leads the row and reads as the one that governs the rest. While
+   it is on, the other four are ticked and locked: still clearly ON, but not
+   clickable, and the line under the row says why. */
+.cm-perm-main{font-weight:600}
+/* Locked stays fully ON. Dimmed, it read as switched off — the opposite of what
+   Main responsible just did. The note under the row says why they cannot be
+   clicked. */
+.cm-perm.locked{opacity:1!important;cursor:default!important}
+.cm-perm.locked input{cursor:default!important;opacity:1!important}
+/* "Full permission": a status, not a control — a flat badge in the app's primary,
+   not another pill. The family screens use the app's purple only: green belongs
+   to the change map's annotation layer ("new"), not to the interface. */
+.cm-permnote{display:inline-flex;align-items:center;gap:5px;align-self:center;
+  font-size:11px;font-weight:600;color:#fff;background:#5a3fc2;
+  border-radius:999px;padding:4px 10px}
+.cm-permnote::before{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+.cm-permnote[hidden]{display:none}
+
+/* The collection window, opened by May collect. */
+.cm-collect{margin-top:10px;padding:10px 12px;border:1px solid rgba(95,67,178,.14);
+  border-radius:10px;background:#fbfaff}
+.cm-collect-head{font-size:9.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:#6b6480;margin-bottom:7px}
+.cm-collect-when{display:flex;flex-wrap:wrap;gap:6px}
+.cm-collect-when > label{margin:0!important}
+.cm-collect-range{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 14px;
+  margin-top:10px}
+.cm-collect-range[hidden]{display:none}
+.cm-collect-range label{display:block;margin:0!important;padding:0!important;
+  background:none!important;border:0!important}
+.cm-collect-range span{display:block;font-size:9.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:#6b6480;margin-bottom:4px}
+.cm-collect-range input{width:100%;box-sizing:border-box}
+
+/* OLD COLUMNS ARE AN ANNOTATION. They exist to show what the migration removes;
+   with the annotations off the form should look like the finished one, which has
+   no such fold. Hidden, never removed: the inputs inside still post, so a save
+   cannot blank a column just because it was out of sight. */
+body.cm-off .cm-plegacy,
+body.cm-off .cm-hlegacy{display:none!important}
+
+/* HOW TO REACH IS ONE COLUMN.
+
+   Two phones side by side gave each of them half a card to live in, and the
+   notification choice that belongs to the first one — None / SMS / Voice — had no
+   room to stay on its line, so it broke into three stacked rows under a field that
+   is only half as wide as the question it answers. A phone number and the setting
+   that governs it read as one thing; they get one row each. */
+.cm-person .cm-pgrid[data-part="reach"]{grid-template-columns:1fr}
+
+/* The house phone is one field with a four-option notification row under it — the
+   same shape as a parent's phone, and it wraps for the same reason. It gets the
+   whole width too. */
+.cm-hblock .cm-pgrid[data-part="phone"]{grid-template-columns:1fr}
+.cm-hblock .cm-pgrid[data-part="phone"] .tnd-msg-opts,
+.cm-hblock .cm-pgrid[data-part="phone"] .tnd-msg-methods{display:flex;flex-wrap:nowrap;
+  align-items:center;gap:8px}
+.cm-hblock .cm-pgrid[data-part="phone"] .tnd-msg-opt{margin:0!important;white-space:nowrap}
+.cm-person .cm-pgrid[data-part="reach"] .tnd-msg-opts{display:flex;flex-wrap:nowrap;
+  align-items:center;gap:8px;margin-top:7px}
+.cm-person .cm-pgrid[data-part="reach"] .tnd-msg-methods{display:flex;flex-wrap:nowrap;
+  align-items:center;gap:8px}
+.cm-person .cm-pgrid[data-part="reach"] .tnd-msg-opt{margin:0!important;white-space:nowrap}
+
+/* Permissions sit right under the relationship now, so the name fields follow a
+   row of pills instead of the dropdown and need their own gap. */
+.cm-ptype + .cm-plabel{margin-top:0}
+.cm-person .cm-pgrid[data-part="name"]{margin-top:14px}
+
+/* Inside the Address fold the tick needs no rule above it — the fold's own line
+   already separates it — and the household address it points at sits under it. */
+.cm-paddr > .cm-same{border-top:0!important;padding-top:0!important;margin-top:11px!important}
+/* Indented to start under the label's text: the box is 20px and the gap 9px. */
+.cm-hsum{margin:5px 0 2px 29px;font-size:12.5px;color:#1f1a2e;line-height:1.45}
+.cm-hsum.empty{color:#6b6480;font-style:italic}
+.cm-paddr .cm-pgrid[data-part="addr"]{margin-top:10px}
+
+/* The badge beside the dropdown, centred on it by the row. */
+.cm-ptype-row > .cm-permnote{margin:0;align-self:center}
+
+/* The badge's three states, all in the app's palette: solid primary = full,
+   primary tint = limited, grey = none. None is quiet on purpose: a grandmother
+   with no rights yet is normal, not an error. */
+.cm-permnote.limited{color:#5a3fc2!important;background:#eeecfa}
+.cm-permnote.limited::before{background:#5a3fc2}
+.cm-permnote.none{color:#6b6480!important;background:#f1eff5}
+.cm-permnote.none::before{background:#9a93ab}
+
+/* ANNOTATIONS OFF, ONE LEFT EDGE. Off, the annotated fields lose their wash and
+   their padding (body.cm-off .cm-new / .cm-out / .cm-wave2 / .cm-move), but a plain
+   field — every field on an added contact, which has no verdict to annotate — kept
+   the 8px 10px the card grid gives it. So a plain "Address line 1" sat 10px to
+   the right of the "City" under it. Off, every field in a card grid starts at the
+   same edge; the grid's gap does the spacing. */
+body.cm-off .cm-pgrid > .form-group{padding:0!important;margin:0!important}
+
+/* "Link existing contact": a quiet text link over the name fields, right-aligned so
+   it reads as an alternative to typing, not a step. */
+.cm-lkrow{display:flex;justify-content:flex-end;margin:12px 0 -6px 0}
+.cm-lklink{background:none;border:0;padding:2px 0;font-size:11.5px;font-weight:600;
+  color:#5a3fc2;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.cm-lklink::before{content:'';width:12px;height:12px;background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='M10.5 10.5L14 14'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='M10.5 10.5L14 14'/%3E%3C/svg%3E") center/contain no-repeat}
+.cm-lklink:hover{text-decoration:underline}
+.cm-lkrow:has(.cm-linked){justify-content:stretch;margin-bottom:0}
+
+/* Once linked, the card shows the person as the household checklist does: a box
+   with the name, a small grey Edit and Unlink, and a summary — not the fields. */
+.cm-lkrow:has(.cm-linked){display:block;margin:14px 0 0 0}
+.cm-linked{background:#fff;border:1px solid rgba(95,67,178,.20);border-radius:10px;
+  padding:11px 13px 12px}
+.cm-lkhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px}
+.cm-lkhead b{font-size:13px;font-weight:700;color:#1f1a2e}
+.cm-lksub{display:block;font-size:11px;font-weight:600;color:#6b6480;margin:2px 0 9px}
+.cm-lkedit,.cm-lkun{background:none;border:0;padding:1px 2px;font-size:11px;font-weight:600;
+  color:#6b6480;cursor:pointer}
+.cm-lkedit:hover,.cm-lkun:hover{color:#1f1a2e;text-decoration:underline}
+.cm-linked + *{margin-top:0}
+.is-linked .cm-lkrow:has(.cm-linked){margin-bottom:0}
+
+/* The search, over the page. */
+.cm-lk-back{position:fixed;inset:0;z-index:100000;background:rgba(31,26,46,.34);
+  display:flex;align-items:flex-start;justify-content:center;padding:12vh 16px 16px}
+.cm-lk{width:100%;max-width:520px;background:#fff;border-radius:14px;
+  box-shadow:0 18px 48px rgba(31,26,46,.24);padding:16px 18px 14px}
+.cm-lk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.cm-lk-head b{font-size:14px;color:#1f1a2e}
+.cm-lk-x{background:none;border:0;font-size:20px;line-height:1;color:#6b6480;cursor:pointer;padding:2px 6px}
+.cm-lk .cm-findout{max-height:50vh;overflow:auto}
+.cm-lk-foot{margin:10px 0 0 0;font-size:11px;color:#6b6480}
+
+/* The found household's address, opened by Edit: two to a row like the cards. */
+.cm-haddrfields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.cm-haddrfields[hidden],.cm-hread[hidden]{display:none}
+
+/* A ticked household person opens beneath its row: who they are, then what they
+   are to THIS child. Row and panel read as one block. */
+/* An open contact is a block of its own; 6px made two of them read as one. A
+   closed row keeps the tighter list rhythm. */
+.cm-pickwrap{margin-bottom:6px}
+.cm-pickwrap.open{margin-bottom:16px}
+.cm-pickwrap.open + .cm-pickwrap{margin-top:0}
+.cm-pickwrap:last-child{margin-bottom:0}
+.cm-pickwrap > .cm-pick{margin-bottom:0}
+.cm-pickwrap.open > .cm-pick{border-radius:9px 9px 0 0}
+.cm-pickmore{border:1px solid rgba(90,63,194,.35);border-top:0;border-radius:0 0 9px 9px;
+  background:#fff;padding:12px 13px 13px}
+.cm-pickmore[hidden]{display:none}
+.cm-picksum{margin-top:12px;padding-top:11px;border-top:1px solid rgba(95,67,178,.11)}
+.cm-pickmore .cm-ptype{margin-bottom:10px}
+
+/* No reachability rule under a household found on file: its parents are already
+   named, with their phones, in the checklist. */
+[data-cm-mode="existing"] > .cm-reachrow,
+[data-cm-mode="existing"] .tnd-enroll-hint-row{display:none!important}
+
+/* "Applies to": this child only, or the whole family (contact_links.child_id).
+   Only under a household found on file. */
+.cm-scope{margin-bottom:2px}
+.cm-scope-opts{display:flex;flex-wrap:wrap;gap:6px}
+.cm-scope-opts > label{margin:0!important}
+[data-cm-mode="new"] .cm-scope{display:none}
+.cm-scope + .cm-plabel{margin-top:12px}
+.cm-ptype + .cm-scope > .cm-plabel{margin-top:0}
+
+/* Once a contact is ticked, its role no longer sits under the name: the
+   relationship dropdown in the panel below says it, and can change it. A closed
+   row keeps it — there it is the only clue to who the person is. */
+.cm-pickwrap.open .cm-pwho i{display:none}
+
+/* The pediatrician on Health: the family contact card, in its own block. */
+.cm-pedi{margin:4px 0 14px 0}
+.cm-pedi .cm-person{position:relative;margin:12px 0 0 0;background:#fdfcff}
+body:not([data-cm-family-mode="existing"]) .cm-pedi .cm-scope{display:none}
+
+/* A pickup / drop-off point: its heading, the Registered address tick with the
+   household address under it, and — unticked — the address in the US shape. */
+.cm-tpoint{display:block!important}
+/* ...except when the app hides it: Pick up / Drop off switched off. */
+.cm-tpoint.d-none{display:none!important}
+.cm-tpoint > .cm-plabel{float:none!important;width:auto!important;text-align:left!important;
+  padding:0!important;margin:4px 0 0 0!important}
+.cm-tpoint > .cm-same{border-top:0!important;padding-top:0!important;margin-top:8px!important}
+.cm-tpoint > .cm-pgrid{margin-top:10px}
+
+/* A household contact's summary, with a small grey Edit in its corner. */
+.cm-picksum{position:relative}
+.cm-pickeditbtn{position:absolute;top:10px;right:0}
+.cm-picksum dl[hidden],.cm-pickedit[hidden]{display:none}
+.cm-pickedit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding-top:2px}
+
+/* Fields the new form does not ask (see NOT_ASKED). Hidden, still posting. */
+#frmAddEditRecord [data-cm-hide="1"]{display:none!important}
+
+/* Siblings on the waiting list: the household's other children, each with where
+   they are now, then a way to link one the household does not show. */
+.cm-sibs{margin-top:4px}
+.cm-sibfrom{font-size:11px;font-weight:600;color:#6b6480;margin:0 0 6px}
+.cm-sibfrom i{font-style:normal;font-weight:500;color:#9a93ad}
+.cm-sibrow{display:flex;align-items:center;gap:10px;padding:8px 11px;background:#fff;
+  border:1px solid rgba(95,67,178,.14);border-radius:9px;margin-bottom:6px}
+.cm-sibrow b{font-size:12.5px;font-weight:600;color:#1f1a2e;flex:1;min-width:0}
+.cm-sibst{font-size:11px;font-weight:600;color:#5a3fc2;background:#eeecfa;border-radius:999px;
+  padding:3px 9px;white-space:nowrap}
+.cm-sibst.wait{color:#6b6480;background:#f1eff5}
+.cm-sibrm{background:none;border:0;padding:1px 2px;font-size:11px;font-weight:600;color:#6b6480;cursor:pointer}
+.cm-sibrm:hover{color:#1f1a2e;text-decoration:underline}
+.cm-sibnone{font-size:12px;color:#6b6480;margin:0 0 6px}
+.cm-sibnone span{display:block;margin-top:3px;font-size:11px}
+.cm-siblink{margin-top:4px}
+
+/* Editing a child: the household question is already answered, so the choice
+   radios stay out of sight until Change asks it again. */
+.cm-newblock.is-current .cm-radio{display:none}
+.cm-newblock.is-current .cm-chosen{margin-top:8px}
+.cm-ps-addr i{font-style:normal;color:#9a93ad}
+
+/* The read-only Family view uses the view's own cards and rows (.vB-list, .vB-row);
+   the only thing added is a sub-label per group, in the same type as the
+   section's own label so it reads as part of the same system. */
+.cm-vfam > .vB-list{margin:0 0 4px 0}
+.cm-vsub{font-size:10.5px;font-weight:700;letter-spacing:1.68px;text-transform:uppercase;
+  color:#9a93ad;margin:18px 0 8px 0;padding-left:4px}
+
+/* ONE LEVEL OF CARDS INSIDE THE SECTION, NOT FOUR.
+
+   The Family tab stacked a box in a box in a box: the section's card, the
+   household-question box, the found-household box, and then each person's card.
+   Only the people are things the office handles one by one, so only they are
+   cards. The containers around them become plain areas of the section:
+
+     the household question  no frame — its title and choices sit in the section
+     the found household     a heading with rows, closed by a divider, not a box
+     More contacts           a heading over its cards, opened by a divider
+
+   The change-map colour for "new" still marks the question area while the
+   annotations are on, as a left rule rather than a second frame. */
+#frmAddEditRecord .cm-newblock,
+body.cm-off #frmAddEditRecord .cm-newblock{
+  border:0!important;background:none!important;border-radius:0!important;
+  padding:0!important;margin:0 0 16px 0!important;box-shadow:none!important}
+body:not(.cm-off) #frmAddEditRecord .cm-newblock{
+  box-shadow:inset 3px 0 0 rgba(31,122,77,.45)!important;padding-left:12px!important}
+#frmAddEditRecord .cm-newblock.is-current > h4{display:none}
+
+#frmAddEditRecord .cm-chosen{
+  border:0!important;border-radius:0!important;background:none!important;
+  padding:0 0 14px 0!important;margin-top:6px!important;
+  border-bottom:1px solid rgba(95,67,178,.11)!important}
+#frmAddEditRecord .cm-newblock.is-current .cm-chosen{margin-top:0!important}
+
+#frmAddEditRecord .cm-others{
+  border:0!important;border-radius:0!important;background:none!important;
+  padding:16px 0 0 0!important;margin-top:16px!important;
+  border-top:1px solid rgba(95,67,178,.11)!important}
+
+/* REGISTERING A FAMILY, ONE CHILD AT A TIME.
+   The child tile is the app's icon tile — a rounded square in the primary tint
+   with an outline glyph — a person for enrollment, an hourglass for the waiting
+   list (grey). The same tiles sit across the top of the child panel, one per
+   child: outlined while current, filled once done. */
+.reg-tiles{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 14px}
+.reg-pi{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:56px}
+.reg-tile{width:44px;height:44px;border-radius:14px;background:#eeecfa;color:#5a3fc2;
+  display:flex;align-items:center;justify-content:center;border:1.5px solid transparent;flex-shrink:0}
+.reg-tile svg{width:22px;height:22px}
+.reg-tile.w{background:#f1eff5;color:#6b6480}
+.reg-tile.sm{width:36px;height:36px;border-radius:11px}
+.reg-tile.sm svg{width:18px;height:18px}
+.reg-pi.on .reg-tile{border-color:#5a3fc2}
+.reg-pi.done .reg-tile{background:#5a3fc2;color:#fff}
+.reg-pl{font-size:11px;font-weight:600;color:#6b6480;white-space:nowrap}
+.reg-pi.on .reg-pl{color:#5a3fc2}
+.reg-intro{font-size:13px;color:#5b5470;line-height:1.55;margin:0 0 18px}
+.reg-row{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid rgba(95,67,178,.14);
+  border-radius:12px;padding:10px 12px;margin:0 0 8px}
+.reg-nm{flex:1;font-size:13.5px;font-weight:600;color:#1f1a2e}
+.reg-seg{display:flex;gap:4px}
+.reg-seg button{height:30px;padding:0 11px;font-size:12px;font-weight:600;border-radius:999px;cursor:pointer;
+  border:1px solid rgba(95,67,178,.16);background:#fff;color:#6b6480}
+.reg-seg button.on{background:#eeecfa;border-color:#5a3fc2;color:#5a3fc2}
+.reg-seg button.onw{background:#eeecfa;border-color:#5a3fc2;color:#5a3fc2}
+.reg-rm{width:26px;height:26px;padding:0;border:0;background:none;color:#9a93ad;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.reg-rm svg{width:14px;height:14px}
+.reg-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:46px;
+  border:1px dashed rgba(95,67,178,.35);border-radius:12px;background:none;color:#5a3fc2;
+  font-size:13px;font-weight:600;cursor:pointer}
+.reg-add svg{width:15px;height:15px}
+.reg-sum{font-size:12px;color:#6b6480;margin:10px 0 0}
+/* The children in the panel's head row: small tiles and their numbers, between
+   the title and the buttons. The arrows appear only when there are more children
+   than fit — then the row is a carousel. */
+.tnd-pane-head .reg-strip{display:flex;align-items:center;gap:2px;margin:0 0 0 14px;min-width:0;flex:0 1 auto}
+.reg-strip .reg-track{position:relative;display:flex;align-items:center;gap:8px;overflow-x:auto;scroll-behavior:smooth;
+  scrollbar-width:none;max-width:208px;padding:2px 1px}
+.reg-strip .reg-track::-webkit-scrollbar{display:none}
+.reg-strip .reg-pi{flex:0 0 auto;flex-direction:column;align-items:center;gap:2px;min-width:22px}
+.reg-strip .reg-tile{width:32px;height:32px;border-radius:10px;border-width:1.5px}
+.reg-strip .reg-tile svg{width:17px;height:17px}
+.reg-strip .reg-pl{font-size:10px;font-weight:700;line-height:1}
+.reg-strip .reg-nav{display:none;width:20px;height:32px;align-self:center;padding:0;border:0;background:none;
+  color:#6b6480;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0}
+.reg-strip .reg-nav svg{width:14px;height:14px}
+.reg-strip .reg-nav:disabled{color:#d8d3e6;cursor:default}
+.reg-strip.is-carousel .reg-nav{display:flex}
+/* While a family is being registered: Back / Next in place of Save. */
+#tndDrawer.reg-active #tndDrawerSave{display:none!important}
+.reg-welcome .reg-wtop{text-align:center;padding:26px 16px 18px}
+.reg-welcome .reg-tile.big{width:64px;height:64px;border-radius:20px;margin:0 auto 14px}
+.reg-welcome .reg-tile.big svg{width:30px;height:30px}
+.reg-welcome h2{font-size:20px;font-weight:700;color:#1f1a2e;margin:0 0 6px}
+.reg-welcome p{font-size:13px;color:#6b6480;margin:0}
+.reg-welcome{display:block!important;padding:0 20px 24px}
+/* The dashed "Add a child" row, against the pane's own button rules. */
+.fam-portal .reg-add{border:1px dashed rgba(95,67,178,.35)!important;background:none!important;
+  border-radius:12px!important;height:46px!important;box-shadow:none!important}
+
+/* While a family is being registered the drawer's own Cancel gives way to Return. */
+#tndDrawer.reg-active #tndDrawerCancel{display:none!important}
+/* The CURRENT child is the strongest tile in the row: solid, white glyph, the
+   number in the primary colour. Done ones step back to a soft fill; the ones
+   still to come stay light. */
+.reg-strip .reg-pi.on .reg-tile{background:#5a3fc2;border-color:#5a3fc2;color:#fff}
+.reg-strip .reg-pi.on .reg-tile.w{background:#5b5470;border-color:#5b5470;color:#fff}
+.reg-strip .reg-pi.done .reg-tile{background:#d9d3f5;border-color:#d9d3f5;color:#5a3fc2}
+.reg-strip .reg-pl{color:#9a93ad}
+.reg-strip .reg-pi.done .reg-pl{color:#6b6480}
+.reg-strip .reg-pi.on .reg-pl{color:#5a3fc2}

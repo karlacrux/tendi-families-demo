@@ -1,0 +1,297 @@
+/* ============================================================
+   TENDI DATE / TIME PICKER -- flatpickr, re-skinned onto tendi-tokens.css
+   ------------------------------------------------------------
+   Replaces the jQuery-UI datepicker, which carried a dark legacy theme from
+   style.css and could only be dragged part-way onto the design system.
+
+   Nothing here hardcodes a colour: every value is a var(--token), so the picker
+   re-themes with the rest of the app. Loaded AFTER flatpickr.min.css so these
+   rules win without !important soup.
+
+   House rules honoured:
+     - a floating overlay, so --shadow-overlay IS allowed here (flat surfaces are not)
+     - no glyph icons: flatpickr's prev/next arrows are already inline SVG
+     - no translateY hover: days respond with fill + border, never movement
+     - month picker runs in `static` mode, so there is no bare native <select>
+   ============================================================ */
+
+/* ---- the popup ---- */
+.flatpickr-calendar {
+  width: 21rem;
+  padding: 12px;
+  background: var(--paper-2);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-overlay);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+  /* Above every surface it can open over: side drawer 3010, the .sc-modal dialogs at
+     10050/10060, Bootstrap modals at 1050. Toasts stay above it at 100000, which is
+     right -- a toast should never be swallowed by an open calendar. */
+  z-index: 10200;
+  max-height: calc(100vh - 16px);   /* a short window scrolls the popup, never clips it */
+  overflow: auto;
+}
+/* placed by tendi-datepicker.js in viewport coordinates, so it can be pinned into view */
+.flatpickr-calendar.open { position: fixed; }
+.flatpickr-day, .tnd-timecell, .flatpickr-monthDropdown-months,
+.flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month { cursor: pointer; }
+input.tnd-dateinput { cursor: pointer; }
+input.tnd-dateinput:focus { cursor: text; }   /* once it is theirs to type in, say so */
+.flatpickr-calendar.open { animation: none; }          /* the stock fade reads as lag */
+.flatpickr-calendar.arrowTop::before,
+.flatpickr-calendar.arrowTop::after,
+.flatpickr-calendar.arrowBottom::before,
+.flatpickr-calendar.arrowBottom::after { display: none; }   /* the notch fights a 16px radius */
+.flatpickr-calendar.hasTime.noCalendar { width: 15rem; }
+
+/* ---- header: month + year ---- */
+.flatpickr-months { padding: 2px 2px 8px; align-items: center; }
+.flatpickr-months .flatpickr-month {
+  height: 34px;
+  background: transparent;
+  color: var(--ink);
+  border-radius: var(--radius-md);
+}
+.flatpickr-current-month {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  padding: 0;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  left: 0;
+}
+.flatpickr-current-month .cur-month { font-weight: 700; margin: 0; }
+.flatpickr-current-month input.cur-year {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  padding: 0 0 0 2px;
+  background: transparent;
+}
+.flatpickr-current-month input.cur-year:focus-visible { outline: 2px solid var(--focus-ring); border-radius: 6px; }
+
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  top: 4px;
+  border-radius: var(--radius-md);
+  color: var(--ink-3);
+  transition: background-color .12s ease, color .12s ease;
+}
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover { background: var(--cream-2); color: var(--primary); }
+.flatpickr-months .flatpickr-prev-month:hover svg fill,
+.flatpickr-months .flatpickr-next-month:hover svg { fill: currentColor; }
+.flatpickr-months .flatpickr-prev-month svg,
+.flatpickr-months .flatpickr-next-month svg { width: 12px; height: 12px; fill: currentColor; }
+
+/* the year's up/down spinner */
+.numInputWrapper:hover { background: var(--cream-2); border-radius: 6px; }
+.numInputWrapper span { border-color: var(--paper-edge); }
+.numInputWrapper span:hover { background: var(--primary-tint); }
+.numInputWrapper span.arrowUp::after { border-bottom-color: var(--ink-3); }
+.numInputWrapper span.arrowDown::after { border-top-color: var(--ink-3); }
+
+/* ---- weekday row ---- */
+.flatpickr-weekdays { height: 28px; background: transparent; }
+.flatpickr-weekdaycontainer { width: 100%; }
+span.flatpickr-weekday {
+  flex: 1 1 14.2857%;
+  background: transparent;
+  color: var(--ink-4);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+/* ---- days ----
+   flatpickr ships hardcoded pixel widths on .dayContainer / .flatpickr-day. They are
+   replaced with percentages of the popup rather than simply cleared: clearing them
+   collapses the grid and the day columns stop lining up with the weekday row. */
+.flatpickr-days { width: 100%; }
+.flatpickr-days .dayContainer {
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  padding: 0;
+  justify-content: flex-start;
+}
+.flatpickr-day {
+  cursor: pointer;
+  flex-basis: 14.2857%;
+  max-width: 14.2857%;
+  height: 38px;
+  line-height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color .12s ease, color .12s ease, border-color .12s ease;
+}
+.flatpickr-day:hover,
+.flatpickr-day:focus { background: var(--cream-2); border-color: transparent; color: var(--ink); }
+
+.flatpickr-day.today { border-color: var(--primary); color: var(--primary); font-weight: 700; }
+.flatpickr-day.today:hover { background: var(--primary-tint); color: var(--primary); }
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+.flatpickr-day.inRange,
+.flatpickr-day.inRange:hover {
+  background: var(--primary-tint);
+  border-color: var(--primary-tint);
+  color: var(--ink);
+  box-shadow: -5px 0 0 var(--primary-tint), 5px 0 0 var(--primary-tint);
+}
+.flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n+1)) { box-shadow: -10px 0 0 var(--primary); }
+
+/* flatpickr gives the spill-over days `cursor: default` off a two-class selector, which
+   outranks a plain .flatpickr-day rule. They are clickable (they select and navigate),
+   so they get the pointer back. */
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay { color: var(--ink-5); cursor: pointer; }
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+  color: var(--ink-5);
+  background: transparent;
+  opacity: .45;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+/* ---- time: our own three-column panel replaces flatpickr's number spinners ---- */
+.flatpickr-calendar.tnd-hastime .flatpickr-time { display: none !important; }
+.flatpickr-calendar.hasTime.noCalendar.tnd-hastime { width: 15.5rem; }
+.flatpickr-calendar.tnd-hastime.noCalendar .flatpickr-innerContainer { display: none; }
+
+.tnd-timepanel {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px solid var(--paper-edge);
+}
+.flatpickr-calendar.noCalendar .tnd-timepanel { border-top: 0; margin-top: 0; padding-top: 0; }
+.tnd-timecol {
+  flex: 1 1 0;
+  max-height: 184px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 2px;
+}
+.tnd-timecol + .tnd-timecol { border-left: 1px solid var(--paper-edge); padding-left: 6px; }
+/* Three scrollbars side by side dominate a panel this small, and the stock thin one
+   drags stepper arrows along with it. (Note: `scrollbar-width` WINS over the
+   ::-webkit-scrollbar rules in Chrome, so styling those instead does nothing --
+   the standard property has to be the one set to none.) The columns still scroll;
+   a soft fade at each end is what says so, and the current value is scrolled into
+   view on open so nothing important starts hidden. */
+.tnd-timecol { scrollbar-width: none; -ms-overflow-style: none; }
+.tnd-timecol::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.tnd-timecol.is-scrollable {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+/* AM/PM has two options; it should sit at the top, not stretch to the column height */
+.tnd-timecol.tnd-timecol-ampm { max-height: none; overflow: visible; flex: 0 0 62px; }
+
+.tnd-timecell {
+  flex: 0 0 auto;
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 9px 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color .12s ease, color .12s ease;
+}
+.tnd-timecell:hover { background: var(--cream-2); color: var(--ink); }
+.tnd-timecell:focus-visible { outline: none; border-color: var(--primary); }
+.tnd-timecell.is-on { background: var(--primary); color: #fff; font-weight: 600; }
+.tnd-timecell.is-on:hover { background: var(--primary-hover); color: #fff; }
+
+/* ---- flatpickr's own time row (kept styled for any field that opts out) ---- */
+.flatpickr-time {
+  border-top: 1px solid var(--paper-edge);
+  margin-top: 8px;
+  padding-top: 4px;
+  height: 42px;
+  line-height: 42px;
+  max-height: 42px;
+}
+.flatpickr-time input {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+}
+.flatpickr-time input:hover,
+.flatpickr-time input:focus { background: var(--cream-2); }
+.flatpickr-time .flatpickr-time-separator,
+.flatpickr-time .flatpickr-am-pm { color: var(--ink-2); font-weight: 600; }
+.flatpickr-time .flatpickr-am-pm {
+  font-size: 12px;
+  letter-spacing: .04em;
+  border-radius: var(--radius-sm);
+  max-width: 62px;
+}
+.flatpickr-time .flatpickr-am-pm:hover,
+.flatpickr-time .flatpickr-am-pm:focus { background: var(--primary-tint); color: var(--primary); }
+
+/* ---- the input a picker is attached to ---- */
+input.tnd-dateinput { background-image: none; }
+input.tnd-dateinput.active,
+input.tnd-dateinput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: none;
+}
+/* a field whose typed text could not be read (set by tendi-datepicker.js) */
+input.tnd-dateinput.tnd-date-bad { border-color: var(--critical); }
+.tnd-date-note { color: var(--critical); font-size: 12px; margin-top: 4px; }
+
+/* the calendar affordance, inline SVG as a data URI (never a glyph) */
+.tnd-datewrap { position: relative; display: block; }
+.tnd-datewrap > input { padding-right: 38px; }
+.tnd-datewrap > .tnd-datewrap-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  pointer-events: none;
+  color: var(--ink-4);
+}
+.tnd-datewrap > .tnd-datewrap-icon svg { display: block; width: 100%; height: 100%; }
+input.tnd-dateinput:focus ~ .tnd-datewrap-icon { color: var(--primary); }

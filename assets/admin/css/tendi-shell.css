@@ -1,0 +1,816 @@
+/* ============================================================
+   Tendi SHELL reskin. The OUTER chrome only (left sidebar nav, top navbar,
+   logo, user menu, scrollbars). Mimics the Tendi-Global app shell.
+   OWNED BY: the shell agent. Do NOT add content/component styles here, those
+   live in tendi-skin.css. Targets the legacy devoops shell (#sidebar-left,
+   .navbar, #header, etc.), which is OUTSIDE the .tendi-skin content scope.
+   Loaded globally from inc/head.php.
+
+   Reference: the Tendi-Global app shell (apps/admin · packages/ui),
+     · pale lavender canvas  #fbfaff
+     · violet icon rail (180deg purple gradient, white icons)
+     · white "islands" (topbar, flyout menus) on the canvas, #ebe4f3 hairlines
+     · violet active/hover states (#5a3fc2 / fill #f4eef9)
+     · flat (no gradients on surfaces), rounded, soft overlay shadows
+   Tokens come from tendi-tokens.css (var(--primary) etc.). All shell elements
+   live OUTSIDE .tendi-skin, so we re-state the font + a couple of tokens that
+   tendi-skin.css would otherwise scope, and lean on !important to beat the
+   legacy devoops theme (style.css / devoops.css / color.css).
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   0. Local helpers: a few shell-only aliases on top of the tokens so the
+   rail gradient + hairlines read like Tendi-Global. (Tokens themselves live
+   in tendi-tokens.css and are NOT edited here.)
+   ------------------------------------------------------------ */
+:root {
+  /* the violet rail gradient (top -> bottom, darkening): the ONE allowed
+     gradient on chrome, matching Tendi-Global's icon rail */
+  --shell-rail-top: #5d44c4;
+  --shell-rail-bottom: #3f2c8c;
+  /* the rail column's own right edge. One token because TWO elements draw it now,
+     the rail and the logo cell stacked above it, and if they ever disagree the
+     column gets a visible step halfway down. */
+  --shell-rail-edge: rgba(0, 0, 0, 0.12);
+  --shell-hairline: #ebe4f3;          /* topbar / flyout hairline */
+  --shell-hairline-strong: #d8cce8;
+  --shell-rail-w: 232px;              /* WIDE labeled sidebar (Tendi-Global), was a 64px icon rail */
+}
+
+/* ------------------------------------------------------------
+   1. CANVAS: pale lavender paper behind everything
+   ------------------------------------------------------------ */
+body {
+  background-color: var(--cream) !important;   /* #fbfaff, was devoops blue #6AA6D6 */
+  font-family: var(--font-sans);
+}
+
+#content {
+  background: var(--cream) !important;          /* was #f2f3f7 */
+}
+
+/* Drop the heavy legacy drop-shadow boxing the whole shell */
+.container-fluid {
+  box-shadow: none !important;
+}
+
+/* ------------------------------------------------------------
+   2. TOP NAVBAR / HEADER: clean white bar, hairline bottom, no harsh shadow
+   ------------------------------------------------------------ */
+.navbar {
+  background: var(--paper-2) !important;        /* #ffffff */
+}
+
+#top-panel {
+  background: var(--paper-2) !important;        /* #ffffff */
+  height: 56px !important;                       /* a hair taller than legacy 50px */
+  border-bottom: 1px solid var(--shell-hairline);
+}
+
+/* main content offset must follow the new bar height */
+#main {
+  margin-top: 56px !important;
+}
+@media (max-width: 767px) {
+  #main { margin-top: 112px !important; }        /* legacy stacks logo + panel = 2 rows */
+}
+
+/* the navbar wrapper: kill the legacy boxing shadow, keep it flush */
+.navbar .container-fluid.expanded-panel {
+  box-shadow: none !important;
+  background: var(--paper-2);
+}
+
+/* ------------------------------------------------------------
+   3. LOGO / BRAND LOCKUP: white "Tendi" wordmark on the violet rail column
+
+   The logo cell is the TOP OF THE NAV COLUMN, not a corner of the white bar.
+   #sidebar-left is fixed at top:56px, so its violet used to start below this
+   cell and the column read as violet with a white notch bitten out of its head.
+   Filling this cell with the rail's own top colour closes that notch and the
+   violet runs unbroken from y=0 to the foot of the page.
+
+   Why a FLAT --shell-rail-top and not the rail's gradient: the rail paints a
+   180deg ramp across its whole height, so re-declaring that gradient in a 56px
+   box would restart it and land a hard colour step exactly on the seam. Flat
+   --shell-rail-top is the precise colour the rail begins with at y=56, so the
+   two surfaces meet at the same value and the join is invisible.
+
+   The mark itself is whitened by a CSS filter in tendi-header.css section 1, since
+   the violet artwork on violet would be unreadable. There is no second white copy
+   of the file; see that section for why.
+
+   SCOPED TO .navbar, and that is load-bearing rather than tidiness: the Groups
+   form carries `<input type="file" id="logo">`, so a bare `#logo` selector styles
+   that file input too, and both live in the DOM together once the SPA loads that
+   page. Unscoped, THESE rules painted it an 88x56 block: invisible while the fill
+   was white, an obvious violet slab the moment the fill became the rail colour.
+   (The legacy style.css/color.css `#logo` rules are still unscoped and still reach
+   that input. They only set a white fill so nothing shows, but the real cure is
+   renaming the Groups input's id, which is another card's work.)
+   ------------------------------------------------------------ */
+.navbar #logo {
+  background-color: var(--shell-rail-top) !important;  /* = the rail's first gradient stop */
+  height: 56px;
+  /* No bottom hairline: it is a LIGHT line and it would draw a visible scar
+     across the violet column at exactly the point this change exists to hide. */
+  border-bottom: 0;
+}
+/* the vertical seam between logo and bar only reads right when they sit
+   side-by-side (desktop); on mobile the logo is a full-width stacked row.
+   Pin the logo column to the sidebar width so the seam lines up with the
+   sidebar's right edge, and let the top-panel fill the rest. */
+@media (min-width: 768px) {
+  .navbar #logo {
+    /* Same token #sidebar-left draws its own right border with, so the column's
+       right edge is ONE continuous line top to bottom. The old light
+       --shell-hairline stopped dead where the rail's darker edge took over. */
+    border-right: 1px solid var(--shell-rail-edge);
+    width: var(--shell-rail-w) !important;
+  }
+  #top-panel {
+    width: calc(100% - var(--shell-rail-w)) !important;
+  }
+}
+
+/* White, not --brand-logo violet: this only paints the `alt="Tendi"` text, which
+   the browser shows if the SVG ever fails to load. Violet alt text on the violet
+   cell would be an invisible corner; white at least leaves the failure readable.
+   (It is still a failure state, not a graceful one: 22px alt text does not fit a
+   56px cell. The point is only that a missing file is visible rather than silent.) */
+.navbar #logo a {
+  color: var(--paper-2) !important;
+  font-family: var(--font-display) !important;  /* Plus Jakarta Sans, was 'Righteous' */
+  font-weight: 800 !important;
+  font-size: 22px !important;
+  line-height: 56px !important;
+  letter-spacing: -0.02em;
+  padding-left: 4px;
+  background: none !important;                    /* drop legacy bg-image hover trick */
+  transition: opacity 0.15s ease;
+}
+
+.navbar #logo a:hover {
+  color: var(--paper-2) !important;
+  opacity: 0.82;
+  background: none !important;
+  text-decoration: none !important;
+}
+
+/* No @media print block here, and that is checked rather than assumed: bootstrap.css
+   carries `@media print { .navbar { display: none } }`, so this whole header is
+   absent from any printed page and a print override would be dead code. */
+
+/* hamburger / sidebar toggle: refined, violet, round hover target
+   (kept display rules from legacy: hidden on desktop, shown on mobile) */
+a.show-sidebar {
+  color: var(--primary) !important;
+  font-size: 18px !important;
+  width: 38px;
+  height: 38px;
+  display: inline-flex !important;               /* may be re-hidden on desktop below */
+  align-items: center;
+  justify-content: center;
+  margin: 9px 0 0 6px;
+  border-radius: var(--radius-md);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+a.show-sidebar:hover {
+  color: var(--primary-hover) !important;
+  background: var(--primary-tint);
+}
+/* legacy hides the hamburger on desktop with `display:none!important`; keep that
+   intent so we don't introduce a stray toggle on wide screens */
+@media (min-width: 768px) {
+  a.show-sidebar { display: none !important; }
+}
+
+/* ------------------------------------------------------------
+   4. LEFT SIDEBAR: violet LABELED sidebar (the Tendi-Global look)
+   Markup is a single-level list (icon + label span) with JS-driven flyout
+   child menus. We widen it to a labeled vertical nav: violet gradient rail,
+   white icon + readable white label inline, frosted-pill active state.
+   ------------------------------------------------------------ */
+/* Rail FILL/COLOR applies at all widths; WIDTH/layout overrides are scoped to
+   desktop so the legacy mobile collapse/reveal model (opacity + .sidebar-show)
+   keeps working untouched. */
+#sidebar-left {
+  background: linear-gradient(180deg, var(--shell-rail-top) 0%, var(--shell-rail-bottom) 100%) !important;
+  border-right: 1px solid var(--shell-rail-edge);
+}
+
+@media (min-width: 768px) {
+  #sidebar-left {
+    width: var(--shell-rail-w) !important;          /* 232px labeled sidebar */
+    /* long flat list of ~32 items: let it scroll under the fixed topbar */
+    height: calc(100vh - 56px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  /* content fills the rest beside the sidebar (default desktop state) */
+  #content {
+    width: calc(100% - var(--shell-rail-w)) !important;
+  }
+  /* desktop toggle hides the sidebar -> content goes full width (legacy inverts here) */
+  .sidebar-show #content.col-sm-10 {
+    width: 100% !important;
+  }
+}
+
+/* the nav list: tidy vertical rhythm */
+.nav.main-menu {
+  margin: 8px 0 0 0 !important;
+  padding: 0 8px 12px !important;
+}
+.nav.main-menu > li {
+  margin-bottom: 2px;
+}
+
+/* SIDEBAR ITEM: icon + inline label, left aligned, rounded row, violet pill states */
+.nav.main-menu > li > a,
+.nav.msg-menu > li > a {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  text-align: left !important;
+  color: rgba(255, 255, 255, 0.80) !important;
+  border-bottom: none !important;
+  border-right: none !important;                  /* drop legacy #FF4966 accent bar */
+  background: transparent !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 9px 14px !important;
+  border-radius: var(--radius-lg) !important;     /* 12-14px rounded row */
+  font-family: var(--font-sans) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+/* icons: fixed 18px gutter so labels align in a clean column */
+.nav.main-menu > li > a > i,
+.nav.msg-menu > li > a > i {
+  font-size: 18px !important;
+  width: 18px !important;
+  flex: 0 0 18px !important;
+  display: inline-block !important;
+  text-align: center;
+  line-height: 1.1;
+  color: inherit !important;
+}
+
+/* SHOW the label inline (this is the whole point of the reskin) */
+.nav.main-menu > li > a > span {
+  display: inline !important;
+  flex: 1 1 auto !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* parent rows (have a child dropdown) get a chevron hint pushed to the right */
+.nav.main-menu > li > a.dropdown-toggle::after {
+  content: "\f107";                               /* fa-angle-down */
+  font-family: "FontAwesome", "Font Awesome 5 Free";
+  font-weight: 900;
+  font-size: 12px;
+  margin-left: auto;
+  opacity: 0.6;
+  flex: 0 0 auto;
+}
+
+/* HOVER: soft translucent white wash */
+.nav.main-menu > li > a:hover,
+.nav.main-menu > li > a:focus,
+.nav.msg-menu > li > a:hover,
+.nav.msg-menu > li > a:focus {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #ffffff !important;
+}
+
+/* ACTIVE / OPEN: frosted white pill (whole row fills, no accent bar) */
+.nav.main-menu > li.active > a,
+.nav.main-menu > li > a.active,
+.nav.main-menu > li > a.active-parent,
+.nav.main-menu .open > a,
+.nav.main-menu .open > a:hover,
+.nav.main-menu .open > a:focus,
+.nav.msg-menu > li.active > a,
+.nav.msg-menu > li > a.active {
+  background: rgba(255, 255, 255, 0.20) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-right: none !important;                  /* override legacy 3px #FF4966 */
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.10);
+}
+
+/* ------------------------------------------------------------
+   5. CHILD MENUS, two legacy modes, both preserved:
+     (a) 768–991px: a right-side FLYOUT (legacy `left:100%`, absolute), we
+         restyle it as a lifted white card with violet rows.
+     (b) 992px+: legacy turns it into an INLINE expander (position:relative,
+         visible) which the slideUp/slideDown JS animates open/closed. On the
+         WIDE labeled sidebar we want this: render children as indented
+         translucent rows on the violet rail (Tendi-Global submenu look).
+   JS controls visibility (slideUp/slideDown). We never touch display/visibility.
+   ------------------------------------------------------------ */
+
+/* (a) FLYOUT CARD: the 768–991px band (legacy absolute flyout) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .main-menu .dropdown-menu {
+    background: var(--paper-2) !important;          /* white, was patterned blue */
+    border: 1px solid var(--shell-hairline) !important;
+    border-radius: var(--radius-xl) !important;     /* 16px */
+    box-shadow: var(--shadow-overlay) !important;
+    padding: 6px !important;
+    min-width: 196px;
+    margin-left: 8px !important;                     /* small gap off the rail */
+    overflow: hidden;
+  }
+  .main-menu .dropdown-menu > li > a {
+    color: var(--ink-3) !important;                 /* #5b5470 */
+    padding: 9px 12px !important;
+    border-radius: var(--radius-md) !important;     /* 10px rows */
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.3 !important;
+    height: auto !important;
+    transition: background 0.12s ease, color 0.12s ease !important;
+  }
+  .main-menu .dropdown-menu > li > a:hover,
+  .main-menu .dropdown-menu > li > a:focus {
+    background: var(--cream-2) !important;          /* #f4eef9 lilac wash */
+    color: var(--ink) !important;
+  }
+  .main-menu .dropdown-menu > li > a.active,
+  .main-menu .dropdown-menu > li.active > a {
+    background: var(--primary-tint) !important;     /* #eeecfa */
+    color: var(--primary) !important;               /* #5a3fc2 */
+    font-weight: 600 !important;
+  }
+  .main-menu .dropdown-menu > li:first-child > a,
+  .main-menu .dropdown-menu > li:last-child > a {
+    border-radius: var(--radius-md) !important;
+  }
+}
+
+/* (b) INLINE INDENTED CHILDREN: 992px+ on the wide violet sidebar.
+   The legacy 992px rule already makes the child ul position:relative/visible;
+   we re-skin those rows as frosted indented rows under the parent. */
+@media (min-width: 992px) {
+  .main-menu .dropdown-menu {
+    background: transparent !important;             /* sit on the violet rail */
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 2px 0 4px 0 !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+    overflow: visible;
+  }
+  .main-menu .dropdown-menu > li > a {
+    display: block !important;
+    color: rgba(255, 255, 255, 0.66) !important;
+    padding: 7px 12px 7px 44px !important;          /* indent past the 18px icon gutter */
+    border-radius: var(--radius-lg) !important;
+    font-family: var(--font-sans) !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    line-height: 1.25 !important;
+    height: auto !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.12s ease, color 0.12s ease !important;
+  }
+  .main-menu .dropdown-menu > li > a:hover,
+  .main-menu .dropdown-menu > li > a:focus {
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: #ffffff !important;
+  }
+  .main-menu .dropdown-menu > li > a.active,
+  .main-menu .dropdown-menu > li.active > a {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   6. TOP-RIGHT PANEL: History Log button, notifications, user menu
+   ------------------------------------------------------------ */
+.panel-menu {
+  margin: 0 !important;
+}
+.panel-menu > li > a {
+  line-height: 56px !important;                   /* match new bar height */
+}
+.panel-menu > li > a:hover {
+  background: none !important;
+}
+
+/* --- History Log pill --- */
+.change_history_launcher.btn-primary {
+  background: var(--primary) !important;
+  border: 0 !important;
+  color: #fff !important;
+  border-radius: var(--radius-full) !important;
+  box-shadow: none !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.01em;
+  line-height: 32px !important;
+  height: 34px;
+  padding: 0 16px !important;
+  width: auto !important;
+  margin: 11px 6px 0 0 !important;
+  transition: background 0.15s ease !important;
+}
+.change_history_launcher.btn-primary:hover,
+.change_history_launcher.btn-primary:focus,
+.change_history_launcher.btn-primary:active {
+  background: var(--primary-hover) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+/* --- Notification bell --- round hover target, violet icon, amber badge --- */
+.panel-menu > li > a.alerts-notification {
+  position: relative;
+  padding: 0 !important;
+}
+.panel-menu > li > a.alerts-notification > i {
+  color: var(--primary) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 17px !important;
+  width: 38px;
+  height: 38px;
+  line-height: 38px !important;
+  margin: 9px 6px 0 0 !important;
+  padding: 0 !important;
+  border-radius: var(--radius-full) !important;
+  text-align: center;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+.panel-menu > li > a.alerts-notification:hover > i,
+.panel-menu > li > a.alerts-notification:focus > i {
+  background: var(--primary-tint) !important;
+  color: var(--primary-hover) !important;
+}
+#top-panel .navbar-nav > li a.alerts-notification:focus {
+  background-color: transparent !important;
+}
+
+/* amber unread badge, JS toggles display:inline-block, so don't force display */
+.panel-menu a.alerts-notification .badge {
+  position: absolute;
+  top: 5px;
+  right: 1px;
+  margin: 0 !important;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px !important;
+  background: var(--attention) !important;        /* amber #9d6b10 */
+  color: #fff !important;
+  font-size: 10px !important;
+  font-weight: 700;
+  line-height: 17px !important;
+  border-radius: var(--radius-full) !important;
+  border: 2px solid var(--paper-2);
+  box-sizing: content-box;
+  text-align: center;
+}
+
+/* generic top-panel icon tiles (defensive: any other .panel-menu i) */
+.panel-menu i {
+  color: var(--primary);
+  box-shadow: none !important;
+  border-radius: var(--radius-md);
+}
+.panel-menu > li > a:hover > i {
+  background: var(--primary-tint) !important;
+}
+
+/* ------------------------------------------------------------
+   7. USER / "Welcome, admin" MENU
+   ------------------------------------------------------------ */
+/* The chip is INSET inside the 56px bar (44px tall + 6px above/below, 4px to the right) so its
+   hover fill reads as a pill. At the full 56px it ran edge-to-edge against the header's top and
+   bottom, the 14px radius had nothing to round against, and the hover looked like a raw block. */
+.panel-menu a.account {
+  height: 44px !important;
+  margin: 6px 4px 6px 0 !important;
+  padding: 0 8px 0 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.panel-menu a.account:hover,
+.panel-menu li.dropdown.open > a.account {
+  background: var(--cream-2) !important;
+  border-color: var(--shell-hairline);
+}
+
+/* avatar: round, hairline ring */
+.account .avatar {
+  width: 34px !important;
+  height: 34px;
+  float: none !important;
+  margin: 0 !important;
+  flex: 0 0 auto;
+}
+.account .avatar > img {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: var(--radius-full) !important;
+  border: 1px solid var(--shell-hairline-strong) !important;
+  object-fit: cover;
+}
+
+/* name block */
+.user-mini {
+  float: none !important;
+  line-height: 1.25 !important;
+  text-align: left;
+}
+.user-mini > span {
+  display: block;
+  font-family: var(--font-sans);
+  color: var(--ink) !important;
+  font-size: 12.5px !important;
+  margin: 0 !important;
+}
+.user-mini > span.welcome {
+  font-weight: 400 !important;
+  color: var(--ink-4) !important;
+  font-size: 10.5px !important;
+  letter-spacing: 0.01em;
+}
+.user-mini > span#currUserUname {
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+}
+
+/* the little chevron: SVG, flips when the menu is open */
+.account .tnd-account-caret {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-4);
+  margin: 0 0 0 2px;
+  transition: transform 0.16s ease, color 0.16s ease;
+}
+.account .tnd-account-caret svg { width: 15px; height: 15px; display: block; }
+.panel-menu li.dropdown.open > a.account .tnd-account-caret { transform: rotate(180deg); color: var(--primary); }
+
+/* dropdown: lifted white card, violet hover rows */
+.panel-menu .dropdown-menu {
+  background: var(--paper-2) !important;
+  border: 1px solid var(--shell-hairline) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-overlay) !important;
+  padding: 6px !important;
+  /* 258, not 210: the account menu now opens with an identity header (name +
+     email + role) above the rows, and an email needs the extra room. */
+  min-width: 258px !important;
+  right: 4px !important;
+  margin-top: 6px !important;
+}
+.panel-menu .dropdown-menu > li > a {
+  color: var(--ink-2) !important;
+  padding: 7px 10px !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 13.5px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+/* Each row carries its icon in a tile. The hover then has something to CHANGE: tile fills,
+   row tints, instead of the old flat wash of cream behind a loose glyph. No transform: the
+   row must not move under the cursor. */
+.panel-menu .tnd-acct-ico {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--cream-2);
+  color: var(--ink-3);
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.panel-menu .tnd-acct-ico svg { width: 16px; height: 16px; display: block; }
+
+.panel-menu .dropdown-menu > li > a:hover,
+.panel-menu .dropdown-menu > li > a:focus {
+  background: var(--primary-tint) !important;
+  color: var(--primary) !important;
+}
+.panel-menu .dropdown-menu > li > a:hover .tnd-acct-ico,
+.panel-menu .dropdown-menu > li > a:focus .tnd-acct-ico {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Logout reads red on hover. It ends the session, and it sits one row under "Database". */
+.panel-menu .dropdown-menu > li > a.is-danger:hover,
+.panel-menu .dropdown-menu > li > a.is-danger:focus {
+  background: var(--critical-tint) !important;
+  color: var(--critical) !important;
+}
+.panel-menu .dropdown-menu > li > a.is-danger:hover .tnd-acct-ico,
+.panel-menu .dropdown-menu > li > a.is-danger:focus .tnd-acct-ico {
+  background: var(--critical);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------
+   8. FOOTER: quiet, on the canvas
+   ------------------------------------------------------------ */
+#content > footer {
+  color: var(--ink-4);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  border-top: 1px solid var(--shell-hairline);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+#content > footer a { color: var(--primary); }
+
+/* ------------------------------------------------------------
+   9. SHELL SCROLLBARS: thin lavender (WebKit + Firefox)
+   Scope to the shell rail + flyouts + body; content scrollbars are handled
+   inside tendi-skin.css for .tendi-skin regions.
+   ------------------------------------------------------------ */
+/* The window scrollbar is shown on every page, tall or short, so the layout lands
+   in the same place each time. Without it, navigating from a page that fits to one
+   that does not shifts the whole app sideways by the scrollbar's width, and the
+   fixed full-width topbar shifts with it.
+
+   `overflow-y: scroll`, NOT `scrollbar-gutter: stable`: this shell lets <body> own
+   the overflow that propagates to the viewport, which leaves <html> outside the
+   definition of a scroll container, so scrollbar-gutter on it is silently ignored
+   (measured: 15px reserved on a tall page, 0 on a short one, i.e. the shift stays).
+
+   Making <html> the scroll container has a consequence tendi-scroll-lock.js handles:
+   the `overflow-y:hidden` that popups set on <body> no longer reaches the viewport,
+   so that file now moves the lock onto <html> and pays back the width with padding.
+   Change one, read the other. */
+html { overflow-y: scroll; }
+
+#sidebar-left::-webkit-scrollbar,
+.main-menu .dropdown-menu::-webkit-scrollbar,
+.panel-menu .dropdown-menu::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+#sidebar-left::-webkit-scrollbar-track,
+.main-menu .dropdown-menu::-webkit-scrollbar-track,
+.panel-menu .dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+#sidebar-left::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-full);
+}
+#sidebar-left::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.42);
+}
+.main-menu .dropdown-menu::-webkit-scrollbar-thumb,
+.panel-menu .dropdown-menu::-webkit-scrollbar-thumb {
+  background: var(--cream-3);
+  border-radius: var(--radius-full);
+}
+
+/* the shell rail uses dark scrollbar on its violet fill (Firefox) */
+#sidebar-left {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.30) transparent;
+}
+
+/* ------------------------------------------------------------
+   10. PAGE LOADER, replaces the legacy "bubblingG" jumping balls shown by
+   LoadAjaxContent() on every SPA page navigation. A calm frosted veil over the
+   CONTENT area + the house violet ring spinner (same language as the table /
+   drawer / batch loaders, @keyframes tndSpin lives in tendi-skin.css).
+   Scoped to `.tnd-page-loader` so the legacy `.preloader` DataTables still uses
+   for its in-table processing veil is untouched. The legacy `.preloader` is
+   position:absolute inside the (faux-column, 3000px-tall) #content with a
+   padding-top:15% that threw the spinner far below the fold. We pin it to the
+   visible content viewport instead so the spinner is always centered in view.
+   ------------------------------------------------------------ */
+/* NB: leave `display` alone, jQuery .show()/.hide() toggle it inline
+   (block/none); we center via the absolutely-positioned inner wrapper so the
+   inline display never fights a stylesheet flex. */
+.preloader.tnd-page-loader {
+  position: fixed !important;
+  top: 56px; right: 0; bottom: 0; left: 0;        /* below the topbar; mobile override below */
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  background: color-mix(in srgb, var(--cream) 68%, transparent);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  z-index: 1500;                                   /* above content (10) + sub-pane (28), below topbar (2000) */
+  animation: tndFadeIn 0.16s ease both;
+}
+@keyframes tndFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.tnd-page-loader .tnd-page-loader-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  /* line up the veil with #content (cleared of the fixed rail; wider when the sub-pane is open) */
+  .preloader.tnd-page-loader { left: var(--shell-rail-w); }
+  body.tnd-pane-open .preloader.tnd-page-loader { left: calc(var(--shell-rail-w) + var(--tnd-subpane-w)); }
+}
+@media (max-width: 767px) {
+  .preloader.tnd-page-loader { top: 112px; left: 0; }   /* mobile stacks logo + panel = 2 rows */
+}
+
+.tnd-page-loader .tnd-page-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid var(--cream-3);
+  border-top-color: var(--primary);
+  animation: tndSpin 0.7s linear infinite;
+}
+.tnd-page-loader .tnd-page-loader-text {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+/* fixed-width ellipsis with a gentle opacity pulse: the dots no longer change
+   width, so the centered "Loading" text never shifts (was animating "" → "..." via
+   a content swap, which re-centered the line each step). The ring spinner carries
+   the main motion; the dots just breathe. */
+.tnd-page-loader .tnd-page-loader-text::after {
+  content: "…";
+  animation: tndLoadingPulse 1.5s ease-in-out infinite;
+}
+@keyframes tndLoadingPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .preloader.tnd-page-loader { animation: none; }
+  .tnd-page-loader .tnd-page-spinner { animation-duration: 1.6s; }
+  .tnd-page-loader .tnd-page-loader-text::after { content: "…"; animation: none; }
+}
+
+/* DataTables in-table "processing" indicator (devoops.js language.processing):
+   the old bubblingG markup is gone; this is the house ring spinner. On reskinned
+   `.tendi-skin` pages tendi-skin.css hides `.dataTables_processing > *` and draws
+   its own centered `::after` ring (so this stays hidden, no double spinner); on
+   any non-reskinned datatable this is the visible fallback. */
+.tnd-dt-spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--cream-3);
+  border-top-color: var(--primary);
+  animation: tndSpin 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tnd-dt-spinner { animation-duration: 1.6s; }
+}
+
+/* ── Google Places autocomplete dropdown ──────────────────────────────────────
+   Google appends .pac-container to <body> with a hardcoded z-index of 1000 and
+   positions it absolutely under the input. Every reskinned overlay in this shell
+   sits ABOVE that (panes/drawers/modals run 1500-3200), so on those surfaces the
+   suggestion list was painted behind the panel: no dropdown, no console error,
+   and, because children.php clears the field on blur when nothing was picked:
+   the typed address silently vanished.
+
+   Deliberately NOT scoped under .tendi-skin: the element is a child of <body>,
+   outside the skin wrapper. !important because Google sets z-index inline.
+   9500 keeps it above every shell layer (max 9000, the tooltip), which is right
+   for a transient list anchored to the focused input.                          */
+.pac-container {
+  z-index: 9500 !important;
+}
+/* the SDK leaves an empty container in the DOM between queries; don't let it
+   swallow clicks on whatever sits underneath */
+.pac-container:empty {
+  display: none !important;
+}

@@ -1,0 +1,447 @@
+/* ============================================================
+   TENDI ENROLLMENT REQUIREMENTS (card "Tendi resell" #91 · §7B)
+   ------------------------------------------------------------
+   The visual half of "it must be obvious what is required, and the answer differs for a
+   waiting-list child versus an enrolled one".
+
+   Everything here is driven by ONE source of truth, application/helpers/enrollment_helper.php.
+   The form stamps `data-enroll-level="required|optional|na"` on each field group from that
+   matrix; this file only decides how each level LOOKS. Nothing in here encodes which field is
+   required, on purpose: a rule that lives in a stylesheet is a rule nobody can enforce on the
+   server.
+
+   Why a separate file rather than more tendi-skin.css: the skin is the shared design system and
+   is owned by the reskin lead. This is one feature's chrome (level markers, tab counters, the
+   save-blocked summary) and is scoped tightly enough to be inert on every page that does not
+   render an enrollment form.
+
+   Scoping: every rule sits under `.tendi-skin`, which covers BOTH surfaces the child form shows
+   up on, the standalone `.tendi-skin.tnd-form-page` add/edit fragment and the portalled
+   `.tendi-skin .tnd-drawer` side pane. Loads AFTER tendi-skin.css so the few overrides here win.
+   Tokens come from tendi-tokens.css; no hardcoded hex.
+   ============================================================ */
+
+/* ------------------------------------------------------------------
+   1. LEVELS
+   `na` = not applicable to this enrollment status. Not rendered, not validated, not written.
+   This is the rule that used to be an accident: the waitlist JS hid the Class field and jQuery
+   Validate's default `ignore: ":hidden"` quietly skipped it, so "hidden" and "not required"
+   were the same thing by coincidence. They are separate now, and this is the ONLY selector that
+   hides a field for a business reason.
+   `!important` because several of these groups also carry legacy inline/utility display rules
+   (`.d-none`, `style="display:none"`) that the form's own JS still toggles for other reasons.
+   ------------------------------------------------------------------ */
+.tendi-skin [data-enroll-level="na"] { display: none !important; }
+
+/* The required marker. `.astric` already exists in the markup and in tendi-skin.css; the form's
+   JS now owns WHICH labels carry one, so an astric it did not put there must not linger. */
+.tendi-skin [data-enroll-level="optional"] > label .astric,
+.tendi-skin [data-enroll-level="optional"] > .control-label .astric,
+.tendi-skin [data-enroll-level="na"] .astric { display: none !important; }
+
+/* A required field the user has left empty, AFTER they tried to save. Quiet until then: nagging
+   someone about a field they have not reached yet is how a form teaches people to ignore red.
+   `.tnd-enroll-missing` lands on the field's own group whether the requirement came from the
+   matrix or from one of the form's own rules, so both look the same to the person filling it in. */
+.tendi-skin .tnd-enroll-armed .tnd-enroll-missing .form-control,
+.tendi-skin .tnd-enroll-armed .tnd-enroll-missing .tnd-select-trigger {
+  border-color: var(--critical);
+  background: var(--critical-tint);
+}
+.tendi-skin .tnd-enroll-armed .tnd-enroll-missing .form-control:focus,
+.tendi-skin .tnd-enroll-armed .tnd-enroll-missing .tnd-select-trigger:focus {
+  background: var(--paper-2);
+  box-shadow: 0 0 0 3px rgba(217, 69, 56, 0.16);
+}
+
+/* WHY THE NEXT TWO BLOCKS REPEAT THE ONES ABOVE AT GREATER LENGTH.
+   Measured on the Branches drawer, 2026-08-17, while bringing this chrome to the other multi-tab
+   records (card https://trello.com/c/E3K1oq5i): inside the record pane the pair above painted
+   NOTHING. A refused save marked the tab, wrote the summary and lit the head chip, and the empty
+   field it was all pointing at looked exactly like a field nobody had touched.
+
+   The reason is weight, not a typo. tendi-skin.css normalises the legacy bootstrap field units it
+   moves into a card with `.tendi-skin #tndDrawer .vB-editcard .form-group input[type=text]`, which
+   carries an id AND an attribute, so it outweighs a rule made only of classes. The rule above
+   matched the element and lost: the empty Name input on a refused Branch save computed to
+   rgba(95, 67, 178, .2), the ordinary edge colour. The focus pair loses the same way, to
+   `... .form-group input:focus`, which sets border-color to var(--primary): without the second
+   block a field would turn violet the moment the user clicked into it to fix it, which is the one
+   moment it most needs to still read as wrong.
+
+   So these carry the same id plus one more class. They are ADDITIONS rather than edits to the pair
+   above, because that pair is what still does the work on the standalone add/edit page
+   (`.tnd-form-page`), where there is no #tndDrawer and no .vB-editcard and nothing outweighs it.
+   `input:not(...)` stands in for the seven typed selectors the skin lists, minus the three kinds of
+   control that have no border to tint.
+
+   This repairs the child form too, which is where the feature shipped and which has only ever had
+   the losing rule. Nothing here changes what is MARKED, only whether the mark is visible. */
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing .form-control,
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing .tnd-select-trigger,
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing textarea,
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing
+  input:not([type=checkbox]):not([type=radio]):not([type=hidden]) {
+  border-color: var(--critical);
+  background: var(--critical-tint);
+}
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing .form-control:focus,
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing .tnd-select-trigger:focus,
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing textarea:focus,
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing
+  input:not([type=checkbox]):not([type=radio]):not([type=hidden]):focus {
+  border-color: var(--critical);
+  background: var(--paper-2);
+  box-shadow: 0 0 0 3px rgba(217, 69, 56, 0.16);
+}
+/* ...but not into the dropdown's own machinery. `.tnd-enroll-missing` marks the whole field group,
+   and TndSelect builds its widget as a SIBLING of the select inside that same group, search box
+   included (`.tnd-select-search input`, tendi-dropdown.js). The `input` selector above therefore
+   reaches it, and a required Branch nobody has picked yet turned the menu's own Search field red,
+   which says the search box is the thing that is wrong. The trigger is the control here; the menu
+   is a way of operating it. Only shows up once a select has enough options to render the search
+   row at all, which is why a short local list would never surface it.
+
+   The `:not()` chain is repeated rather than dropped, and that is the load-bearing part: each
+   `:not(...)` counts toward weight, so the shorter selector this was first written with came out
+   lighter than the rule it had to beat and measured as still red. */
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing .tnd-select-menu
+  input:not([type=checkbox]):not([type=radio]):not([type=hidden]),
+.tendi-skin #tndDrawer .tnd-enroll-armed .vB-editcard .tnd-enroll-missing .tnd-select-menu
+  input:not([type=checkbox]):not([type=radio]):not([type=hidden]):focus {
+  border-color: var(--paper-edge-strong);
+  background: var(--paper-2);
+  box-shadow: none;
+}
+
+/* THE USERS PANE, whose inputs are not .form-control.
+   Every rule above reaches its control through `.form-control` or `.tnd-select-trigger`, which is
+   what the record drawer and the standalone form pages render. The Users pane is older markup:
+   `<div class="field"><label class="field-label">…</label><input name="uname"></div>`, with no
+   bootstrap class on the input at all, so none of the above touches it and a refused save would
+   have marked the field group and painted nothing.
+   Scoped to #tndUserPane rather than widened globally, because a bare `input` selector at this
+   weight would reach into every other surface's widgets. Checkboxes, radios and the hidden
+   plumbing are excluded for the same reason they are above: they have no border to tint, and an
+   unchecked box is an answer rather than an omission. */
+.tendi-skin #tndUserPane .tnd-enroll-armed .tnd-enroll-missing input:not([type=checkbox]):not([type=radio]):not([type=hidden]),
+.tendi-skin #tndUserPane .tnd-enroll-armed .tnd-enroll-missing select,
+.tendi-skin #tndUserPane .tnd-enroll-armed .tnd-enroll-missing textarea {
+  border-color: var(--critical);
+  background: var(--critical-tint);
+}
+.tendi-skin #tndUserPane .tnd-enroll-armed .tnd-enroll-missing input:not([type=checkbox]):not([type=radio]):not([type=hidden]):focus,
+.tendi-skin #tndUserPane .tnd-enroll-armed .tnd-enroll-missing select:focus,
+.tendi-skin #tndUserPane .tnd-enroll-armed .tnd-enroll-missing textarea:focus {
+  border-color: var(--critical);
+  background: var(--paper-2);
+  box-shadow: 0 0 0 3px rgba(217, 69, 56, 0.16);
+}
+
+/* ------------------------------------------------------------------
+   2. THE HINT BOXES, and why they are usually not there
+   Two elements wear this class: one under the waiting-list toggle, one on Parents Details. Both
+   used to be on screen from the moment the form opened, listing what the current status requires.
+   Card https://trello.com/c/Rn6tUAT4 took that away: sixteen field names read out before the
+   first field is a wall, not help, and it was one of the three things the card circled.
+
+   What is left of each:
+     · under the toggle, only the warning that moving an enrolled child to the queue gives up
+       their place, which is a consequence and not a list;
+     · on Parents Details, the "at least one way to reach the family" rule, held back until a save
+       has actually been refused, because that rule belongs to no single field and so has no
+       asterisk anywhere to explain a refusal.
+
+   Both are therefore blank most of the time and have to be able to go away COMPLETELY, which is
+   what the rule below is for: `display: block` further down would otherwise beat the browser's
+   own `[hidden]` rule and leave an empty tinted strip behind.
+   ------------------------------------------------------------------ */
+.tendi-skin .tnd-enroll-hint[hidden],
+.tendi-skin .tnd-enroll-hint-row[hidden] { display: none !important; }
+.tendi-skin .tnd-enroll-hint {
+  display: block;
+  margin: 8px 0 0;
+  padding: 9px 12px;
+  border: 1px solid var(--paper-edge);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-md);
+  background: var(--primary-tint);
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 620px;
+}
+.tendi-skin .tnd-enroll-hint strong { font-weight: 700; color: var(--ink); }
+/* read-only pane: the hint is guidance for someone filling the form in, not a record field */
+.tendi-skin .tnd-pane.is-readonly .tnd-enroll-hint { display: none; }
+
+/* ------------------------------------------------------------------
+   2b. WORDING THAT EXISTS ONLY TO BE READ, never painted
+   The waiting-list switch is labelled with the action it performs ("Add to waiting list"). The
+   read-only pane reuses that same label as the NAME of a record row, where an instruction printed
+   against a Yes/No pill reads as something nobody did. This span carries the statement-of-fact
+   wording for that one reader (fieldToView prefers `.field-label` over `.control-label`, while
+   enhanceToggles reads the two in document order and so keeps the instruction on the switch).
+   The element also carries an inline `display:none`, and that is the one doing the work on the
+   first load after a release: the class is new, so a browser still holding the previous copy of
+   this stylesheet would get the markup without this rule and paint the words next to the switch.
+   Kept here as well so the intent is stated where the rest of the feature's chrome lives.
+   ------------------------------------------------------------------ */
+.tendi-skin .tnd-viewonly-label { display: none !important; }
+
+/* ------------------------------------------------------------------
+   3. TAB COUNTERS
+   After a save has been REFUSED, each tab carries what is holding it up (card
+   https://trello.com/c/Rn6tUAT4). Before that there are no badges at all: tendi-list.js only
+   builds them while the form is armed, so a record does not open covered in counts.
+     .tnd-tab-req  how many REQUIRED fields on that tab are still empty
+     .tnd-tab-opt  how many OPTIONAL fields are still empty (muted: information, not a demand)
+   Numbers only, no glyphs. Each carries a title + aria-label spelling out what it counts, so the
+   number is never ambiguous to a screen reader or to a hovering mouse.
+   ------------------------------------------------------------------ */
+.tendi-skin .tnd-tab-req,
+.tendi-skin .tnd-tab-opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  vertical-align: 1px;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+/* Fallback only. A badge exists solely while the form is armed, and arming also stamps
+   .tnd-enroll-armed on the pane, so in practice the solid rule below is the one that lands. Kept
+   so a badge is never unstyled if those two ever come apart. */
+.tendi-skin .tnd-tab-req {
+  background: var(--critical-tint);
+  color: var(--critical);
+  border: 1px solid rgba(217, 69, 56, 0.28);
+}
+/* the save was refused: solid, so the eye lands on it without a new element appearing */
+.tendi-skin .tnd-enroll-armed .tnd-tab-req {
+  background: var(--critical);
+  color: #fff;
+  border-color: var(--critical);
+}
+.tendi-skin .tnd-tab-opt {
+  background: transparent;
+  color: var(--ink-4);
+  border: 1px solid var(--paper-edge-strong);
+  font-weight: 600;
+}
+/* an active tab's own counters must not out-shout the tab label itself */
+.tendi-skin .tnd-tab.is-active .tnd-tab-opt { color: var(--ink-3); }
+
+/* ------------------------------------------------------------------
+   4. THE SAVE-BLOCKED SUMMARY
+   A single line under the pane head naming every tab that is holding the save up ("2 required on
+   Details, 1 on Parents"). Sticky, because the pane body scrolls and the whole point is that it
+   stays visible while the user walks the tabs fixing things.
+   ------------------------------------------------------------------ */
+.tendi-skin .tnd-enroll-summary {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 0 14px;
+  padding: 10px 13px;
+  border: 1px solid var(--critical);
+  border-radius: var(--radius-md);
+  background: var(--critical-tint);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--critical);
+  font-weight: 600;
+}
+.tendi-skin .tnd-enroll-summary[hidden] { display: none; }
+.tendi-skin .tnd-enroll-summary-ico {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+.tendi-skin .tnd-enroll-summary-ico svg { width: 16px; height: 16px; display: block; }
+.tendi-skin .tnd-enroll-summary-text { min-width: 0; }
+/* jumping between the offending tabs straight from the summary */
+.tendi-skin .tnd-enroll-jump {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.tendi-skin .tnd-enroll-jump:hover { color: var(--ink); }
+.tendi-skin .tnd-pane.is-readonly .tnd-enroll-summary { display: none !important; }
+
+/* ------------------------------------------------------------------
+   5. THE DRAWER HEAD CHIP
+   Sits immediately left of Save and says what is still outstanding, so the count is visible from
+   the one place the user is looking when they decide to save. Fixed head = always on screen,
+   whatever tab is open and however far the body has scrolled.
+   ------------------------------------------------------------------ */
+.tendi-skin .tnd-enroll-outstanding {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  margin-right: 2px;
+  border: 1px solid rgba(217, 69, 56, 0.30);
+  border-radius: var(--radius-full);
+  background: var(--critical-tint);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--critical);
+  white-space: nowrap;
+}
+.tendi-skin .tnd-enroll-outstanding[hidden] { display: none; }
+.tendi-skin .tnd-enroll-outstanding svg { width: 13px; height: 13px; flex: 0 0 auto; }
+/* everything-filled state: the same chip, in the "nothing owing" voice */
+.tendi-skin .tnd-enroll-outstanding.is-clear {
+  border-color: rgba(31, 122, 77, 0.28);
+  background: var(--ok-tint);
+  color: var(--ok);
+}
+/* the head chip belongs to editing; the read-only pane has no Save to qualify */
+.tendi-skin .tnd-pane.is-readonly .tnd-enroll-outstanding { display: none !important; }
+
+/* narrow pane / phone: the head is tight enough without a chip competing with Save */
+@media (max-width: 560px) {
+  .tendi-skin .tnd-enroll-outstanding { display: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+   Custom dropdowns inside the lifecycle modals (Enroll, Remove from waiting
+   list, Enrollment history).
+
+   Those modals deliberately live OUTSIDE `.tendi-skin`, because as descendants
+   they picked up the skin's own styling and the list page collapses what
+   follows its container (see the note in children_manage.php). The whole
+   TndSelect stylesheet is scoped `.tendi-skin ...`, so out there the enhanced
+   dropdown loses the one rule that matters most: its menu is never collapsed.
+   Every enhanced select in those modals therefore rendered with its full option
+   list permanently expanded, reported as `display: block` while
+   `aria-expanded="false"`.
+
+   Pre-existing for the Class and Reason pickers; the Tuition type picker added
+   for §7B inherited it. Mirrored here rather than widening the rule in
+   tendi-skin.css, both to keep the blast radius at these modals and because
+   that file is being edited by other work right now.
+   --------------------------------------------------------------------------- */
+.tnd-modal .tnd-select { position: relative; width: 100%; }
+.tnd-modal .tnd-select-menu {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 60;
+  display: none; flex-direction: column; max-height: 320px;
+  background: var(--paper-2, #fff); border: 1px solid var(--paper-edge, #e6e3f2);
+  border-radius: 12px; box-shadow: var(--shadow-overlay-sm, 0 8px 24px rgba(24, 18, 48, .14));
+  padding: 6px; overflow: auto;
+}
+.tnd-modal .tnd-select.is-open .tnd-select-menu { display: flex; }
+.tnd-modal .tnd-select.is-up .tnd-select-menu { top: auto; bottom: calc(100% + 6px); }
+.tnd-modal .tnd-option.is-placeholder { display: none !important; }
+
+/* ---------------------------------------------------------------------------
+   Status pill states for the lifecycle (§7B).
+
+   The pill used to render `children.status`, so every row on the Waiting list
+   view read "Active": true of the record, and useless to someone who can
+   already see which list they are looking at. It says where the child is now.
+
+   Base `.tnd-st` and its active/inactive/trash variants live in
+   tendi-children.css; these are the additive states, kept here so that file
+   does not have to change.
+   --------------------------------------------------------------------------- */
+.tendi-skin .tnd-st.is-waitlist { color: var(--primary); background: var(--primary-tint); }
+.tendi-skin .tnd-st.is-future   { color: var(--info);    background: var(--info-tint); }
+.tendi-skin .tnd-st.is-pending  { color: var(--info);    background: var(--info-tint); }
+/* Left and Past are both "no longer with us": quiet, not alarming. Red is for
+   trashed, which is a thing somebody did, not a date passing. */
+.tendi-skin .tnd-st.is-ended    { color: var(--ink-3);   background: var(--cream-2); }
+.tendi-skin .tnd-st.is-past     { color: var(--ink-3);   background: var(--cream-2); }
+
+/* ------------------------------------------------------------------
+   6. THE ENROLL CALL TO ACTION, on the profile of a child who is waiting
+
+   Reported from the field: "There should be a very visible ENROLL child on
+   every waitlist child profile." There was none. Enroll lived in exactly one
+   place, the row kebab on the Children list, so from inside a child's own
+   record the only route to a place was to find the enroll/waiting-list toggle,
+   untick it, notice that Branch, Class and Join date had appeared, fill all
+   three and Save. The word "Enroll" did not appear on this screen at all.
+
+   Deliberately the loudest thing on the form: primary tint, a primary rule down
+   the leading edge and a filled button, because it is the one action the whole
+   waiting list exists to produce. It sits above every field, so it is the first
+   thing read on opening a waiting child.
+
+   No `translateY` on hover (house rule) and no glyph icons: the mark is an
+   inline SVG inheriting currentColor, like every other icon in the skin.
+   ------------------------------------------------------------------ */
+.tendi-skin .tnd-enroll-cta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--paper-edge);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-md);
+  background: var(--primary-tint);
+  font-family: var(--font-sans);
+}
+.tendi-skin .tnd-enroll-cta__ico {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--paper-2);
+  color: var(--primary);
+}
+.tendi-skin .tnd-enroll-cta__ico svg { width: 19px; height: 19px; }
+.tendi-skin .tnd-enroll-cta__text { flex: 1 1 auto; min-width: 0; }
+.tendi-skin .tnd-enroll-cta__text strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tendi-skin .tnd-enroll-cta__text span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.tendi-skin .tnd-enroll-cta .tnd-enroll-cta__go { flex: none; }
+
+/* Read-only pane: Enroll is an action, and the read-only pane offers none. The
+   sentence above it would then be describing a button that is not there, so the
+   whole block goes rather than just the button. */
+.tendi-skin .tnd-pane.is-readonly .tnd-enroll-cta { display: none; }
+
+/* Narrow pane: stack rather than squeeze the button to nothing. */
+@media (max-width: 560px) {
+  .tendi-skin .tnd-enroll-cta { flex-wrap: wrap; }
+  .tendi-skin .tnd-enroll-cta__text { flex: 1 1 100%; order: 2; }
+  .tendi-skin .tnd-enroll-cta .tnd-enroll-cta__go { order: 3; width: 100%; }
+}

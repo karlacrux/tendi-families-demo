@@ -1,0 +1,143 @@
+/* ============================================================
+   TENDI TOAST: token-driven restyle of Notyf (the vendored toast lib).
+   ------------------------------------------------------------
+   Pairs with assets/admin/js/tendi-toast.js (registers the types +
+   exposes window.tndToast + shims the legacy jAlert).
+
+   These toasts portal to <body> (outside any .tendi-skin wrapper), so
+   the rules below are scoped to Notyf's own classes (.notyf*) plus our
+   own .tnd-toast--* classes. They target nothing else in the app, so
+   loading this globally cannot leak into a legacy page (§7 contract).
+
+   Look: a calm, FLAT white card (the reskin's "one confident accent"
+   philosophy, not a loud full-bleed colored block) with a single
+   colored icon chip carrying the severity. Tokens are the single source
+   of truth; severity colour is driven by ONE local custom property
+   (--toast-accent) per type, mirroring the --note pattern in §17.
+   ============================================================ */
+
+/* ---- container: bottom-center, above everything (drawer 3010 / legacy modal 99999) ---- */
+.notyf {
+  z-index: 100000;            /* clears the side-pane drawer AND the legacy jAlert modal */
+  padding: 22px;
+  pointer-events: none;
+}
+
+/* ---- the toast card ---- */
+.notyf__toast {
+  --toast-accent: var(--info);          /* default; per-type classes override below */
+  /* A white card on the near-white lavender canvas barely shows. Give each toast a
+     severity-tinted wash + a matching coloured edge so it reads as its colour at a
+     glance and lifts clearly off the page: all driven by --toast-accent. */
+  background: color-mix(in srgb, var(--toast-accent) 12%, var(--paper-2));
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--toast-accent) 38%, transparent);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-overlay);
+  max-width: 420px;
+  min-width: 300px;
+  padding: 0;                            /* padding lives on the wrapper */
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+.notyf__toast--upper { margin-bottom: 14px; }
+.notyf__toast--lower { margin-top: 14px; }
+
+.notyf__wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 15px 18px;
+}
+
+/* ---- icon chip: filled with the severity colour, white glyph ---- */
+.notyf__icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  border-radius: var(--radius-full);
+  background: var(--toast-accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+.notyf__icon > i { color: #fff; font-size: 16px; line-height: 1; }
+
+/* ---- message ---- */
+.notyf__message {
+  margin: 0;
+  padding-top: 5px;                       /* optically centre one line against the 32px chip */
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ink);
+  letter-spacing: -0.003em;
+  word-break: break-word;
+}
+.notyf__message b, .notyf__message strong { color: var(--ink); font-weight: 600; }
+
+/* ---- dismiss (×): subtle ink, not Notyf's dark block ---- */
+.notyf__toast--dismissible .notyf__wrapper { padding-right: 42px; }
+/* Notyf base gives .notyf__dismiss `margin-right:-15px` to overhang into the toast's
+   old side padding (which we removed), that pushed the × half-outside the card. Pin it
+   back inside. */
+.notyf__dismiss { width: 40px; margin-right: 0; }
+.notyf__dismiss-btn {
+  background: transparent;
+  opacity: 1;
+  transition: background-color 0.16s ease;
+}
+.notyf__dismiss-btn:hover { background: var(--cream-2); }
+.notyf__dismiss-btn:active { background: var(--cream-3); }
+.notyf__dismiss-btn:before,
+.notyf__dismiss-btn:after { background: var(--ink-4); height: 11px; }
+.notyf__dismiss-btn:hover:before,
+.notyf__dismiss-btn:hover:after { background: var(--ink-2); }
+
+/* ---- severity palette: one custom property per type drives the chip ---- */
+.notyf__toast.tnd-toast--success { --toast-accent: var(--ok); }
+.notyf__toast.tnd-toast--error   { --toast-accent: var(--critical); }
+.notyf__toast.tnd-toast--warning { --toast-accent: var(--attention); }
+.notyf__toast.tnd-toast--info    { --toast-accent: var(--info); }
+.notyf__toast.tnd-toast--default { --toast-accent: var(--primary); }
+
+/* ripple is disabled in JS; hide defensively so a stray one never shows */
+.notyf__ripple { display: none !important; }
+
+/* ---- small screens: keep the card look (Notyf squares it off by default) ---- */
+@media only screen and (max-width: 480px) {
+  .notyf { padding: 12px; }
+  .notyf__toast {
+    width: 100%;
+    max-width: none;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-overlay);
+  }
+}
+
+/* ---- respect reduced motion: Notyf animates icon/message/dismiss in from opacity:0,
+        so suppressing the motion must also force them visible ----
+   ⚠ Do NOT use `animation: none` here. Notyf removes a dismissed toast ONLY from its
+   `animationend` listener (view.removeNotification adds .notyf__toast--disappear and waits
+   for the event). With the animation removed the event never fires, so every toast stayed
+   on screen forever for anyone with "reduce motion" enabled. Collapse the DURATION instead.
+   The motion is imperceptible but the event still fires and the node is still removed. */
+@media (prefers-reduced-motion: reduce) {
+  .notyf__toast,
+  .notyf__toast .notyf__icon,
+  .notyf__toast .notyf__message,
+  .notyf__toast .notyf__dismiss {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .notyf__toast .notyf__icon,
+  .notyf__toast .notyf__message,
+  .notyf__toast .notyf__dismiss { opacity: 1 !important; transform: none !important; }
+  /* keep the toast itself visible while it lives, but don't fight the disappear state */
+  .notyf__toast:not(.notyf__toast--disappear) { opacity: 1 !important; transform: none !important; }
+}
