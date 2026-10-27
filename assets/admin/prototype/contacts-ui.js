@@ -101,7 +101,7 @@
       '<div class="pc-why">Removes the link. ' + escape(r.name) + ' stays on file' +
         (r.links > 1 ? ' and keeps ' + (r.links - 1) + ' other link' + (r.links > 2 ? 's' : '') + '.' : '.') +
       '</div>' +
-      '<button type="button" class="danger"' + (canDelete ? '' : ' disabled') + '>Delete this person</button>' +
+      '<button type="button" class="danger"' + (canDelete ? '' : ' disabled') + '>Delete this contact</button>' +
       '<div class="pc-why">' + (canDelete
         ? 'No other family is linked, so the record can go.'
         : 'Blocked: linked to ' + r.links + ' families. Remove the other links first.') +
@@ -122,16 +122,16 @@
     p.setAttribute('data-pc', '1');
     p.innerHTML =
       '<div class="pc-head">' +
-        '<div><b>Contacts</b><span>One row per person. A row marked <i>family</i> reaches every ' +
+        '<div><b>Contacts</b><span>One row per contact. A row marked <i>family</i> reaches every ' +
         'child in the household, including a sibling enrolled later.</span></div>' +
         '<button type="button" class="pc-add">Add contact</button>' +
       '</div>';
     ROWS.forEach(function (r, i) { p.appendChild(rowNode(r, i)); });
     p.appendChild(el('div', 'pc-foot',
       'The pediatrician, the trusted list and the emergency list were three separate places on ' +
-      'this form. They are one list of people now — <b>emergency contact</b> and ' +
+      'this form. They are one list of contacts now — <b>emergency contact</b> and ' +
       '<b>may collect</b> are permissions on the row, not lists of their own, so the grandmother ' +
-      'who is both is one person with two ticks.'));
+      'who is both is one contact with two ticks.'));
     p.querySelector('.pc-add').addEventListener('click', openModal);
     return p;
   }
@@ -154,9 +154,9 @@
             '<i>An exception, alongside the family’s contacts.</i></span></label>' +
           '</div>' +
           '<div class="pc-sec">Who is it? <i>Doctor, grandmother, car service, emergency — all of them start here</i></div>' +
-          '<input class="pc-search" type="search" placeholder="Search by name or phone…" aria-label="Search people">' +
+          '<input class="pc-search" type="search" placeholder="Search by name or phone…" aria-label="Search contacts">' +
           '<div class="pc-results"><div class="pc-hint">Type a name or a number. Try <b>lane</b>, or <b>212</b>.</div></div>' +
-          '<div class="pc-note">Every person is one record, whoever they are. This tenant has ' +
+          '<div class="pc-note">Every contact is one record, whoever they are. This tenant has ' +
           '<b>570 children with a pediatrician named and 36 actual doctors</b> — the search below ' +
           'shows the real names, duplicate spellings and all. That is what linking prevents.</div>' +
         '</div>' +
@@ -191,7 +191,7 @@
     if (!hits.length) {
       out.innerHTML = '<div class="pc-hint">Nobody on file matches.</div>' +
         '<div class="pc-new"><span>Then this is someone new.</span>' +
-        '<button type="button" class="pc-newbtn">Create a new person</button></div>';
+        '<button type="button" class="pc-newbtn">Create a new contact</button></div>';
       return;
     }
 
@@ -206,7 +206,7 @@
         '<button type="button" class="pc-link">Link</button></div>';
     }).join('') +
       '<div class="pc-new"><span>Not one of these?</span>' +
-      '<button type="button" class="pc-newbtn">Create a new person</button></div>';
+      '<button type="button" class="pc-newbtn">Create a new contact</button></div>';
   }
 
   function escape(s) {

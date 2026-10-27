@@ -726,3 +726,200 @@ body:not(.cm-off) #frmAddEditRecord .cm-newblock{
 .reg-strip .reg-pl{color:#9a93ad}
 .reg-strip .reg-pi.done .reg-pl{color:#6b6480}
 .reg-strip .reg-pi.on .reg-pl{color:#5a3fc2}
+
+/* Phones, emails and addresses as lists, each row with a type and one primary
+   (client review, 2026-10-27). Every row has the same two parts: the type and
+   the value on top, and a bottom bar with Primary on the left and Remove on the
+   right, so neither moves between a phone, an email and an address. */
+.cm-reach{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.cm-multi{display:flex;flex-direction:column;gap:6px}
+.cm-mlabel{font-size:11px;font-weight:600;color:#5b5470}
+.cm-mrows{display:flex;flex-direction:column;gap:6px}
+.cm-mrow{background:#fff;border:1px solid rgba(95,67,178,.16);border-radius:9px;overflow:hidden}
+.cm-mmain{display:flex;align-items:center;gap:8px;padding:8px 9px}
+.cm-mrow .form-control{height:32px!important;padding:4px 9px!important;font-size:12.5px!important;margin:0!important}
+.cm-mtype{flex:0 0 104px;width:104px!important}
+.cm-mmain > input{flex:1 1 auto;min-width:0;width:auto!important}
+.cm-maddr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 8px;padding:0 9px 9px}
+.cm-mbar{display:flex;align-items:center;gap:14px;min-height:36px;padding:0 9px 0 10px;
+  background:#faf9fd;border-top:1px solid rgba(95,67,178,.10)}
+.cm-mprim{position:relative;display:inline-flex!important;align-items:center;gap:7px;height:24px;margin:0!important;
+  padding:0!important;border:0!important;background:none!important;box-shadow:none!important;border-radius:0!important;
+  font-size:12px!important;font-weight:500!important;color:#6b6480!important;cursor:pointer;line-height:1!important}
+.cm-mprim input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.cm-mdot{width:15px;height:15px;border-radius:50%;border:1.5px solid rgba(95,67,178,.40);background:#fff;flex-shrink:0;box-sizing:border-box}
+.cm-mprim.on{color:#5a3fc2!important;font-weight:600!important}
+.cm-mprim.on .cm-mdot{border:4.5px solid #5a3fc2}
+.cm-mmsgl{display:inline-flex!important;align-items:center;gap:7px;margin:0!important;font-size:12px;font-weight:500;color:#6b6480}
+.cm-mmsgl .cm-mmsg{width:auto!important;height:26px!important;padding:2px 6px!important;font-size:12px!important}
+.cm-mrm{margin-left:auto;background:none;border:0;padding:4px 0;font-size:12px;font-weight:500;color:#6b6480;cursor:pointer}
+.cm-mrm:hover{color:#a3322a}
+.cm-mfoot{display:flex;gap:16px;align-items:center}
+.cm-madd,.cm-mhh{background:none;border:0;padding:0;font-size:12px;font-weight:600;color:#5a3fc2;cursor:pointer}
+.cm-mhh{color:#6b6480;font-weight:500}
+.cm-mhh:hover{color:#1f1a2e}
+.cm-pall{font-size:11.5px;color:#6b6480;margin:-4px 0 9px 0}
+.cm-chev{width:8px;height:8px;border-right:1.6px solid #6b6480;border-bottom:1.6px solid #6b6480;
+  transform:rotate(-45deg);flex-shrink:0;margin:0 3px}
+.cm-pick.on .cm-chev{transform:rotate(45deg);border-color:#5a3fc2}
+
+/* THE HOUSEHOLD FOUND ON FILE, as one card (client review, 2026-10-27): header,
+   then Household, Children and Contacts as labelled sections divided by rules.
+   .cm-chosen is the top of the card and .cm-parents, straight after it, its end. */
+.cm-chosen{margin-top:12px;padding:0!important;border:1px solid rgba(95,67,178,.20);border-radius:12px;
+  background:#fff;overflow:hidden}
+.cm-chosen .cm-chosenhead{display:flex;align-items:center;gap:11px;margin:0!important;padding:12px 14px;
+  background:#faf9fd;border-bottom:1px solid rgba(95,67,178,.10)}
+.cm-chosenhead .cm-hav{width:34px;height:34px;border-radius:50%;background:#5a3fc2;color:#fff;display:inline-flex;
+  align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.cm-htitle{flex:1 1 auto;min-width:0}
+.cm-htitle b{display:inline!important;font-size:13.5px;font-weight:700;color:#1f1a2e}
+.cm-chosenhead .cm-htitle span{display:block;font-size:11.5px;color:#6b6480;font-weight:500;margin-top:2px}
+.cm-chosen .cm-hacts{align-self:center}
+.cm-hsec{padding:11px 14px 12px;border-bottom:1px solid rgba(95,67,178,.10)}
+.cm-hsec:last-child{border-bottom:0}
+.cm-hsec-label{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#6b6480;margin-bottom:8px}
+.cm-hsec .cm-hread{grid-template-columns:110px 1fr;gap:6px 12px}
+.cm-hkids{display:flex;flex-wrap:wrap;gap:6px}
+.cm-hkid{display:inline-flex;flex-direction:column;padding:5px 10px;border-radius:8px;background:#f6f4fb;
+  border:1px solid rgba(95,67,178,.10)}
+.cm-hkid b{font-size:12px;font-weight:600;color:#1f1a2e}
+.cm-hkid i{font-style:normal;font-size:10.5px;color:#6b6480}
+.cm-parents .cm-pall{margin:-3px 0 10px 0}
+.cm-pick{gap:10px!important;padding:9px 11px!important}
+.cm-pav{width:28px;height:28px;border-radius:50%;background:#eeecfa;color:#5a3fc2;display:inline-flex;
+  align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.cm-pick .cm-permnote{flex-shrink:0;font-size:10.5px;padding:3px 9px}
+.cm-ptag,.cm-vtag{display:inline-block;padding:0 6px;border-radius:999px;background:#f1eff5;color:#6b6480;
+  font-size:10px;font-weight:600;line-height:16px;font-style:normal}
+.cm-pwho .cm-ptag,.cm-fhit .cm-ptag,.cm-lk .cm-ptag{display:inline-block!important;width:auto!important;margin:0 0 0 4px!important;vertical-align:1px}
+.cm-mbar .cm-mprim{gap:0!important;display:inline-flex!important}
+.cm-mbar .cm-mprim > span:last-child{margin-left:7px}
+.cm-mbar .cm-mprim input{width:1px!important;height:1px!important}
+.cm-mbar .cm-mmsgl{gap:7px!important}
+
+/* FEWER BOXES (client review, 2026-10-27). One card per section — Household,
+   Contacts, each parent, More contacts — and nothing boxed inside a card: the
+   household question loses its frame, contacts are rows divided by rules, an
+   opened contact continues under its row, and a phone, email or address is a
+   tinted field group instead of another bordered box. */
+.cm-newblock{border:0!important;background:none!important;padding:0!important;margin:0 0 14px 0!important}
+.cm-newblock .cm-chosen{margin-top:10px}
+.cm-parents:not([hidden]){display:block;background:#fff;border:1px solid rgba(95,67,178,.14);border-radius:12px;
+  padding:14px 16px 6px 16px;margin:0 0 14px 0}
+.cm-parents .cm-pall{margin:-6px 0 6px 0}
+.cm-pickwrap,.cm-pickwrap.open{margin:0!important;border-top:1px solid rgba(95,67,178,.10)}
+.cm-pickwrap:first-child{border-top:0}
+.cm-pickwrap > .cm-pick,.cm-pickwrap.open > .cm-pick{border:0!important;border-radius:0!important;background:none!important;
+  padding:11px 0!important;margin:0!important}
+.cm-pickmore{border:0!important;border-radius:0!important;background:none!important;padding:2px 0 16px 0!important}
+.cm-pickmore .cm-person,.cm-extras .cm-person,.cm-pedi .cm-person{border:0!important;border-radius:0!important;
+  background:none!important;box-shadow:none!important;padding:0!important}
+.cm-extras .cm-person{margin:0!important;padding:14px 0 4px 0!important;border-top:1px solid rgba(95,67,178,.10)!important}
+.cm-extras .cm-extra-remove{top:14px;right:0}
+.cm-mrow{border:0!important;background:#f6f5fa!important;border-radius:8px!important}
+.cm-mrow .form-control{background:#fff!important}
+.cm-mbar{background:none!important;border-top:0!important;min-height:30px!important;padding:0 10px 6px 10px!important}
+.cm-mmain{padding:8px 9px 6px 9px!important}
+.cm-pickwrap.open > .cm-pick .cm-permnote{display:none}
+/* The name of an "Other" phone, email or address, on its own line under the type. */
+.cm-mother{padding:0 9px 6px 9px}
+.cm-mother[hidden]{display:none}
+.cm-mrow--address .cm-mother{padding-bottom:6px}
+
+/* HIERARCHY ON THE FAMILY TAB (client review, 2026-10-27): the household is one
+   block, and EACH CONTACT IS A BLOCK OF ITS OWN at the same level — father,
+   mother, grandmother, pediatrician — under a plain "Contacts" label, never rows
+   inside a shared box. Every block has the same shape: a header (who it is) and a
+   body (its details). "+ Add contact" adds another block to the same column. */
+.cm-parents:not([hidden]){background:none!important;border:0!important;border-radius:0!important;
+  padding:0!important;margin:4px 0 0 0!important}
+.cm-parents > .cm-personhead,.cm-sechead{font-family:"Inter",-apple-system,sans-serif!important;font-size:10px!important;
+  font-weight:700!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:#6b6480!important;
+  margin:6px 0 2px 2px!important}
+.cm-parents .cm-pall{margin:0 0 10px 2px!important}
+.cm-pickwrap,.cm-pickwrap.open,.cm-pickwrap:first-child{border:1px solid rgba(95,67,178,.16)!important;
+  border-radius:12px!important;background:#fff!important;margin:0 0 12px 0!important;overflow:hidden}
+.cm-pickwrap > .cm-pick,.cm-pickwrap.open > .cm-pick{padding:12px 14px!important}
+.cm-pickwrap.open > .cm-pick{background:#faf9fd!important;border-bottom:1px solid rgba(95,67,178,.10)!important}
+.cm-pickwrap > .cm-pickmore{padding:14px 16px 16px!important}
+
+/* More contacts: no frame of its own — its cards join the column above, and Add
+   contact closes it. */
+.cm-others:not(.cm-pedi){background:none!important;border:0!important;padding:0!important;margin:0!important}
+.cm-others:not(.cm-pedi) > .cm-personhead{display:none!important}
+.cm-others:not(.cm-pedi) .cm-extras .cm-person{border:1px solid rgba(95,67,178,.16)!important;border-radius:12px!important;
+  background:#fff!important;padding:14px 16px 15px 16px!important;margin:0 0 12px 0!important}
+.cm-others:not(.cm-pedi) .cm-extras .cm-extra-remove{top:12px;right:14px}
+.cm-others:not(.cm-pedi) .cm-addcontact{display:block;width:100%;margin-top:0;padding:12px;border-radius:12px;
+  font-weight:600}
+/* The Family section's own card is only a frame around those blocks; it goes, so
+   the household and each contact stand directly on the panel. */
+.vB-editcard:has(> .cm-newblock){background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+.vB-editcard:has(> .cm-newblock) > .cm-newblock .cm-chosen,
+.vB-editcard:has(> .cm-newblock) > .cm-hblock{box-shadow:0 1px 2px rgba(31,26,46,.04)}
+.vB-editcard:has(> .cm-newblock) > .cm-others:not(.cm-pedi){border:0!important;padding:0!important;margin:0!important}
+/* A contact being added gets the same header bar as the ones on file. */
+.cm-xhead{margin:-14px -16px 14px -16px;padding:12px 16px;background:#faf9fd;border-bottom:1px solid rgba(95,67,178,.10);
+  font-size:13px;font-weight:600;color:#1f1a2e;border-radius:12px 12px 0 0}
+.cm-xhead{font-family:"Plus Jakarta Sans","Inter",-apple-system,sans-serif}
+.vB-editcard:has(> .cm-newblock) > .cm-hblock > .cm-personhead:first-child{margin:-14px -16px 14px -16px!important;
+  padding:12px 16px;background:#faf9fd;border-bottom:1px solid rgba(95,67,178,.10);border-radius:12px 12px 0 0}
+/* "Copy an address from…": a quiet select beside + Add address. */
+.cm-mfoot .cm-mcopy{width:auto!important;max-width:100%;height:28px!important;padding:2px 26px 2px 9px!important;
+  font-size:12px!important;font-weight:500;color:#5b5470;background-color:#fff;border-radius:8px;margin:0!important}
+.cm-mfoot{flex-wrap:wrap;row-gap:6px}
+.cm-mfoot .cm-mcopy{width:190px!important;flex:0 0 auto}
+
+/* THE HOUSEHOLD IS A BLOCK like each contact (client review, 2026-10-27): white,
+   the same border and corner, a header bar, then its sections. */
+.cm-newblock .cm-chosen,.vB-editcard:has(> .cm-newblock) > .cm-hblock{background:#fff!important;
+  border:1px solid rgba(95,67,178,.16)!important;border-radius:12px!important;overflow:hidden;
+  box-shadow:0 1px 2px rgba(31,26,46,.04)!important}
+.cm-newblock h4{font-family:"Inter",-apple-system,sans-serif!important;font-size:10px!important;font-weight:700!important;
+  letter-spacing:.08em!important;text-transform:uppercase!important;color:#6b6480!important;margin:6px 0 8px 2px!important}
+
+/* The household's phone and address: the same rows as everyone's, with the type
+   "Household" in a fixed chip where a contact has its dropdown. */
+.cm-mfixed{flex:0 0 104px;width:104px;height:32px;display:inline-flex;align-items:center;padding:0 10px;
+  border-radius:999px;background:#eeecfa;color:#5a3fc2;font-size:12px;font-weight:600;box-sizing:border-box}
+.cm-mread .cm-mmain{padding:8px 9px!important}
+.cm-mreadval{font-size:13px;color:#1f1a2e;min-width:0}
+.cm-mreadval i{color:#6b6480}
+.cm-hrows{display:flex!important;flex-direction:column;gap:6px}
+.cm-hrows .cm-mlabel,.cm-hfields .cm-mlabel,.cm-haddrfields .cm-mlabel{margin-top:4px}
+.cm-hfields{display:flex;flex-direction:column;gap:6px}
+.cm-hfields[hidden],.cm-haddrfields[hidden]{display:none!important}
+.cm-haddrfields:not([hidden]){display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.cm-hrowsnew .cm-mbar .tnd-msg-opts{display:flex;margin:0!important}
+.cm-hrowsnew .cm-mmain > input,.cm-hrowsnew .cm-maddr > input{width:100%!important}
+.cm-hrows[hidden]{display:none!important}
+/* The change map's own markers (cm-wave2, cm-out) land on these rows because the
+   real inputs live in them; the rows keep their own shape. */
+.cm-hrowsnew .cm-mrow .cm-mmain{display:flex!important;align-items:center;gap:8px;padding:8px 9px 6px 9px!important;
+  margin:0!important;border:0!important;background:none!important;outline:0!important;box-shadow:none!important}
+.cm-hrowsnew .cm-mrow .cm-maddr{display:grid!important;padding:0 9px 9px!important;margin:0!important;border:0!important;
+  background:none!important;outline:0!important;box-shadow:none!important}
+.cm-hrowsnew .cm-mbar .tnd-msg-opts{padding:0!important;border:0!important;background:none!important;outline:0!important}
+.cm-hrowsnew .cm-mbar{padding:0 10px 8px 10px!important}
+
+/* Family on file: the household block in the New family block's shape — a
+   "Household" header bar, then which household, then Address and Phone rows. */
+.cm-chosen .cm-chosenhead{padding:12px 16px!important}
+.cm-chosen .cm-htitle b{font-family:'Plus Jakarta Sans',"Inter",-apple-system,sans-serif;font-size:13.5px!important;font-weight:700}
+.cm-chosen .cm-hsec{padding:14px 16px 15px!important}
+.cm-hnameline{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cm-hnameline .cm-hav{width:30px;height:30px;border-radius:50%;background:#5a3fc2;color:#fff;display:inline-flex;
+  align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.cm-hnameline b{display:block;font-size:13px;font-weight:600;color:#1f1a2e}
+.cm-hmeta{display:block;font-size:11.5px;color:#6b6480;margin-top:1px}
+.cm-hphonefields[hidden]{display:none!important}
+.cm-hphonefields:not([hidden]){display:flex;flex-direction:column;gap:6px;margin-top:6px}
+
+/* Stronger than the change map's form-level rules (#frmAddEditRecord …), which
+   flattened the found household and framed the choice with a green stripe. */
+#frmAddEditRecord .cm-newblock .cm-chosen{background:#fff!important;border:1px solid rgba(95,67,178,.16)!important;
+  border-radius:12px!important;padding:0!important;margin-top:10px!important;overflow:hidden;
+  box-shadow:0 1px 2px rgba(31,26,46,.04)!important}
+body:not(.cm-off) #frmAddEditRecord .vB-editcard .cm-newblock,
+#frmAddEditRecord .vB-editcard .cm-newblock{box-shadow:none!important;padding-left:0!important}

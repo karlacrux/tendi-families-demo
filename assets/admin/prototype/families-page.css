@@ -400,3 +400,39 @@ html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
 .fam-crow.is-editing .fam-crow-facts{display:none}
 /* Edit contact: each family is a block like a contact in Edit household. */
 .fam-plink.fam-crow{display:block;padding:12px 14px;border:1px solid var(--paper-edge,rgba(95,67,178,.13));border-bottom:1px solid var(--paper-edge,rgba(95,67,178,.13));margin-bottom:10px}
+
+/* The kind of every phone, email and address, after its value (client review). */
+.fam-type{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:#f1eff5;
+  color:#6b6480;font-size:10.5px;font-weight:600;line-height:17px;vertical-align:1px;white-space:nowrap}
+.fam-addr:has(.fam-addr-t){display:flex;align-items:center;min-width:0}
+.fam-addr-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.fam-addr .fam-type{flex-shrink:0}
+.fam-sub-ph,.fam-phone{display:inline-flex;align-items:center}
+
+/* Edit household: the section is the card; its contacts are rows divided by a
+   rule, not boxes inside it (client review, 2026-10-27). */
+.fam-portal .fam-crow,.fam-portal .fam-cnew{border:0;border-radius:0;background:none;padding:14px 0;margin:0;
+  border-top:1px solid var(--paper-edge,rgba(95,67,178,.10))}
+.fam-portal .vB-editcard > .fam-crow:first-child,.fam-portal .vB-editcard > .fam-cnew:first-child,
+.fam-portal .fam-plinks > .fam-plink:first-child{border-top:0;padding-top:2px}
+.fam-portal .fam-crow-card{border-top:0;padding-top:4px}
+
+/* Edit household and Edit contact: the same hierarchy as the child's Family tab —
+   each contact (or each family a contact is in) is a block of its own under the
+   section label, not a row inside a shared card (client review, 2026-10-27). */
+.fam-portal .vB-editcard.fam-clist-parents,.fam-portal .vB-editcard.fam-clist,.fam-portal .vB-editcard.fam-plinks{
+  background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+.fam-portal .fam-crow,.fam-portal .fam-cnew,
+.fam-portal .vB-editcard > .fam-crow:first-child,.fam-portal .vB-editcard > .fam-cnew:first-child,
+.fam-portal .fam-plinks > .fam-plink:first-child{border:1px solid var(--paper-edge,rgba(95,67,178,.16));
+  border-radius:12px;background:var(--paper-2,#fff);padding:0;margin:0 0 12px 0;overflow:hidden}
+.fam-portal .fam-crow-main,.fam-portal .fam-cnew-head{padding:12px 14px;margin:0;background:#faf9fd;
+  border-bottom:1px solid var(--paper-edge,rgba(95,67,178,.10))}
+.fam-portal .fam-crow-card{padding:14px 16px 16px;margin:0}
+.fam-portal .fam-cnew > .cm-extra{padding:14px 16px 16px}
+.fam-portal .fam-crow-facts{padding:0 14px 12px}
+.fam-portal .fam-cadd,.fam-portal .fam-padd-btn{width:100%;justify-content:center}
+.fam-hhrows{margin-top:12px}
+/* The households list's Phone column is narrow: the type sits under the number. */
+.fam-row:not(.fam-row--people) > .fam-phone{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1.25}
+.fam-row:not(.fam-row--people) > .fam-phone .fam-type{margin-left:0}

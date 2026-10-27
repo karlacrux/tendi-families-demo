@@ -265,8 +265,8 @@
           '<b>' + esc(f.n) + '</b>' +
         '</span>' +
         parentsCell(f) +
-        '<span class="fam-addr">' + (f.a ? esc(f.a) : '<i class="blank">no address</i>') + '</span>' +
-        '<span class="fam-phone' + (f.p ? '' : ' none') + '">' + (f.p ? esc(f.p) : 'not on file') + '</span>' +
+        '<span class="fam-addr">' + (f.a ? '<span class="fam-addr-t">' + esc(f.a) + '</span>' + typeTag('Household') : '<i class="blank">no address</i>') + '</span>' +
+        '<span class="fam-phone' + (f.p ? '' : ' none') + '">' + (f.p ? esc(f.p) + typeTag('Household') : 'not on file') + '</span>' +
         kidsCell(f) +
         '<span class="fam-act"><span class="tnd-rowmenu">' +
           '<button type="button" class="tnd-kebab" aria-label="Actions for the ' + esc(f.n) + ' household" ' +
@@ -305,9 +305,22 @@
   }
 
   function emailCell(c, cls) {
-    if (!c.e) return '<span class="' + cls + ' none">no email</span>';
-    return '<span class="' + cls + '" title="' + esc(c.e) + '">' + esc(c.e) +
+    var m = mainOf(c, 'email');
+    if (!m) return '<span class="' + cls + ' none">no email</span>';
+    return '<span class="' + cls + '" title="' + esc(m.value + ' \u00b7 ' + m.type) + '">' + esc(m.value) + typeTag(m.type) +
       '</span>';
+  }
+  // A contact's main phone / email / address — the primary one, else the first.
+  function mainOf(c, kind, f) {
+    var it = listsOf(c, f)[kind];
+    return it.filter(function (x) { return x.primary; })[0] || it[0] || null;
+  }
+  // Every phone, email and address on screen says what kind it is (client review).
+  function typeTag(t) { return t ? '<small class="fam-type">' + esc(t) + '</small>' : ''; }
+  function phoneCell(c, cls, none) {
+    var m = mainOf(c, 'phone');
+    return m ? '<span class="' + cls + '">' + esc(m.value) + typeTag(m.type) + '</span>'
+             : '<span class="' + cls + ' none">' + none + '</span>';
   }
 
   // The tables' own row menu (⋮), on every member row too: one way to act on a row.
@@ -325,11 +338,10 @@
         '<span class="fam-sub-who"><span class="fam-sub-av ' + acc(c.n) + '">' + esc(initials(c.n)) + '</span>' +
           '<span class="fam-sub-nm"><b>' + esc(c.n) + '</b><small>' + esc(c.t) + '</small></span></span>' +
         '<span class="fam-sub-badge">' + badge(c) + '</span>' +
-        '<span class="fam-sub-ph' + (c.p ? '' : ' none') + '">' + (c.p ? esc(c.p) : 'no phone') + '</span>' +
+        phoneCell(c, 'fam-sub-ph', 'no phone') +
         emailCell(c, 'fam-sub-em') +
-        // The prototype's links are all household-wide (child_id NULL); a link set
-        // for some children only would name them here ("for Clara, Gabe").
-        '<span class="fam-sub-scope">' + (c.only ? 'for ' + esc(c.only) : 'Whole household') + '</span>' +
+        // Every contact applies to the whole family (client review, 2026-10-27).
+        '<span class="fam-sub-scope">Whole household</span>' +
         '<span class="fam-sub-go">' + subKebab('data-person="' + esc(pkey(c)) + '"', c.n) + '</span>' +
       '</div>';
     };
@@ -460,7 +472,8 @@
     return persons().filter(function (p) {
       if (STATE.filter !== 'all' && !inFilter(p, STATE.filter)) return false;
       if (!q) return true;
-      var hay = [p.c.n, p.c.p, p.c.p2, p.c.e].concat(p.links.map(function (l) { return l.f.n; })).join(' ').toLowerCase();
+      var ls = listsOf(p.c);
+      var hay = [p.c.n, p.c.p, p.c.p2, p.c.e].concat(ls.phone.concat(ls.email).map(function (x) { return x.value; })).concat(p.links.map(function (l) { return l.f.n; })).join(' ').toLowerCase();
       return hay.indexOf(q) !== -1;
     }).sort(function (a, b) { return (b.links.length - a.links.length) || String(a.c.n).localeCompare(String(b.c.n)); });
   }
@@ -479,7 +492,7 @@
       '<span class="fam-hh" title="' + esc(p.links.map(function (l) { return l.f.n; }).join(', ')) + '">' +
         (hh === 1 ? esc(p.links[0].f.n) : '<b>' + hh + '</b> households') + '</span>' +
       '<span class="fam-kids"><i class="fam-kidn">' + p.kids + '</i></span>' +
-      '<span class="fam-phone' + (c.p ? '' : ' none') + '">' + (c.p ? esc(c.p) : 'not on file') + '</span>' +
+      phoneCell(c, 'fam-phone', 'not on file') +
       emailCell(c, 'fam-email') +
       '<span class="fam-act"><span class="tnd-rowmenu">' +
         '<button type="button" class="tnd-kebab" aria-label="Actions for ' + esc(c.n) + '" ' +
@@ -621,9 +634,8 @@
         vRow(DI.person, c.t, c.n).replace('<div class="vB-row"', '<a class="vB-row vB-row--action fam-toperson" data-person="' +
           esc(pkey(c)) + '" href="javascript:void(0);"').replace(/<\/div>$/, DI.cta + '</a>') +
         vRow(DI.group, 'What they may do', { full: 'Full permission', limited: 'Limited permission', none: 'No permission' }[lv]) +
-        vRow(DI.group, 'Applies to', c.only ? c.only : 'Every child') +
-        vRow(DI.phone, 'Phone', c.p, tel(c.p)) +
-        vRow(DI.person, 'Email', c.e, c.e ? 'mailto:' + c.e : '') +
+        primaryRow(listsOf(c, f).phone, 'phone') +
+        primaryRow(listsOf(c, f).email, 'email') +
       '</div>';
     };
 
@@ -649,8 +661,8 @@
           '</section>' +
           group('Household',
             '<div class="vB-list">' +
-              vRow(DI.home, 'Address', addr) +
-              vRow(DI.phone, 'Household phone', f.p, tel(f.p)) +
+              vRow(DI.home, 'Address \u00b7 Household', addr) +
+              vRow(DI.phone, 'Phone \u00b7 Household', f.p, tel(f.p)) +
             '</div>') +
           group('Children', '<div class="vB-list">' + childRows + '</div>') +
           (parents.length ? group('Parents', parents.map(personCard).join('')) : '') +
@@ -685,6 +697,31 @@
   function personAddress(c, f) {
     if (c.addr) return c.addr;
     return f && f.a ? 'Lives at the household address · ' + String(f.a).replace(/,?\s*USA$/i, '') : '';
+  }
+
+  /* A contact's phones, emails and addresses as lists (client review, 2026-10-27):
+     each with a type, one primary. The mock contacts carry p / p2 / e / addr, so
+     those are read as lists until a card saves real ones. */
+  var PERSON_KEYS = ['n', 'p', 'p2', 'e', 'msg', 'addr', 'occ', 'emp', 'phones', 'emails', 'addrs'];
+  function listsOf(c, f) {
+    var hh = f ? String(f.a || '').replace(/,?\s*USA$/i, '') : '';
+    return window.cmMulti ? window.cmMulti.items(c, hh) : { phone: [], email: [], address: [] };
+  }
+  var LIST_NAME = { phone: 'Phone', email: 'Email', address: 'Address' };
+  function listLabel(kind, x, withPrimary) {
+    return [LIST_NAME[kind], x.type, withPrimary && x.primary ? 'primary' : '',
+            x.msg && x.msg !== 'None' ? x.msg : ''].filter(Boolean).join(' \u00b7 ');
+  }
+  function listHref(kind, v) { return kind === 'phone' ? tel(v) : kind === 'email' ? 'mailto:' + v : ''; }
+  function listRows(items, kind) {
+    var ico = kind === 'address' ? DI.home : kind === 'phone' ? DI.phone : DI.person;
+    if (!items.length) return vRow(ico, LIST_NAME[kind], '');
+    return items.map(function (x) { return vRow(ico, listLabel(kind, x, items.length > 1), x.value, listHref(kind, x.value)); }).join('');
+  }
+  function primaryRow(items, kind) {
+    var x = items.filter(function (i) { return i.primary; })[0] || items[0];
+    var ico = kind === 'phone' ? DI.phone : DI.person;
+    return x ? vRow(ico, listLabel(kind, x, false), x.value, listHref(kind, x.value)) : vRow(ico, LIST_NAME[kind], '');
   }
 
   function openPerson(p) {
@@ -734,15 +771,13 @@
           '</section>' +
           group('Details',
             '<div class="vB-list">' +
-              vRow(DI.phone, 'Phone', c.p, tel(c.p)) +
-              vRow(DI.phone, 'Phone 2', c.p2, tel(c.p2)) +
-              vRow(DI.person, 'Email', em, c.e ? 'mailto:' + c.e : '') +
-              vRow(DI.person, 'Messages', c.msg || '') +
-              vRow(DI.home, 'Address', personAddress(c, f0)) +
+              listRows(listsOf(c, f0).phone, 'phone') +
+              listRows(listsOf(c, f0).email, 'email') +
+              listRows(listsOf(c, f0).address, 'address') +
               vRow(DI.group, 'Work', [c.occ, c.emp].filter(Boolean).join(' · ')) +
             '</div>') +
           group('Linked to', linked +
-            '<p class="fam-panel-note">What they may do for one child is set on that child’s Family tab.</p>') +
+            '<p class="fam-panel-note">The relationship and what they may do are set per family, for every child in it.</p>') +
         '</div></div>' +
       '</aside>';
     document.body.appendChild(portal);
@@ -765,9 +800,7 @@
   function applyPerson(p, v) {
     p.links.forEach(function (l) {
       var c = l.c;
-      c.n = v.n; c.p = v.p; c.p2 = v.p2; c.msg = v.msg;
-      c.e = v.e;
-      c.addr = v.addr; c.occ = v.occ; c.emp = v.emp;
+      PERSON_KEYS.forEach(function (k) { c[k] = v[k]; });
     });
   }
 
@@ -820,7 +853,8 @@
           if (window.tndToast) window.tndToast.error('Choose their relationship in each household.');
           return false;
         }
-        var who = { n: r.n, p: r.p, p2: r.p2, e: r.e, msg: r.msg, addr: r.addr, occ: r.occ, emp: r.emp };
+        var who = {};
+        PERSON_KEYS.forEach(function (k) { who[k] = r[k]; });
         applyPerson(p, who);
         var added = 0, removed = 0;
         rows.forEach(function (row) {
@@ -830,12 +864,12 @@
             if (row.classList.contains('is-removed')) {
               l.f.contacts = (l.f.contacts || []).filter(function (x) { return x !== l.c; });
               removed++;
-            } else { l.c.t = type; l.c.only = lv.only; if (lv.perm) l.c.perm = lv.perm; }
+            } else { l.c.t = type; if (lv.perm) l.c.perm = lv.perm; }
           } else if (!row.classList.contains('is-removed')) {
             var f = (FAMILIES || [])[+key.slice(3)];
             if (!f) return;
-            var nc = { t: type, on: false, only: lv.only, perm: lv.perm };
-            ['n', 'p', 'p2', 'e', 'msg', 'addr', 'occ', 'emp'].forEach(function (k) { nc[k] = who[k]; });
+            var nc = { t: type, on: false, perm: lv.perm };
+            PERSON_KEYS.forEach(function (k) { nc[k] = who[k]; });
             f.contacts = (f.contacts || []).concat([nc]);
             added++;
           }
@@ -854,14 +888,6 @@
       var nameGrid = card.querySelector('[data-part="name"]');
       while (nameGrid && nameGrid.previousElementSibling) nameGrid.previousElementSibling.remove();
       portal.querySelector('.fam-pcardhost').appendChild(card);
-      var hs = card.querySelector('.cm-hsum');
-      if (hs) {
-        var txt = hs.getAttribute('data-fam-addr') || '';
-        var syncHs = function () { hs.textContent = txt || 'No household address yet.'; };
-        syncHs();
-        var cb = card.querySelector('.cm-same input');
-        if (cb) cb.addEventListener('change', function () { setTimeout(syncHs, 0); });
-      }
     }
 
     var links = portal.querySelector('.fam-plinks'), addWrap = portal.querySelector('.fam-padd');
@@ -944,13 +970,11 @@
   // A family link's values, read from its card: relationship, children, permission.
   function linkVals(row) {
     var card = row.querySelector('.cm-extra');
-    if (!card) return { t: '', only: '', perm: '' };
+    if (!card) return { t: '', perm: '' };
     var sel = card.querySelector('.cm-ptype select');
-    var some = card.querySelector('.fam-scope input[value="some"]:checked');
     var note = card.querySelector('.cm-permnote');
     return {
       t: sel && sel.value ? typeText(sel.value) : '',
-      only: some ? [].map.call(card.querySelectorAll('.fam-scope-kids input:checked'), function (x) { return x.value; }).join(', ') : '',
       perm: note && /\b(full|limited|none)\b/.test(note.className) ? note.className.match(/\b(full|limited|none)\b/)[1] : ''
     };
   }
@@ -1078,65 +1102,37 @@
         '<button type="button" class="fam-cremove" title="Takes them out of this household only; they stay in their other families">Remove</button>' +
       '</div>' +
       '<div class="fam-crow-facts">' +
-        '<span class="fam-reach">' + esc(reachText(c)) + '</span>' +
-        '<span>' + (c.p ? esc(c.p) : '<i>No phone</i>') + '</span>' +
-        '<span>' + (c.e ? esc(c.e) : '<i>No email</i>') + '</span>' +
+        (function () { var m = mainOf(c, 'phone'); return '<span>' + (m ? esc(m.value) + typeTag(m.type) : '<i>No phone</i>') + '</span>'; })() +
+        (function () { var m = mainOf(c, 'email'); return '<span>' + (m ? esc(m.value) + typeTag(m.type) : '<i>No email</i>') + '</span>'; })() +
       '</div>' +
       '<div class="fam-crow-card"></div>' +
     '</div>';
   }
 
-  // Which children a household contact reaches: all of them (the link has no
-  // child), or the ones named. "for Clara, Gabe" is how the expanded row says it.
-  function reachText(c) { return c.only ? 'Reaches ' + c.only : 'Reaches every child'; }
+  /* No "Applies to" here any more (client review, 2026-10-27): a household's
+     contact applies to every child in it, so the card has no scope choice. */
 
-  /* APPLIES TO, for a household. On a child's form the choice is "this child only"
-     or the whole family; here there is no "this child", so it is the whole family
-     or only some of its children, ticked by name. */
-  function scopeBlock(f, c, key) {
-    var names = kids(f), only = c && c.only ? c.only.split(/\s*,\s*/) : [];
-    var some = only.length > 0;
-    return '<div class="cm-scope fam-scope">' +
-      '<div class="cm-plabel">Applies to</div>' +
-      '<div class="cm-scope-opts">' +
-        '<label class="' + (some ? '' : 'on') + '"><input type="radio" name="fam-scope-' + key + '" value="all"' + (some ? '' : ' checked') + '>' +
-          '<span>Whole ' + esc(f.n) + ' family \u00b7 ' + f.c + (f.c === 1 ? ' child' : ' children') + '</span></label>' +
-        '<label class="' + (some ? 'on' : '') + '"><input type="radio" name="fam-scope-' + key + '" value="some"' + (some ? ' checked' : '') + '>' +
-          '<span>Only some children</span></label>' +
-      '</div>' +
-      '<div class="fam-scope-kids"' + (some ? '' : ' hidden') + '>' + names.map(function (n) {
-        return '<label class="fam-scope-kid"><input type="checkbox" value="' + esc(n) + '"' + (only.indexOf(n) > -1 ? ' checked' : '') + '> <span>' + esc(n) + '</span></label>';
-      }).join('') + '</div>' +
-    '</div>';
-  }
-  function wireScope(card) {
-    var sc = card.querySelector('.fam-scope');
-    if (!sc) return;
-    var kidsBox = sc.querySelector('.fam-scope-kids');
-    sc.querySelectorAll('.cm-scope-opts input').forEach(function (r) {
-      r.addEventListener('change', function () {
-        sc.querySelectorAll('.cm-scope-opts label').forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); });
-        kidsBox.hidden = r.value !== 'some' || !r.checked;
-      });
-    });
-  }
-  var SCOPE_N = 0;
-
-  // The creation card, emptied of what does not apply here (its own Remove, and the
-  // "this child / whole family" choice: a household's contact is the household's).
+  // The creation card, emptied of what does not apply here (its own Remove), and
+  // filled with the contact's details: names, the phone / email / address lists, work.
   function personCard(f, c) {
     if (!window.cmExtraCard) return null;
     var card = window.cmExtraCard();
     var rm = card.querySelector('.cm-extra-remove'); if (rm) rm.remove();
-    var oldScope = card.querySelector('.cm-scope');
-    var tmpS = document.createElement('div');
-    tmpS.innerHTML = scopeBlock(f, c, ++SCOPE_N);
-    if (oldScope) oldScope.parentNode.replaceChild(tmpS.firstChild, oldScope);
-    wireScope(card);
     var cap = card.querySelector('.cm-ptype-cap');
     if (cap) cap.textContent = 'Relationship';
-    var hsum = card.querySelector('.cm-hsum');
-    if (hsum) hsum.setAttribute('data-fam-addr', String(f.a || '').replace(/,?\s*USA$/i, ''));
+    var hh = String(f.a || '').replace(/,?\s*USA$/i, '');
+    card.setAttribute('data-fam-addr', hh);
+    var hhFn = function () { return hh; };
+    var ab = card.querySelector('.cm-multi[data-multi="address"]');
+    if (ab) {
+      ab._hhAddr = hhFn;
+      // The household's other contacts, for "Copy an address from…".
+      ab._peers = function () {
+        return (f.contacts || []).filter(function (x) { return x !== c; }).map(function (x) {
+          return { who: x.n + ' (' + x.t + ')', items: listsOf(x).address };
+        });
+      };
+    }
     if (!c) return card;
     var sel = card.querySelector('.cm-ptype select');
     if (sel) { sel.value = typeKey(c.t); sel.dispatchEvent(new Event('change')); }
@@ -1152,25 +1148,14 @@
     var nm = splitName(c.n);
     set(inp('name', /^first name$/i), nm.first);
     set(inp('name', /^last name$/i), nm.last);
-    set(inp('reach', /^phone$/i), c.p);
-    set(inp('reach', /^phone 2$/i), c.p2);
-    set(inp('reach', /^email$/i), c.e);
-    card.querySelectorAll('.cm-msg .tnd-msg-opt').forEach(function (o) {
-      if ((o.textContent || '').trim() === (c.msg || 'None')) o.querySelector('input').checked = true;
-    });
-    var same = card.querySelector('.cm-same input');
-    if (same) { same.checked = !c.addr; same.dispatchEvent(new Event('change')); }
-    if (c.addr) {
-      var a = parseAddr(c.addr);
-      set(inp('addr', /^address line 1$/i), a.line1); set(inp('addr', /^address line 2/i), a.line2);
-      set(inp('addr', /^city$/i), a.city); set(inp('addr', /^state$/i), a.state); set(inp('addr', /^zip/i), a.zip);
-    }
+    if (window.cmMulti) window.cmMulti.fill(card, c, hh);
     set(inp('work', /^occupation$/i), c.occ);
     set(inp('work', /^employer$/i), c.emp);
     return card;
   }
 
-  // Everything the creation card holds, read back.
+  // Everything the creation card holds, read back. The lists are kept whole; p, p2,
+  // e, msg and addr are their primary values, for the list rows and the search.
   function readCard(card) {
     var inp = function (part, re) {
       var gs = card.querySelectorAll('[data-part="' + part + '"] .form-group');
@@ -1181,22 +1166,40 @@
       return '';
     };
     var sel = card.querySelector('.cm-ptype select');
-    var msg = card.querySelector('.cm-msg input:checked');
-    var same = card.querySelector('.cm-same input');
     var note = card.querySelector('.cm-permnote');
-    var addr = same && !same.checked ? [inp('addr', /^address line 1$/i), inp('addr', /^address line 2/i), inp('addr', /^city$/i),
-      [inp('addr', /^state$/i), inp('addr', /^zip/i)].filter(Boolean).join(' ')].filter(Boolean).join(', ') : '';
-    var scopeSome = card.querySelector('.fam-scope input[value="some"]:checked');
-    var only = scopeSome ? [].map.call(card.querySelectorAll('.fam-scope-kids input:checked'), function (x) { return x.value; }).join(', ') : '';
+    var get = function (k) { return window.cmMulti ? window.cmMulti.values(card, k) : []; };
+    var phones = get('phone'), emails = get('email'), addrs = get('address');
+    var hh = String(card.getAttribute('data-fam-addr') || '').toLowerCase();
+    var isWork = function (a) { return a.type === 'Work' || a.type === 'Office'; };
+    var home = addrs.filter(function (a) { return !isWork(a); })[0];
     return {
-      scopeSome: !!scopeSome, only: only,
       t: sel && sel.value ? typeText(sel.value) : '',
       n: [inp('name', /^first name$/i), inp('name', /^last name$/i)].filter(Boolean).join(' '),
-      p: inp('reach', /^phone$/i), p2: inp('reach', /^phone 2$/i), e: inp('reach', /^email$/i),
-      msg: msg ? (msg.parentNode.textContent || '').trim() : 'None',
-      addr: addr, occ: inp('work', /^occupation$/i), emp: inp('work', /^employer$/i),
+      phones: phones, emails: emails, addrs: addrs,
+      p: phones[0] ? phones[0].value : '', p2: phones[1] ? phones[1].value : '',
+      msg: phones[0] ? phones[0].msg : 'None', e: emails[0] ? emails[0].value : '',
+      // Living at the household address is no own address, as before.
+      addr: home && home.value.toLowerCase() !== hh ? home.value : '',
+      occ: inp('work', /^occupation$/i), emp: inp('work', /^employer$/i),
       perm: note && /\b(full|limited|none)\b/.test(note.className) ? note.className.match(/\b(full|limited|none)\b/)[1] : ''
     };
+  }
+
+  /* The household's phone and address in the same rows as a contact's, with the
+     fixed type "Household" (client review, 2026-10-27). Same data-k keys as before. */
+  function hhRows(p, a) {
+    var chip = '<span class="cm-mfixed">Household</span>';
+    var inp = function (k, v, ph) {
+      return '<input type="text" class="form-control" data-k="' + k + '" value="' + esc(v || '') +
+        '" placeholder="' + ph + '" aria-label="' + ph + '">';
+    };
+    return '<div class="cm-reach fam-hhrows">' +
+      '<div class="cm-multi"><div class="cm-mlabel">Phone</div><div class="cm-mrow"><div class="cm-mmain">' + chip +
+        inp('phone', p, 'Phone number') + '</div></div></div>' +
+      '<div class="cm-multi"><div class="cm-mlabel">Address</div><div class="cm-mrow cm-mrow--address"><div class="cm-mmain">' + chip +
+        inp('line1', a.line1, 'Address line 1') + '</div><div class="cm-maddr">' + inp('line2', a.line2, 'Address line 2') +
+        inp('city', a.city, 'City') + inp('state', a.state, 'State') + inp('zip', a.zip, 'ZIP code') + '</div></div></div>' +
+    '</div>';
   }
 
   function editHousehold(f, opts) {
@@ -1218,14 +1221,7 @@
     var portal = openEditPane('Editing household',
       '<section class="vB-group"><h3 class="vB-group-label">Household</h3><div class="vB-editcard">' +
         field('Name', 'name', f.n + ' household', ' readonly') +
-        field('Household phone', 'phone', f.p) +
-      '</div></section>' +
-      '<section class="vB-group"><h3 class="vB-group-label">Address</h3><div class="vB-editcard">' +
-        field('Address line 1', 'line1', a.line1) +
-        field('Address line 2 (apartment)', 'line2', a.line2) +
-        field('City', 'city', a.city) +
-        field('State', 'state', a.state) +
-        field('ZIP code', 'zip', a.zip) +
+        hhRows(f.p, a) +
       '</div></section>' +
       '<section class="vB-group"><h3 class="vB-group-label">Children</h3><div class="vB-editcard">' +
         (childRows || '<p class="fam-panel-note">No children.</p>') +
@@ -1253,28 +1249,24 @@
             rows[i].scrollIntoView({ block: 'center' });
             return false;
           }
-          if (r.scopeSome && !r.only) {
-            if (window.tndToast) window.tndToast.error('Tick the children this contact applies to.');
-            rows[i].scrollIntoView({ block: 'center' });
-            return false;
-          }
         }
         var keep = [];
         rows.forEach(function (row) {
           var card = row.querySelector('.cm-extra');
           if (row.classList.contains('fam-cnew')) {
             var rn = readCard(card);
-            keep.push({ n: rn.n, t: rn.t, p: rn.p, p2: rn.p2, e: rn.e, msg: rn.msg, addr: rn.addr, occ: rn.occ, emp: rn.emp, perm: rn.perm, only: rn.only, on: false });
+            var nc = { t: rn.t, perm: rn.perm, on: false };
+            PERSON_KEYS.forEach(function (k) { nc[k] = rn[k]; });
+            keep.push(nc);
             return;
           }
           var c = f.contacts[+row.getAttribute('data-ci')];
           if (row.classList.contains('is-removed')) return;       // the link goes; the person stays elsewhere
           if (card) {
             var r2 = readCard(card), p = personById(pkey(c));
-            if (p) applyPerson(p, r2); else { ['n', 'p', 'p2', 'e', 'msg', 'addr', 'occ', 'emp'].forEach(function (k) { c[k] = r2[k]; }); }
+            if (p) applyPerson(p, r2); else { PERSON_KEYS.forEach(function (k) { c[k] = r2[k]; }); }
             c.t = r2.t;                                           // the relationship is this household's link
             if (r2.perm) c.perm = r2.perm;
-            c.only = r2.only;                                     // which children the link reaches
           }
           keep.push(c);
         });
@@ -1287,24 +1279,12 @@
         if (window.tndToast) window.tndToast.success('Saved.');
       }, null, opts);
 
-    // The household summary inside a card ("Lives at the household address") reads
-    // the child form's address on the child page; here it is this household's.
-    var fixSummary = function (card) {
-      var hs = card.querySelector('.cm-hsum');
-      if (!hs) return;
-      var text = hs.getAttribute('data-fam-addr') || '';
-      var sync = function () { hs.textContent = text || 'No household address yet.'; hs.classList.toggle('empty', !text); };
-      sync();
-      var cb = card.querySelector('.cm-same input');
-      if (cb) cb.addEventListener('change', function () { setTimeout(sync, 0); });
-    };
-
     var list = portal.querySelector('.fam-clist');
     // Every person is open in the edit form: the full creation card, filled in.
     portal.querySelectorAll('.fam-crow').forEach(function (row) {
       var c = f.contacts[+row.getAttribute('data-ci')];
       var card = personCard(f, c);
-      if (card) { row.querySelector('.fam-crow-card').appendChild(card); fixSummary(card); }
+      if (card) row.querySelector('.fam-crow-card').appendChild(card);
       row.classList.add('is-editing');
       row.querySelector('.fam-cremove').addEventListener('click', function () {
         var off = !row.classList.contains('is-removed');
@@ -1321,7 +1301,6 @@
       if (!card) return;
       wrap.appendChild(card);
       list.insertBefore(wrap, this);
-      fixSummary(card);
       wrap.querySelector('.fam-cremove').addEventListener('click', function () { wrap.remove(); });
       var sel = card.querySelector('.cm-ptype select');
       if (sel) sel.focus();
@@ -1346,7 +1325,10 @@
           return false;
         }
         f.contacts = f.contacts || [];
-        f.contacts.push({ n: [v.first, v.last].filter(Boolean).join(' '), t: v.typeLabel, p: v.phone, on: false });
+        var rc = readCard(card);
+        var nc = { t: v.typeLabel, perm: rc.perm, on: false };
+        PERSON_KEYS.forEach(function (k) { nc[k] = rc[k]; });
+        f.contacts.push(nc);
         refresh();
         if (window.tndToast) window.tndToast.success('Contact added.');
       });
@@ -1355,8 +1337,14 @@
       var card = window.cmExtraCard();
       var rm = card.querySelector('.cm-extra-remove');
       if (rm) rm.remove();
-      var scope = card.querySelector('.cm-scope');
-      if (scope) scope.remove();                 // it is the household's contact by definition
+      card.setAttribute('data-fam-addr', String(f.a || '').replace(/,?\s*USA$/i, ''));
+      var ab = card.querySelector('.cm-multi[data-multi="address"]');
+      if (ab) {
+        ab._hhAddr = function () { return card.getAttribute('data-fam-addr'); };
+        ab._peers = function () {
+          return (f.contacts || []).map(function (x) { return { who: x.n + ' (' + x.t + ')', items: listsOf(x).address }; });
+        };
+      }
       host.appendChild(card);
       var sel = card.querySelector('select');
       if (sel) sel.focus();
