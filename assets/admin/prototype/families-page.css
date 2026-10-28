@@ -436,3 +436,36 @@ html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
 /* The households list's Phone column is narrow: the type sits under the number. */
 .fam-row:not(.fam-row--people) > .fam-phone{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1.25}
 .fam-row:not(.fam-row--people) > .fam-phone .fam-type{margin-left:0}
+
+/* ---- client review, 2026-10-28 -------------------------------------------
+   A checkbox column and the bulk-action
+   dock instead of expanding a row; Children right after Household; Contacts
+   lists households, not email. These come last, so they win over the
+   column grids above. */
+#tndFamiliesPage .fam-table .fam-th,#tndFamiliesPage .fam-table .fam-row{
+  grid-template-columns:28px minmax(150px,1fr) minmax(150px,1.2fr) minmax(130px,1.1fr) minmax(160px,1.4fr) 128px 40px}
+#tndFamiliesPage .fam-table .fam-th--people,#tndFamiliesPage .fam-table .fam-row--people{
+  grid-template-columns:28px minmax(160px,1.2fr) minmax(110px,.9fr) minmax(170px,1.3fr) 84px 128px 40px}
+/* The older narrow-screen rules hid the 6th cell (it was Email); it is Phone now. */
+#tndFamiliesPage .fam-table .fam-th--people > *:nth-child(6),#tndFamiliesPage .fam-table .fam-row--people > *:nth-child(6){display:block}
+#tndFamiliesPage .fam-table .fam-th--people > *:nth-child(5){text-align:center}
+#tndFamiliesPage .fam-table .fam-row--people > .fam-kids:not(.fam-hhs){justify-content:center}
+@media (max-width:1280px){
+  #tndFamiliesPage .fam-table .fam-th,#tndFamiliesPage .fam-table .fam-row{gap:10px;
+    grid-template-columns:28px minmax(130px,1fr) minmax(120px,1.1fr) minmax(110px,1fr) minmax(130px,1.2fr) 118px 40px}
+  #tndFamiliesPage .fam-table .fam-th--people,#tndFamiliesPage .fam-table .fam-row--people{
+    grid-template-columns:28px minmax(140px,1.2fr) minmax(90px,.8fr) minmax(140px,1.2fr) 70px 118px 40px}
+}
+@media (max-width:1100px){
+  #tndFamiliesPage .fam-table .fam-th,#tndFamiliesPage .fam-table .fam-row{
+    grid-template-columns:28px minmax(120px,1fr) 52px minmax(100px,1fr) minmax(110px,1.1fr) 112px 40px}
+  #tndFamiliesPage .fam-hhs .fam-kidnames{display:flex}
+}
+
+.fam-sel{display:flex;align-items:center;justify-content:center}
+.fam-cb{width:16px;height:16px;margin:0!important;cursor:pointer;accent-color:var(--primary,#5a3fc2)}
+#tndFamiliesPage .fam-row.is-sel{background:var(--primary-tint,#eeecfa)}
+/* The dock floats over the last rows; leave room to scroll them clear of it. */
+#tndFamiliesPage .fam-table{margin-bottom:84px}
+#tndFamiliesPage .fam-table .fam-row--people > .fam-hhs{justify-content:flex-start}
+#tndFamiliesPage .fam-table .fam-th--people > *:nth-child(4){text-align:left}

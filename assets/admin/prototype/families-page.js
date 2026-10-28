@@ -31,9 +31,9 @@
 
   var FAMILIES = null;      // null until the fetch resolves, [] if it failed
   var PEOPLE = [];          // people.json, used only for the "N children" count
-  // view: households | people (FAM-FAM-6). exp: households expanded in place, by
-  // index into FAMILIES (FAM-FAM-7). filter: the People view's group chip.
-  var STATE = { q: '', open: null, view: 'households', exp: {}, filter: 'all' };
+  // view: households | people — the Families and Contacts tabs. filter: the
+  // Contacts view's group chip.
+  var STATE = { q: '', open: null, view: 'households', filter: 'all' };
 
   /* ---- data -------------------------------------------------------------- */
 
@@ -248,44 +248,36 @@
       '</span></span>';
   }
 
-  var ICON_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
-    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>';
+  /* SELECTION — the Children list's own: a checkbox at the start of each row, one
+     in the header for the whole view, and the dark bar of bulk actions at the foot
+     of the screen. It replaced expanding a row in place: everything that showed is
+     in the side panel the row opens. Kept per view, by household index / contact id. */
+  var SEL = { households: {}, people: {} };
+  function selBox(attr, label, on) {
+    return '<span class="fam-sel"><input type="checkbox" class="fam-cb" ' + attr + (on ? ' checked' : '') +
+      ' aria-label="Select ' + esc(label) + '"></span>';
+  }
 
-  function rowHtml(f, i, open, q) {
+  function rowHtml(f, i) {
+    var on = !!SEL.households[i];
     return '' +
-      // A row is clickable, but not a <button>: it now holds the kebab, and a
-      // button cannot contain another button.
-      '<div class="fam-row' + (open ? ' is-expanded' : '') + '" role="button" tabindex="0" data-fam="' + i + '">' +
+      // A row is clickable, but not a <button>: it holds the checkbox and the kebab.
+      '<div class="fam-row' + (on ? ' is-sel' : '') + '" role="button" tabindex="0" data-fam="' + i + '">' +
+        selBox('data-sel="' + i + '"', 'the ' + f.n + ' household', on) +
         '<span class="fam-name">' +
-          // The chevron expands the row in place (FAM-FAM-7); the rest of the row
-          // still opens the household panel.
-          '<button type="button" class="fam-chev" data-exp="' + i + '" aria-expanded="' + (open ? 'true' : 'false') + '" ' +
-            'aria-label="' + (open ? 'Collapse' : 'Show the members of') + ' the ' + esc(f.n) + ' household">' + ICON_CHEV + '</button>' +
           '<span class="fam-av" style="background:' + colour(f.n) + '">' + esc(String(f.n).charAt(0).toUpperCase()) + '</span>' +
           '<b>' + esc(f.n) + '</b>' +
         '</span>' +
-        parentsCell(f) +
-        '<span class="fam-addr">' + (f.a ? '<span class="fam-addr-t">' + esc(f.a) + '</span>' + typeTag('Household') : '<i class="blank">no address</i>') + '</span>' +
-        '<span class="fam-phone' + (f.p ? '' : ' none') + '">' + (f.p ? esc(f.p) + typeTag('Household') : 'not on file') + '</span>' +
         kidsCell(f) +
+        parentsCell(f) +
+        // The list shows the main address and phone only; their type is in the panel.
+        '<span class="fam-addr">' + (f.a ? '<span class="fam-addr-t">' + esc(f.a) + '</span>' : '<i class="blank">no address</i>') + '</span>' +
+        '<span class="fam-phone' + (f.p ? '' : ' none') + '">' + (f.p ? esc(f.p) : 'not on file') + '</span>' +
         '<span class="fam-act"><span class="tnd-rowmenu">' +
           '<button type="button" class="tnd-kebab" aria-label="Actions for the ' + esc(f.n) + ' household" ' +
           'aria-haspopup="true" aria-expanded="false" data-fam="' + i + '">' + ICON_KEBAB + '</button>' +
         '</span></span>' +
-      '</div>' +
-      (open ? membersHtml(f, q) : '');
-  }
-
-  /* ---- a household expanded in place (FAM-FAM-7) -------------------------
-     Taken from the Payments page's Families view, which opens a family row where
-     it stands: its members one by one, parents, then children, then everyone
-     else. Each person has Edit (the person panel, FAM-FAM-6); each child, Open
-     (the child drawer). Behaviour only — the look is this page's own. */
-  function hitText(q, s) { return !!q && String(s || '').toLowerCase().indexOf(q) !== -1; }
-  function memberHit(f, q) {
-    if (!q) return false;
-    if ((f.contacts || []).some(function (c) { return hitText(q, c.n) || hitText(q, c.p) || hitText(q, c.e); })) return true;
-    return kids(f).some(function (n) { return hitText(q, n); });
+      '</div>';
   }
 
   function ageOf(dob) {
@@ -329,49 +321,8 @@
       'aria-haspopup="true" aria-expanded="false">' + ICON_KEBAB + '</button></span>';
   }
 
-  function membersHtml(f, q) {
-    var parents = parentsOf(f);
-    var others = (f.contacts || []).filter(function (c) { return parents.indexOf(c) === -1; });
-    var kidsOf = kidsOfHousehold(f);
-    var person = function (c) {
-      return '<div class="fam-sub' + (hitText(q, c.n) || hitText(q, c.p) || hitText(q, c.e) ? ' is-hit' : '') + '">' +
-        '<span class="fam-sub-who"><span class="fam-sub-av ' + acc(c.n) + '">' + esc(initials(c.n)) + '</span>' +
-          '<span class="fam-sub-nm"><b>' + esc(c.n) + '</b><small>' + esc(c.t) + '</small></span></span>' +
-        '<span class="fam-sub-badge">' + badge(c) + '</span>' +
-        phoneCell(c, 'fam-sub-ph', 'no phone') +
-        emailCell(c, 'fam-sub-em') +
-        // Every contact applies to the whole family (client review, 2026-10-27).
-        '<span class="fam-sub-scope">Whole household</span>' +
-        '<span class="fam-sub-go">' + subKebab('data-person="' + esc(pkey(c)) + '"', c.n) + '</span>' +
-      '</div>';
-    };
-    var child = function (n) {
-      var c = kidsOf.filter(function (x) { return x.f === n; })[0];
-      var where = whereOf(c);
-      return '<div class="fam-sub is-child' + (hitText(q, n) ? ' is-hit' : '') + '">' +
-        '<span class="fam-sub-who"><span class="fam-sub-av is-kid">' + esc(initials(n + ' ' + f.n)) + '</span>' +
-          '<span class="fam-sub-nm"><b>' + esc(n + ' ' + f.n) + '</b><small>' + ((c && c.dob && ageOf(c.dob)) ? esc(ageOf(c.dob)) : 'Child') + '</small></span></span>' +
-        '<span class="fam-sub-status' + (!c || c.s === 'inactive' ? ' off' : c.s === 'waitlist' ? ' wait' : '') + '">' + esc(where) + '</span>' +
-        '<span class="fam-sub-go">' + subKebab('data-child="' + (c ? c.id : '') + '" data-childname="' + esc(n + ' ' + f.n) + '"', n + ' ' + f.n) + '</span>' +
-      '</div>';
-    };
-    var sect = function (label, html) { return html ? '<div class="fam-sub-label">' + label + '</div>' + html : ''; };
-    /* Only the people with FULL PERMISSION for the children are listed: the
-       adults the office actually deals with. Anyone with limited or no
-       permission (a grandmother who collects, the pediatrician) is counted on one
-       line that opens the household, where everyone is. Father first, then mother. */
-    var full = parents.concat(others).filter(function (c) { return permLevel(c) === 'full'; });
-    var rest = (f.contacts || []).length - full.length;
-    return '<div class="fam-members">' +
-      sect('Full permission', full.map(person).join('')) +
-      sect('Children', kids(f).map(child).join('')) +
-      (rest > 0 ? '<button type="button" class="fam-sub-more" data-openhh="' + (FAMILIES || []).indexOf(f) + '">' +
-        rest + (rest === 1 ? ' more contact' : ' more contacts') + ' with limited or no permission \u00b7 Open household</button>' : '') +
-    '</div>';
-  }
-
   function renderList(root) {
-    if (STATE.view === 'people') { renderPeople(root); return; }
+    if (STATE.view === 'people') { renderPeople(root); paintDock(root); return; }
     var rows = visible();
     var body = root.querySelector('#famRows');
     var count = root.querySelector('#famCount');
@@ -379,20 +330,11 @@
     if (!body) return;
     if (head) {
       head.className = 'fam-th';
-      head.innerHTML = '<span>Household</span><span>Parents</span><span>Address</span><span>Phone</span>' +
-        '<span>Children</span><span></span>';
+      head.innerHTML = selBox('id="famAll"', 'every household in this view', false) +
+        '<span>Household</span><span>Children</span><span>Parents</span><span>Address</span><span>Phone</span><span></span>';
     }
-    var q = STATE.q.trim().toLowerCase();
-    // While a search narrows the list to a few households, those where a MEMBER
-    // matched open by themselves, with that member highlighted.
-    var auto = q && rows.length <= 6;
-
     body.innerHTML = rows.length
-      ? rows.map(function (f) {
-          var i = (FAMILIES || []).indexOf(f);
-          var open = STATE.exp[i] === true || (STATE.exp[i] !== false && auto && memberHit(f, q));
-          return rowHtml(f, i, open, q);
-        }).join('')
+      ? rows.map(function (f) { return rowHtml(f, (FAMILIES || []).indexOf(f)); }).join('')
       : '<div class="fam-empty"><b>No household matches that.</b>' +
         'The search reads the surname, the address, the phone, every child’s ' +
         'name and every contact’s name.</div>';
@@ -402,11 +344,93 @@
         ? '<b>' + rows.length + '</b> households'
         : '<b>' + rows.length + '</b> of ' + (FAMILIES || []).length + ' households';
     }
-    var all = root.querySelector('#famExpAll');
+    paintDock(root);
+  }
+
+  /* The rows in view, as [key, item] pairs of the current view: what the header box
+     selects and the dock acts on. */
+  function viewItems() {
+    return STATE.view === 'people'
+      ? peopleVisible().map(function (p) { return [p.id, p]; })
+      : visible().map(function (f) { return [String((FAMILIES || []).indexOf(f)), f]; });
+  }
+  function selected() {
+    var sel = SEL[STATE.view];
+    return viewItems().filter(function (x) { return sel[x[0]]; }).map(function (x) { return x[1]; });
+  }
+
+  var DOCK_ICO = {
+    msg: SVG_I('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>'),
+    exp: SVG_I('<path d="M12 21V8"></path><path d="m7 13 5-5 5 5"></path><path d="M3 3h18"></path>'),
+    arc: SVG_I('<rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"></path>'),
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>'
+  };
+  function SVG_I(d) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  }
+
+  /* The dock: Manage Children's own .tnd-seldock — the count, then what can be done
+     to every selected row at once, then × to clear. Households: message the
+     families, export them, archive them (only those with no child enrolled or
+     waiting). Contacts: message them, export them. Nothing is sent or saved. */
+  function paintDock(root) {
+    var dock = document.getElementById('famSelDock');
+    if (!dock) {
+      dock = document.createElement('div');
+      dock.className = 'tnd-seldock';
+      dock.id = 'famSelDock';
+      dock.setAttribute('role', 'region');
+      dock.setAttribute('aria-label', 'Bulk actions');
+      root.appendChild(dock);
+      dock.addEventListener('click', function (e) { dockAct(root, e); });
+    }
+    var list = selected(), n = list.length, ppl = STATE.view === 'people';
+    var all = root.querySelector('#famAll'), items = viewItems();
     if (all) {
-      var anyOpen = !!body.querySelector('.fam-row.is-expanded');
-      all.textContent = anyOpen ? 'Collapse all' : 'Expand all';
-      all.hidden = false;
+      all.checked = n > 0 && n === items.length;
+      all.indeterminate = n > 0 && n < items.length;
+    }
+    dock.classList.toggle('is-on', n > 0);
+    if (!n) return;
+    var noun = ppl ? (n === 1 ? 'contact' : 'contacts') : (n === 1 ? 'household' : 'households');
+    var canArc = ppl ? 0 : list.filter(function (f) { return !activeKids(f).length; }).length;
+    dock.innerHTML =
+      '<span class="cnt" aria-live="polite"><b>' + n + '</b> ' + noun + ' selected</span>' +
+      '<div class="vdiv"></div>' +
+      '<button type="button" class="tnd-dockbtn" data-dock="msg">' + DOCK_ICO.msg + 'Send a message</button>' +
+      '<button type="button" class="tnd-dockbtn" data-dock="export">' + DOCK_ICO.exp + 'Export</button>' +
+      (ppl ? '' : '<button type="button" class="tnd-dockbtn danger" data-dock="archive"' + (canArc ? '' : ' disabled') +
+        ' title="' + (canArc ? 'Only households with no child enrolled or waiting' : 'Every selected household has a child enrolled or waiting') + '">' +
+        DOCK_ICO.arc + 'Archive' + (canArc ? ' (' + canArc + ')' : '') + '</button>') +
+      '<button type="button" class="tnd-dockx" data-dock="clear" aria-label="Clear selection">' + DOCK_ICO.x + '</button>';
+  }
+
+  function dockAct(root, e) {
+    var b = e.target.closest && e.target.closest('[data-dock]');
+    if (!b || b.disabled) return;
+    var act = b.getAttribute('data-dock'), list = selected(), ppl = STATE.view === 'people';
+    var toast = function (m) { if (window.tndToast) window.tndToast.success(m); };
+    if (act === 'clear') { SEL[STATE.view] = {}; renderList(root); return; }
+    if (act === 'export') { if (ppl) exportPeople(list); else exportCsv('sel', list); return; }
+    if (act === 'msg') {
+      toast('Prototype: a message to ' + list.length + (ppl ? (list.length === 1 ? ' contact' : ' contacts')
+        : (list.length === 1 ? ' household' : ' households')) + ' would open here. Nothing is sent.');
+      return;
+    }
+    if (act === 'archive') {
+      var ok = list.filter(function (f) { return !activeKids(f).length; });
+      var msg = 'Archive ' + ok.length + (ok.length === 1 ? ' household' : ' households') + '? ' +
+        (ok.length < list.length ? (list.length - ok.length) + ' selected stay: a child in them is enrolled or waiting. ' : '') +
+        'Their contacts stay on file.';
+      var go = function () {
+        FAMILIES = (FAMILIES || []).filter(function (x) { return ok.indexOf(x) === -1; });
+        SEL.households = {};
+        renderList(root);
+        toast('Archived ' + ok.length + (ok.length === 1 ? ' household.' : ' households.'));
+      };
+      if (window.jConfirm) window.jConfirm(msg, 'Archive households', 'primary', function (y) { if (y) go(); });
+      else if (window.confirm(msg)) go();
     }
   }
 
@@ -484,16 +508,31 @@
     return '<span class="fam-rel" title="' + esc(p.types.join(', ')) + '">' + esc(p.types.join(', ')) + '</span>';
   }
 
+  /* HOUSEHOLDS — the way the Households list shows children: how many, then the
+     main one by name (where they are a parent, else the first), and "+N" for the
+     rest. Every household and the relationship in it is in the title and the panel. */
+  function hhCell(p) {
+    var main = function (l) { return PARENT_STANDING.test(l.c.t || '') ? 0 : 1; };
+    var ls = p.links.slice().sort(function (a, b) { return main(a) - main(b); });
+    var rest = ls.length - 1;
+    return '<span class="fam-kids fam-hhs" title="' +
+        esc(ls.map(function (l) { return l.f.n + ' (' + l.c.t + ')'; }).join(', ')) + '">' +
+      '<i class="fam-kidn">' + ls.length + '</i><span class="fam-kidnames">' +
+        '<span class="fam-kid">' + esc(ls[0].f.n) + '</span>' +
+        (rest > 0 ? '<span class="fam-kid more">+' + rest + '</span>' : '') +
+      '</span></span>';
+  }
+
   function personRowHtml(p) {
-    var c = p.c, hh = p.links.length;
-    return '<div class="fam-row fam-row--people" role="button" tabindex="0" data-person="' + esc(p.id) + '">' +
+    var c = p.c, on = !!SEL.people[p.id];
+    var ph = mainOf(c, 'phone');
+    return '<div class="fam-row fam-row--people' + (on ? ' is-sel' : '') + '" role="button" tabindex="0" data-person="' + esc(p.id) + '">' +
+      selBox('data-sel="' + esc(p.id) + '"', c.n, on) +
       '<span class="fam-name"><span class="fam-av fam-av--p ' + acc(c.n) + '">' + esc(initials(c.n)) + '</span><b>' + esc(c.n) + '</b></span>' +
       relCell(p) +
-      '<span class="fam-hh" title="' + esc(p.links.map(function (l) { return l.f.n; }).join(', ')) + '">' +
-        (hh === 1 ? esc(p.links[0].f.n) : '<b>' + hh + '</b> households') + '</span>' +
+      hhCell(p) +
       '<span class="fam-kids"><i class="fam-kidn">' + p.kids + '</i></span>' +
-      phoneCell(c, 'fam-phone', 'not on file') +
-      emailCell(c, 'fam-email') +
+      '<span class="fam-phone' + (ph ? '' : ' none') + '">' + (ph ? esc(ph.value) : 'not on file') + '</span>' +
       '<span class="fam-act"><span class="tnd-rowmenu">' +
         '<button type="button" class="tnd-kebab" aria-label="Actions for ' + esc(c.n) + '" ' +
         'aria-haspopup="true" aria-expanded="false" data-person="' + esc(p.id) + '">' + ICON_KEBAB + '</button>' +
@@ -507,8 +546,9 @@
     if (!body) return;
     if (head) {
       head.className = 'fam-th fam-th--people';
-      head.innerHTML = '<span>Name</span><span>Relationship</span><span>Households</span><span>Children</span>' +
-        '<span>Phone</span><span>Email</span><span></span>';
+      head.innerHTML = selBox('id="famAll"', 'every contact in this view', false) +
+        '<span>Name</span><span>Relationship</span><span>Households</span><span>Children</span>' +
+        '<span>Phone</span><span></span>';
     }
     var sel = root.querySelector('#famPSel');
     if (sel) {
@@ -533,8 +573,6 @@
       count.innerHTML = rows.length === all.length ? '<b>' + all.length + '</b> contacts'
         : '<b>' + rows.length + '</b> of ' + all.length + ' contacts';
     }
-    var ea = root.querySelector('#famExpAll');
-    if (ea) ea.hidden = true;
   }
 
   /* ---- the household drawer ----------------------------------------------
@@ -1416,8 +1454,8 @@
     })();
   }
 
-  function exportCsv(scope) {
-    var rows = scope === 'view' ? visible() : (FAMILIES || []);
+  function exportCsv(scope, picked) {
+    var rows = picked || (scope === 'view' ? visible() : (FAMILIES || []));
     var q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     var lines = [['Household', 'Address', 'Household phone', 'Children', 'Mother', 'Father', 'Other contacts'].join(',')];
     rows.forEach(function (f) {
@@ -1429,11 +1467,27 @@
     var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = scope === 'view' ? 'households-this-view.csv' : 'households.csv';
+    a.download = scope === 'sel' ? 'households-selected.csv' : scope === 'view' ? 'households-this-view.csv' : 'households.csv';
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
     if (window.tndToast) window.tndToast.success(rows.length + (rows.length === 1 ? ' household' : ' households') + ' exported.');
+  }
+  function exportPeople(list) {
+    var q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var lines = [['Name', 'Relationship', 'Households', 'Main phone', 'Main email'].join(',')];
+    list.forEach(function (p) {
+      var ph = mainOf(p.c, 'phone'), em = mainOf(p.c, 'email');
+      lines.push([p.c.n, p.types.join('; '), p.links.map(function (l) { return l.f.n + ' (' + l.c.t + ')'; }).join('; '),
+        ph ? ph.value : '', em ? em.value : ''].map(q).join(','));
+    });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
+    a.download = 'contacts-selected.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    if (window.tndToast) window.tndToast.success(list.length + (list.length === 1 ? ' contact' : ' contacts') + ' exported.');
   }
 
   function wireHead(root) {
@@ -1633,7 +1687,6 @@
           '</button>' +
           '<div class="tnd-chl-menu r" role="listbox"></div>' +
         '</div>' +
-        '<button type="button" class="fam-expall" id="famExpAll" hidden>Expand all</button>' +
       '</div>' +
 
       '<div class="fam-table">' +
@@ -1646,8 +1699,6 @@
     var q = root.querySelector('#famQ'), wrap = root.querySelector('#famSearchWrap');
     q.addEventListener('input', function () {
       STATE.q = this.value;
-      // A new search decides afresh which households open by themselves.
-      Object.keys(STATE.exp).forEach(function (k) { if (STATE.exp[k] === false) delete STATE.exp[k]; });
       wrap.classList.toggle('has-val', !!this.value);
       renderList(root);
     });
@@ -1666,6 +1717,12 @@
         q.placeholder = placeholder();
         renderList(root);
       });
+    });
+    root.querySelector('#famTh').addEventListener('change', function (e) {
+      if (!e.target.matches('#famAll')) return;
+      var sel = SEL[STATE.view] = {};
+      if (e.target.checked) viewItems().forEach(function (x) { sel[x[0]] = true; });
+      renderList(root);
     });
     var psel = root.querySelector('#famPSel');
     var setOpen = function (open) {
@@ -1686,11 +1743,6 @@
     });
     document.addEventListener('click', function (e) { if (!psel.contains(e.target)) setOpen(false); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
-    root.querySelector('#famExpAll').addEventListener('click', function () {
-      var open = !root.querySelector('.fam-row.is-expanded');
-      visible().forEach(function (f) { STATE.exp[(FAMILIES || []).indexOf(f)] = open; });
-      renderList(root);
-    });
     root.querySelector('#famQClear').addEventListener('click', function () {
       q.value = '';
       q.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1714,25 +1766,15 @@
       var keb = e.target.closest('.tnd-kebab');
       if (keb) { e.stopPropagation(); rowMenu(keb); return; }
       if (e.target.closest('.tnd-rowmenu')) return;
-      var chev = e.target.closest('.fam-chev');
-      if (chev) {
-        var ix = chev.getAttribute('data-exp');
-        STATE.exp[ix] = chev.getAttribute('aria-expanded') !== 'true';
-        renderList(root);
-        var again = root.querySelector('.fam-chev[data-exp="' + ix + '"]');
-        if (again) again.focus();
+      var cb = e.target.closest('.fam-sel');
+      if (cb) {
+        var box = cb.querySelector('input');
+        if (e.target !== box) box.checked = !box.checked;
+        SEL[STATE.view][box.getAttribute('data-sel')] = box.checked;
+        box.closest('.fam-row').classList.toggle('is-sel', box.checked);
+        paintDock(root);
         return;
       }
-      var sub = e.target.closest('.fam-sub-btn');
-      if (sub) {
-        if (sub.disabled) return;
-        if (sub.hasAttribute('data-person')) { var pp = personById(sub.getAttribute('data-person')); if (pp) openPerson(pp); }
-        else if (sub.hasAttribute('data-child')) openChild(sub.getAttribute('data-child'), sub.getAttribute('data-childname'));
-        return;
-      }
-      var more = e.target.closest('.fam-sub-more');
-      if (more) { var fh = (FAMILIES || [])[+more.getAttribute('data-openhh')]; if (fh) { STATE.open = fh; openDrawer(fh); } return; }
-      if (e.target.closest('.fam-members')) return;
       var row = e.target.closest('.fam-row');
       if (!row) return;
       if (row.hasAttribute('data-person')) {
@@ -1750,17 +1792,13 @@
     root.querySelector('#famRows').addEventListener('keydown', function (e) {
       var row = e.target.classList && e.target.classList.contains('fam-row') ? e.target : null;
       if (!row) return;
-      if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === 'Enter') {
         e.preventDefault();
         row.click();
-      } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && row.hasAttribute('data-fam')) {
-        // Right opens the members, left closes them, as in a tree.
+      } else if (e.key === ' ') {
+        // Space selects the row, as a checkbox would.
         e.preventDefault();
-        var i = row.getAttribute('data-fam');
-        STATE.exp[i] = e.key === 'ArrowRight';
-        renderList(root);
-        var r2 = root.querySelector('.fam-row[data-fam="' + i + '"]');
-        if (r2) r2.focus();
+        row.querySelector('.fam-sel').click();
       }
     });
 

@@ -923,3 +923,32 @@ body:not(.cm-off) #frmAddEditRecord .cm-newblock{
   box-shadow:0 1px 2px rgba(31,26,46,.04)!important}
 body:not(.cm-off) #frmAddEditRecord .vB-editcard .cm-newblock,
 #frmAddEditRecord .vB-editcard .cm-newblock{box-shadow:none!important;padding-left:0!important}
+
+/* "Other" names itself BESIDE the type, in the same row (client review, 2026-10-28):
+   the type's space doubles — the list, then the name — and the value keeps its own. */
+.cm-mtypebox{display:flex;align-items:center;gap:6px;flex:0 0 auto;min-width:0}
+.cm-mtypebox .cm-mother{padding:0!important;flex:0 0 128px;width:128px}
+.cm-mtypebox .cm-mother[hidden]{display:none}
+.cm-mtypebox .cm-mname{width:100%!important}
+
+/* Already on file? — offered under the name while a new contact is typed. */
+.cm-dupe{margin:10px 0 2px 0;padding:10px 12px;border-radius:10px;background:#fff8e8;
+  border:1px solid rgba(178,124,24,.28)}
+.cm-dupe[hidden]{display:none}
+.cm-dupe-head{display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6b5420;margin-bottom:6px}
+.cm-dupe-head b{font-size:12.5px;color:#5a4310}
+.cm-dupe-head span{flex:1 1 auto;min-width:0}
+.cm-dupe-no{background:none;border:0;padding:0;font-size:11.5px;font-weight:600;color:#6b5420;cursor:pointer}
+.cm-dupe-no:hover{text-decoration:underline}
+.cm-dupe-hit{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid rgba(178,124,24,.18)}
+.cm-dupe-hit:first-of-type{border-top:0}
+.cm-dupe-who{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.cm-dupe-who b{font-size:13px;color:var(--ink,#1f1a2e)}
+.cm-dupe-who i{font-style:normal;font-size:11.5px;color:var(--ink-3,#5b5470)}
+.cm-dupe-who small{font-size:10.5px;font-weight:600;color:#9a6a12;text-transform:uppercase;letter-spacing:.04em}
+.cm-dupe-link{flex-shrink:0;border:1px solid var(--primary,#5a3fc2);background:#fff;color:var(--primary,#5a3fc2);
+  font-size:12px;font-weight:600;border-radius:8px;padding:5px 12px;cursor:pointer}
+.cm-dupe-link:hover{background:var(--primary,#5a3fc2);color:#fff}
+.cm-dupe .cm-dupe-link{border:1px solid var(--primary,#5a3fc2)!important;background:#fff!important;color:var(--primary,#5a3fc2)!important;
+  padding:5px 14px!important;border-radius:8px!important}
+.cm-dupe .cm-dupe-link:hover{background:var(--primary,#5a3fc2)!important;color:#fff!important}

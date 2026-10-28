@@ -1642,6 +1642,93 @@
     }
 
     row.querySelector('.cm-lklink').addEventListener('click', open);
+
+    /* ALREADY ON FILE? (client review, 2026-10-28) While a new contact is typed, a
+       name or a phone close to one on file is offered to link instead, under the
+       name: a spelling a letter or two off ("Thornley" / "Thornly"), the same surname
+       with the same start of a first name, or the same number. Link is the same as
+       picking them in the search; Not them hides it until the name or phone changes.
+       Whoever the card held when it opened is not offered back to itself. */
+    var dupe = document.createElement('div');
+    dupe.className = 'cm-dupe';
+    dupe.hidden = true;
+    nameGrid.parentNode.insertBefore(dupe, nameGrid.nextSibling);
+    var dismissed = '', own = null, timer = null;
+    var typed = function () {
+      var f = fields();
+      var phones = multiValues(multiBox(card, 'phone')).map(function (x) { return x.value; });
+      if (!phones.length && f.phone) phones = [f.phone.value];
+      return {
+        name: [f.first && f.first.value, f.last && f.last.value].filter(Boolean).join(' ').trim(),
+        phones: phones.map(function (x) { return String(x || '').replace(/\D/g, ''); }).filter(function (x) { return x.length >= 7; })
+      };
+    };
+    setTimeout(function () { own = nameKey(typed().name); }, 1200);
+    function suggest() {
+      if (card.classList.contains('is-linked')) { dupe.hidden = true; return; }
+      var t = typed(), sig = nameKey(t.name) + '|' + t.phones.join(',');
+      if (sig === dismissed) return;
+      var hits = similarPeople(t.name, t.phones).filter(function (h) { return !own || nameKey(h.n) !== own; });
+      if (!hits.length) { dupe.hidden = true; return; }
+      dupe.hidden = false;
+      dupe.innerHTML = '<div class="cm-dupe-head"><b>Already on file?</b>' +
+          '<span>Link the contact instead of adding them twice.</span>' +
+          '<button type="button" class="cm-dupe-no">Not them</button></div>' +
+        hits.map(function (h, i) {
+          return '<div class="cm-dupe-hit"><span class="cm-dupe-who"><b>' + esc(h.n) + '</b>' +
+            '<i>' + esc(h.t) + (h.where ? ' \u00b7 ' + esc(h.where) : '') +
+            (h.p ? ' \u00b7 ' + esc(h.p) : '') + '</i>' +
+            '<small>' + esc(h.why) + '</small></span>' +
+            '<button type="button" class="cm-dupe-link" data-i="' + i + '">Link</button></div>';
+        }).join('');
+      dupe.querySelector('.cm-dupe-no').addEventListener('click', function () { dismissed = sig; dupe.hidden = true; });
+      dupe.querySelectorAll('.cm-dupe-link').forEach(function (b) {
+        b.addEventListener('click', function () { dupe.hidden = true; linked(hits[+b.getAttribute('data-i')]); });
+      });
+    }
+    card.addEventListener('input', function (e) {
+      if (!e.isTrusted) return;     // a value set by Link or the form, not typed
+      clearTimeout(timer);
+      timer = setTimeout(suggest, 260);
+    });
+    card.addEventListener('cm-linked', function () { dupe.hidden = true; });
+  }
+
+  // A name as it compares: lower case, letters only, no "Dr.".
+  function nameKey(n) {
+    return String(n || '').toLowerCase().replace(/^dr\.?\s+/, '').replace(/[^a-z\u0590-\u05ff ]/g, '')
+      .replace(/\s+/g, ' ').trim();
+  }
+  function editDistance(a, b) {
+    if (Math.abs(a.length - b.length) > 3) return 9;
+    var prev = [], cur, i, j;
+    for (j = 0; j <= b.length; j++) prev[j] = j;
+    for (i = 1; i <= a.length; i++) {
+      cur = [i];
+      for (j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+  /* Who on file is close to what was typed, each with why — at most three.
+     A name needs a first and a last, or six letters, before it is compared. */
+  function similarPeople(name, phones) {
+    var q = nameKey(name), qp = q.split(' ');
+    var useName = q.length >= 6 || qp.length >= 2;
+    return peopleIndex().map(function (h) {
+      var k = nameKey(h.n), kp = k.split(' '), why = '';
+      var hp = String(h.p || '').replace(/\D/g, '');
+      if (hp.length >= 7 && phones.some(function (x) { return x.slice(-7) === hp.slice(-7); })) why = 'Same phone number';
+      else if (useName && k) {
+        if (k === q) why = 'Same name';
+        else if (editDistance(k, q) <= 2) why = 'Similar name';
+        else if (qp.length >= 2 && kp.length >= 2 && qp[qp.length - 1] === kp[kp.length - 1] &&
+          qp[0].slice(0, 3) === kp[0].slice(0, 3)) why = 'Same last name, similar first name';
+      }
+      return why ? { n: h.n, t: h.t, p: h.p, pt: h.pt, where: h.where, a: h.a, kids: h.kids, why: why } : null;
+    }).filter(Boolean).slice(0, 3);
   }
 
   function wireSame(same, bucket, sum) {
@@ -1724,17 +1811,19 @@
   function multiRow(kind, grp, item) {
     item = item || {};
     var spec = MULTI[kind];
-    /* OTHER CAN BE NAMED: choosing Other opens a line to say what it is ("Grandma's
-       house", "Summer cell"); that name is then the type shown everywhere. A type
-       on file that is not in the list arrives as Other with its name filled in. */
+    /* OTHER CAN BE NAMED: choosing Other opens a field beside it, in the same row,
+       to say what it is ("Grandma's house", "Summer cell"); that name is then the
+       type shown everywhere. A type on file that is not in the list arrives as
+       Other with its name filled in. */
     var custom = item.type && spec.types.indexOf(item.type) < 0 ? item.type : '';
     var cur = custom ? 'Other' : item.type;
     var type = '<select class="form-control cm-mtype" aria-label="Type">' + spec.types.map(function (t) {
       return '<option' + (t === cur ? ' selected' : '') + '>' + t + '</option>';
     }).join('') + '</select>';
     var other = '<div class="cm-mother"' + (cur === 'Other' ? '' : ' hidden') + '>' +
-      '<input type="text" class="form-control cm-mname" maxlength="40" aria-label="Name this ' + kind + '" placeholder="Name it, e.g. ' +
+      '<input type="text" class="form-control cm-mname" maxlength="40" aria-label="Name this ' + kind + '" placeholder="Name it" title="e.g. ' +
       { phone: 'Grandma\u2019s cell', email: 'School email', address: 'Grandma\u2019s house' }[kind] + '" value="' + esc(custom) + '"></div>';
+    type = '<div class="cm-mtypebox">' + type + other + '</div>';
     var prim = '<label class="cm-mprim"><input type="radio" form="cm-proto-none" name="' + grp + '"' +
       (item.primary ? ' checked' : '') + '><span class="cm-mdot" aria-hidden="true"></span><span>Primary</span></label>';
     var msg = kind === 'phone'
@@ -1751,14 +1840,14 @@
         return '<input type="text" class="form-control" data-a="' + k + '" placeholder="' + label +
           '" aria-label="' + label + '" value="' + esc(a[k] || '') + '">';
       };
-      return '<div class="cm-mrow cm-mrow--address"><div class="cm-mmain">' + type + inp('line1', 'Address line 1') + '</div>' + other +
+      return '<div class="cm-mrow cm-mrow--address"><div class="cm-mmain">' + type + inp('line1', 'Address line 1') + '</div>' +
         '<div class="cm-maddr">' + inp('line2', 'Address line 2') + inp('city', 'City') + inp('state', 'State') +
           inp('zip', 'ZIP code') + '</div>' + foot + '</div>';
     }
     var val = '<input type="' + (kind === 'phone' ? 'tel' : 'email') + '" class="form-control cm-mval" aria-label="' +
       (kind === 'phone' ? 'Phone' : 'Email') + '" placeholder="' + (kind === 'phone' ? 'Phone number' : 'Email address') +
       '" value="' + esc(item.value || '') + '">';
-    return '<div class="cm-mrow cm-mrow--' + kind + '"><div class="cm-mmain">' + type + val + '</div>' + other + foot + '</div>';
+    return '<div class="cm-mrow cm-mrow--' + kind + '"><div class="cm-mmain">' + type + val + '</div>' + foot + '</div>';
   }
 
   function paintPrimary(box) {
