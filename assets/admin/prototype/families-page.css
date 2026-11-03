@@ -674,3 +674,6 @@ html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
 .tendi-skin .fam-vaddrs .vB-row-value{font-size:14px;font-weight:400}
 .tendi-skin .fam-vaddrs-all{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .tendi-skin .fam-vaddrs-all small{color:var(--ink-4,#6b6480);font-size:12px}
+
+/* Inside a tab's block, the add buttons keep the same 16px from the cards as the cards do. */
+.tendi-skin .fam-tbody .vB-group > .fam-caddview,.tendi-skin .fam-tbody .vB-group > .reg-more{margin-top:6px}
