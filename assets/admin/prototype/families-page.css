@@ -677,3 +677,10 @@ html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
 
 /* Inside a tab's block, the add buttons keep the same 16px from the cards as the cards do. */
 .tendi-skin .fam-tbody .vB-group > .fam-caddview,.tendi-skin .fam-tbody .vB-group > .reg-more{margin-top:6px}
+
+/* A block's title and what follows it: the same left edge, the same 10px, on every tab. */
+.tendi-skin .fam-fview .vB-group > .vB-group-label{margin:0!important;padding-left:0!important;padding-right:0!important}
+.tendi-skin .fam-fview .vB-group{display:flex;flex-direction:column;gap:10px}
+.tendi-skin .fam-tbody .vB-group > .vB-group-label + .fam-caddview,.tendi-skin .fam-tbody .vB-group > .vB-group-label + .reg-more{margin-top:0}
+.tendi-skin .fam-editform .vB-editcard.fam-clist{margin:0!important;padding-top:0!important}
+.tendi-skin .fam-editform .vB-editcard.fam-clist > .fam-cadd{margin-top:0}
