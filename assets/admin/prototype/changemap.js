@@ -1021,7 +1021,7 @@
   var PERSON_PARTS = [
     { key: 'perms',  label: 'What they may do', fields: [], perms: true },
     { key: 'name',   label: '',              fields: ['fname', 'lname'] },
-    { key: 'reach',  label: 'How to reach',  fields: ['home_phone', 'office_phone', 'email'] },
+    { key: 'reach',  label: '',              fields: ['home_phone', 'office_phone', 'email'] },
     { key: 'addr',   label: '',              fields: ['address'] },
     { key: 'work',   label: 'Work',          fields: ['occupation', 'employer', 'work_address'] },
     { key: 'legacy', label: 'Old columns',   fields: [],
@@ -1495,7 +1495,7 @@
     if (!nameGrid || card.querySelector('.cm-lkrow')) return;
     var row = document.createElement('div');
     row.className = 'cm-lkrow';
-    row.innerHTML = '<button type="button" class="cm-lklink">Link existing contact</button>';
+    row.innerHTML = '<button type="button" class="cm-lklink" title="Link an existing contact">Find existing</button>';
     nameGrid.parentNode.insertBefore(row, nameGrid);
     var before = null;
 
@@ -1575,7 +1575,7 @@
           card.classList.remove('is-linked');
           showFields(true);
           card.dispatchEvent(new CustomEvent('cm-unlinked'));
-          row.innerHTML = '<button type="button" class="cm-lklink">Link existing contact</button>';
+          row.innerHTML = '<button type="button" class="cm-lklink" title="Link an existing contact">Find existing</button>';
           row.querySelector('.cm-lklink').addEventListener('click', open);
         });
       };
@@ -1835,7 +1835,7 @@
           return '<option' + ((item.msg || 'None') === o ? ' selected' : '') + '>' + o + '</option>';
         }).join('') + '</select></label>'
       : '';
-    var foot = '<div class="cm-mbar">' + prim + msg +
+    var foot = '<div class="cm-mbar">' + prim +
       '<button type="button" class="cm-mrm">Remove</button></div>';
     if (kind === 'address') {
       var a = item.addr || parseAddr(item.value || '');
@@ -1850,7 +1850,8 @@
     var val = '<input type="' + (kind === 'phone' ? 'tel' : 'email') + '" class="form-control cm-mval" aria-label="' +
       (kind === 'phone' ? 'Phone' : 'Email') + '" placeholder="' + (kind === 'phone' ? 'Phone number' : 'Email address') +
       '" value="' + esc(item.value || '') + '">';
-    return '<div class="cm-mrow cm-mrow--' + kind + '"><div class="cm-mmain">' + type + val + '</div>' + foot + '</div>';
+    // A phone's messages sit beside the number they are about.
+    return '<div class="cm-mrow cm-mrow--' + kind + '"><div class="cm-mmain">' + type + val + msg + '</div>' + foot + '</div>';
   }
 
   function paintPrimary(box) {
@@ -2131,7 +2132,6 @@
       typeSelect('') +
       '<div class="cm-plabel">What they may do</div>' + permToggles(key, true) +
       '<div class="cm-pgrid" data-part="name">' + fld('First Name') + fld('Last Name') + '</div>' +
-      '<div class="cm-plabel">How to reach</div>' +
       '<div class="cm-reach" data-part="reach"></div>' +
       '<div class="cm-reach" data-part="addrs"></div>' +
       '<details class="cm-pmore"><summary>Work</summary>' +
@@ -2167,6 +2167,30 @@
     };
   };
 
+  /* The permissions, on the side: the badge beside the relationship says where they stand
+     and opens the choices, so a card is not a wall of pills. Moved, not rebuilt: the same
+     inputs, and the same badge the rest of the page reads. */
+  function foldPerms(card, note, ptype) {
+    var perms = card.querySelector('.cm-perms');
+    if (!note || !ptype || !perms || card.querySelector('.cm-permfold')) return;
+    var fold = document.createElement('details');
+    fold.className = 'cm-permfold';
+    fold.innerHTML = '<summary aria-label="What they may do"></summary><div class="cm-permpop"><div class="cm-plabel">What they may do</div></div>';
+    var cap = perms.previousElementSibling;
+    if (cap && cap.classList.contains('cm-plabel') && /what they may do/i.test(cap.textContent)) cap.remove();
+    ptype.appendChild(fold);
+    fold.querySelector('summary').appendChild(note);
+    var pop = fold.querySelector('.cm-permpop');
+    var collect = card.querySelector('.cm-collect');
+    pop.appendChild(perms);
+    if (collect) pop.appendChild(collect);
+  }
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('.cm-permfold[open]').forEach(function (d) {
+      if (!d.contains(e.target)) d.open = false;
+    });
+  });
+
   function wirePerms(card) {
     var boxes = {};
     card.querySelectorAll('.cm-perm input').forEach(function (b) {
@@ -2179,6 +2203,7 @@
        permission" is the one-line answer to who this person is to the child. */
     var ptype = card.querySelector('.cm-ptype-row');
     if (note && ptype && note.parentNode !== ptype) ptype.appendChild(note);
+    foldPerms(card, note, ptype);
     var collect = card.querySelector('.cm-collect');
     var range   = card.querySelector('.cm-collect-range');
     var ranged  = card.querySelector('.cm-collect-when input[value="range"]');
@@ -2905,8 +2930,6 @@
   function regClear() { try { sessionStorage.removeItem('cm-reg'); } catch (e) {} }
 
   var REG_SVG = {
-    group: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
-    bill: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2.5-1.5L10 21l2-1.5 2 1.5 2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"></path><path d="M9 9h6"></path><path d="M9 13h6"></path></svg>',
     // The Children page's own head icon: one child, one glyph, everywhere in the flow.
     kid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
     wait: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 7h11"></path><path d="M6.5 17h11"></path><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"></path><path d="M6 4v2a6 6 0 1 0 12 0V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path></svg>',
@@ -2966,15 +2989,13 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></svg></button>' +
       '<div class="reg-track">' + items.map(function (it, i) {
         var st = i === cur ? 'on' : (i < cur ? 'done' : '');
-        // The family's own step comes first, with the family glyph; the children number from 1.
-        var nth = i - (items[0] && items[0].fam ? 1 : 0) + 1;
         // Every child is the same purple person tile; enrollment or waiting list is
         // said by the choice and the tooltip, not by a different colour or glyph.
         // No number: the tile alone, a little larger. "Child 2 · Clara · Enrollment"
         // is in the tooltip and the accessible name.
-        var label = it.fam || it.others || it.bill ? it.title : 'Child ' + nth + ' \u00b7 ' + it.title;
+        var label = 'Child ' + (i + 1) + ' \u00b7 ' + it.title;
         return '<span class="reg-pi ' + st + '" title="' + esc(label) + '" aria-label="' + esc(label) + '">' +
-          '<span class="reg-tile">' + (it.fam ? REG_SVG.home : it.others ? REG_SVG.group : it.bill ? REG_SVG.bill : REG_SVG.kid) + '</span></span>';
+          '<span class="reg-tile">' + REG_SVG.kid + '</span></span>';
       }).join('') + '</div>' +
       '<button type="button" class="reg-nav" data-d="1" aria-label="Later children">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg></button>';
@@ -3021,12 +3042,10 @@
       var eb = head.querySelector('.up-head-eyebrow');
       head.insertBefore(strip, eb ? eb.nextSibling : head.firstChild);
     }
-    var steps = plan.kids.map(function (k, i) {
+    window.cmRegTrack(strip, plan.kids.map(function (k, i) {
       var snap = plan.snaps[i];
       return { w: k.m === 'wait', title: (snap && snap.fname ? snap.fname + ' · ' : '') + (k.m === 'wait' ? 'Waiting list' : 'Enrollment') };
-    });
-    // A family being created has its own step first.
-    window.cmRegTrack(strip, plan.family ? [{ fam: true, title: 'Family' }].concat(steps, [{ others: true, title: 'Other contacts' }, { bill: true, title: 'Billing' }]) : steps, plan.family ? plan.cur + 1 : plan.cur);
+    }), plan.cur);
   }
 
   function regButtons(plan, form) {
@@ -3046,8 +3065,7 @@
     back.addEventListener('click', function () { regMove(-1); });
     var next = document.createElement('button');
     next.type = 'button'; next.className = 'btn-sm primary reg-btn reg-next';
-    // Creating a family, other contacts and billing come after the last child.
-    next.textContent = last && !plan.family ? 'Finish' : 'Next';
+    next.textContent = last ? 'Finish' : 'Next';
     acts.insertBefore(next, close);
     next.addEventListener('click', function () { regMove(1); });
   }
@@ -3071,22 +3089,7 @@
       return;
     }
     plan.snaps[plan.cur] = snap;
-    if (dir > 0 && plan.cur === plan.kids.length - 1) {
-      regSave(plan);
-      if (plan.family && window.cmOpenFamilyContacts) {
-        // Opens on top, already in place; the child panel closes unseen under it.
-        var dr0 = document.getElementById('tndDrawer'), sc0 = document.getElementById('tndDrawerScrim');
-        var still0 = [dr0, sc0].filter(Boolean);
-        window.cmOpenFamilyContacts();
-        still0.forEach(function (el) { el.style.transition = 'none'; });
-        if (window.TndListDrawer) window.TndListDrawer.close(true);
-        regTidy();
-        setTimeout(function () { still0.forEach(function (el) { el.style.transition = ''; }); }, 50);
-        return;
-      }
-      regWelcome(plan);
-      return;
-    }
+    if (dir > 0 && plan.cur === plan.kids.length - 1) { regSave(plan); regWelcome(plan); return; }
     if (dir < 0 && plan.cur === 0) {
       // Back to the first screen, keeping what was typed for the children that stay.
       // The first screen opens on top, already in place, and the child panel closes unseen
@@ -3119,7 +3122,7 @@
     var acts = pane.querySelector('.tnd-pane-head-actions');
     acts.querySelectorAll('button:not(.tnd-pane-close)').forEach(function (b) { b.style.display = 'none'; });
     var done = document.createElement('button');
-    done.type = 'button'; done.className = 'btn-sm primary reg-btn'; done.textContent = 'Done';
+    done.type = 'button'; done.className = 'btn-sm primary reg-btn'; done.textContent = plan.famKnown ? 'Back to family' : 'Done';
     acts.insertBefore(done, acts.querySelector('.tnd-pane-close'));
     done.addEventListener('click', function () {
       regClear();
@@ -3132,18 +3135,34 @@
     var w = document.createElement('div');
     // Not .tnd-pane-view: the drawer hides that container while it is editing.
     w.className = 'reg-welcome';
+    // Everyone registered in this visit, not only the child just finished.
+    var regd = (plan.earlier || []).concat(plan.kids.map(function (k, i) {
+      var sn = plan.snaps[i] || {};
+      return { what: k.m === 'wait' ? 'Waiting list' : 'Enrolled' + (sn.cls ? ' · ' + sn.cls : ''),
+               name: [sn.fname, sn.lname].filter(Boolean).join(' ') || 'Child ' + (i + 1) };
+    }));
     w.innerHTML =
       '<div class="reg-wtop"><span class="reg-tile big">' + REG_SVG.home + '</span>' +
       '<h2>Welcome to the ' + esc(name) + ' family</h2>' +
-      '<p>' + plan.kids.length + (plan.kids.length === 1 ? ' child' : ' children') + ' registered</p></div>' +
+      '<p>' + regd.length + (regd.length === 1 ? ' child' : ' children') + ' registered</p></div>' +
       '<section class="vB-group"><h3 class="vB-group-label">Children</h3><div class="vB-list">' +
-      plan.kids.map(function (k, i) {
-        var sn = plan.snaps[i] || {};
-        var what = k.m === 'wait' ? 'Waiting list' : 'Enrolled' + (sn.cls ? ' · ' + sn.cls : '');
+      regd.map(function (c) {
         return '<div class="vB-row"><span class="vB-row-ico" aria-hidden="true">' + REG_SVG.kid +
-          '</span><span class="vB-row-body"><span class="vB-row-label">' + esc(what) + '</span>' +
-          '<span class="vB-row-value">' + esc([sn.fname, sn.lname].filter(Boolean).join(' ') || 'Child ' + (i + 1)) + '</span></span></div>';
-      }).join('') + '</div></section>';
+          '</span><span class="vB-row-body"><span class="vB-row-label">' + esc(c.what) + '</span>' +
+          '<span class="vB-row-value">' + esc(c.name) + '</span></span></div>';
+      }).join('') + '</div>' +
+      // More children, without going back to the family first.
+      (plan.famKnown ? '<div class="reg-more">' +
+        '<button type="button" class="reg-add" data-more="enroll">+ Enroll another child</button>' +
+        '<button type="button" class="reg-add" data-more="wait">+ Add to waiting list</button></div>' : '') +
+      '</section>';
+    w.querySelectorAll('[data-more]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        w.remove();
+        regTidy();
+        document.dispatchEvent(new CustomEvent('cm-reg-more', { detail: { mode: b.getAttribute('data-more'), earlier: regd } }));
+      });
+    });
     body.appendChild(w);
     document.dispatchEvent(new CustomEvent('cm-reg-done', { detail: plan }));
     regClear();
@@ -3178,10 +3197,10 @@
     if (!form || form.getAttribute('data-cm-reg') === '1') return 0;
     if (!/children\/save\/?$/.test(form.getAttribute('action') || '')) return 0;
     form.setAttribute('data-cm-reg', '1');
-    // The family was the first step, so a child's step does not ask for it again. Hidden,
-    // not removed: the form keeps the family picked for it, and the shared answers.
+    // Added from a family's own Children tab, so the child's form does not ask for it again.
+    // Hidden, not removed: the form keeps the family picked for it.
     var pn1 = document.getElementById('tndDrawer');
-    if (pn1) pn1.classList.toggle('reg-famdone', !!plan.family);
+    if (pn1) pn1.classList.toggle('reg-famdone', !!plan.famKnown);
     regStrip(plan);
     regButtons(plan, form);
     var kid = plan.kids[plan.cur];
@@ -3537,18 +3556,15 @@
           return '<div class="cm-vsub">' + esc(c.t) + '</div>' +
             '<div class="vB-list">' +
               row(ICO.person, 'Name', c.n) +
-              row(ICO.perm, 'What they may do', 'Full permission') +
               /* The quick view shows the MAIN contact only — the primary phone,
                  email and address, each with its type; Edit shows the lists. */
               row(ICO.phone, 'Main phone' + (it.phone[0] ? ' \u00b7 ' + it.phone[0].type : ''), c.p, tel(c.p)) +
               row(ICO.mail, 'Main email' + (it.email[0] ? ' \u00b7 ' + it.email[0].type : ''), c.e, c.e ? 'mailto:' + c.e : '') +
               (msgs[key] ? row(ICO.msg, 'Messages to the main phone', msgs[key]) : '') +
-            '</div>' +
             // Closed until asked for, as on every contact's form.
-            '<details class="cm-pmore cm-paddrs fam-vaddrs"><summary><span>Addresses</span><small class="cm-paddrs-sum">' +
-              esc(c.addr || (hhAddr ? 'The household address' : '')) + '</small></summary>' +
-              '<div class="vB-list">' + row(ICO.home, 'Main address \u00b7 Home', c.addr ? c.addr + ' (not the household\u2019s)' : (hhAddr ? 'The household address' : '')) + '</div>' +
-            '</details>';
+            '<details class="fam-vaddrs"><summary><span class="vB-row-label">Addresses</span>' +
+              '<span class="vB-row-value">' + esc(c.addr || (hhAddr ? 'The household address' : 'Not set')) + '</span></summary></details>' +
+            '</div>';
         }).join('') + '</div>';
 
       // The flat rows' own card is emptied by this, so it goes; the new cards take

@@ -490,13 +490,9 @@ html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
 .tendi-skin .fam-ftabs .tnd-tab.is-active:hover{color:var(--primary);font-weight:700;background:var(--paper-2);
   border-color:var(--paper-edge-strong);border-bottom-color:var(--primary)}
 .tendi-skin .fam-ftabs .tnd-tab:focus-visible{outline:2px solid var(--primary);outline-offset:-2px;box-shadow:none}
-.fam-fhero .vB-hero-meta{display:flex;align-items:center;justify-content:center;gap:8px}
+.fam-fhero .vB-hero-meta{display:flex;align-items:center;gap:8px}
 
 .fam-hacts{display:contents}
-.fam-tbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}
-.fam-tbar .btn-sm{display:inline-flex;align-items:center;gap:6px}
-.fam-tbar .btn-sm svg{width:14px;height:14px}
-.fam-tbar-note{font-size:12px;color:var(--ink-4,#6b6480);line-height:1.45;max-width:46ch}
 .fam-newnote{margin:0 2px 14px}
 
 /* Draft: a family saved before its first child. */
@@ -519,8 +515,162 @@ html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
 .fam-cardform[hidden],.fam-cards[hidden],.fam-cardadd[hidden]{display:none}
 .fam-cardrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fam-cardacts{display:flex;justify-content:flex-end;gap:8px}
-.fam-vaddrs > .vB-list{margin-top:10px}
 
 /* A tab's sections, the same 22px apart as the child's view. */
 .fam-tbody{display:flex;flex-direction:column;gap:22px}
 .fam-tbody > .fam-panel-note{margin-top:-12px}
+
+/* The family's panel, quieter: one icon per block, on its first row; the rows under it line up
+   with that row's text, with no arrows and no rules between them. The blocks carry the
+   separation. */
+.fam-tbody .vB-group{gap:10px}
+.fam-tbody .vB-group > .vB-list + .vB-list{margin-top:6px}
+.fam-tbody .vB-list{padding:6px 0}
+.fam-tbody .vB-row{border:0 !important;padding-top:7px;padding-bottom:7px;min-height:0;background:none}
+.fam-tbody .vB-row:hover{background:none}
+.fam-tbody .vB-row-cta{display:none}
+.fam-tbody .vB-list > .vB-row:not(:first-child) .vB-row-ico{display:none}
+.fam-tbody .vB-list > .vB-row:not(:first-child){padding-left:68px}
+/* Regular text throughout; the name a block is about is only a little larger. */
+.fam-tbody .vB-row-value{font-size:14px;font-weight:400}
+.fam-tbody .vB-row--action .vB-row-value{font-weight:400}
+.fam-tbody .vB-row-label{font-weight:500;letter-spacing:.06em}
+.fam-tbody .fam-headed > .vB-row:first-child .vB-row-value{font-size:15px;font-weight:400}
+.fam-tbody .fam-pblock > .vB-row.is-empty{display:none}
+/* The head of the panel: a line, not a poster. */
+.tendi-skin .vB-hero.fam-fhero{display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center;justify-items:start;text-align:left;padding:0 0 4px}
+.tendi-skin .fam-fhero .vB-avatar{grid-row:1 / span 2;width:44px;height:44px;font-size:17px;box-shadow:none;margin:0}
+.tendi-skin .fam-fhero .vB-name{font-size:18px;margin:0}
+.tendi-skin .fam-fhero .vB-hero-meta{justify-content:flex-start;margin:2px 0 0}
+
+/* Each person, a closed card of their own: name, relationship and how to reach them, and a
+   chevron. Open, the card is theirs alone, and Remove belongs to the open card. */
+.fam-portal .fam-crow:not(.is-editing) .fam-crow-card{display:none}
+.fam-portal .fam-clist .fam-crow > .fam-crow-main,.fam-portal .fam-clist-parents .fam-crow > .fam-crow-main{cursor:pointer}
+.fam-portal .fam-crow[data-ci] > .fam-crow-main::after{content:'';flex:none;width:7px;height:7px;margin:-3px 4px 0 4px;
+  border-right:1.5px solid var(--ink-4,#6b6480);border-bottom:1.5px solid var(--ink-4,#6b6480);transform:rotate(45deg)}
+.fam-portal .fam-crow[data-ci].is-editing > .fam-crow-main::after{transform:rotate(-135deg);margin-top:3px}
+.fam-portal .fam-crow[data-ci]:not(.is-editing) .fam-cremove{display:none}
+
+/* A contact's linked children: one line each, the name and where they are. */
+/* A contact's window: under each family, names in one column and status in the next. */
+.fam-tbody .fam-linked > .vB-row:not(:first-child) .vB-row-body{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px;align-items:baseline}
+.fam-tbody .fam-linked > .vB-row:not(:first-child) .vB-row-value{order:1}
+.fam-tbody .fam-linked > .vB-row:not(:first-child) .vB-row-label{order:2;
+  text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;line-height:1.3;color:var(--ink-3,#5b5470)}
+.fam-tbody .fam-linked > .vB-row:not(:first-child){padding-top:5px;padding-bottom:5px}
+
+/* ONE LABEL, ONE FIELD. Every label and every field in the family's forms and a contact's
+   card share these, whatever part of the app they came from. */
+.tendi-skin .fam-editform label.control-label,
+.tendi-skin .fam-editform .cm-mlabel,
+.tendi-skin .fam-editform .cm-ptype-cap,
+.tendi-skin .fam-editform .cm-plabel,
+.tendi-skin .fam-editform .cm-pmore > summary,
+.tendi-skin .fam-editform .cm-pgrid > .form-group > label,
+.tendi-skin .fam-editform .fam-cards-label,
+.tendi-skin .fam-editform .cm-mmsgl > span,
+.tendi-skin .cm-person label.control-label,
+.tendi-skin .cm-person .cm-mlabel,
+.tendi-skin .cm-person .cm-ptype-cap,
+.tendi-skin .cm-person .cm-plabel,
+.tendi-skin .cm-person .cm-pmore > summary,
+.tendi-skin .cm-person .cm-pgrid > .form-group > label,
+.tendi-skin .cm-person .fam-cards-label,
+.tendi-skin .cm-person .cm-mmsgl > span{
+  font-family:var(--font-label,inherit)!important;font-size:10.5px!important;font-weight:600!important;letter-spacing:.07em!important;
+  text-transform:uppercase!important;color:var(--ink-4,#6b6480)!important;line-height:1.3!important}
+.tendi-skin .fam-editform input[type="text"],
+.tendi-skin .fam-editform input[type="tel"],
+.tendi-skin .fam-editform input[type="email"],
+.tendi-skin .fam-editform input[type="number"],
+.tendi-skin .fam-editform input[type="search"],
+.tendi-skin .fam-editform select,
+.tendi-skin .fam-editform .cm-mfixed,
+.tendi-skin .cm-person input[type="text"],
+.tendi-skin .cm-person input[type="tel"],
+.tendi-skin .cm-person input[type="email"],
+.tendi-skin .cm-person input[type="number"],
+.tendi-skin .cm-person input[type="search"],
+.tendi-skin .cm-person select,
+.tendi-skin .cm-person .cm-mfixed{
+  box-sizing:border-box;height:40px!important;min-height:40px!important;padding:0 12px!important;
+  font-family:var(--font-sans,inherit)!important;font-size:13.5px!important;font-weight:400!important;letter-spacing:0!important;color:var(--ink,#1f1a2e)!important;
+  background-color:var(--paper-2,#fff)!important;border:1px solid var(--paper-edge-strong,rgba(95,67,178,.2))!important;border-radius:10px!important;box-shadow:none!important}
+.tendi-skin .fam-editform select,
+.tendi-skin .cm-person select{padding-right:30px!important}
+.tendi-skin .fam-editform input:focus,
+.tendi-skin .fam-editform select:focus,
+.tendi-skin .cm-person input:focus,
+.tendi-skin .cm-person select:focus{border-color:var(--primary,#5a3fc2)!important;box-shadow:0 0 0 3px rgba(90,63,194,.12)!important}
+/* A type that cannot change reads as what it is: a field, greyed. */
+.tendi-skin .fam-editform .cm-mfixed,.tendi-skin .cm-person .cm-mfixed{display:inline-flex;align-items:center;flex:none;min-width:118px;color:var(--ink-3,#5b5470)!important;background-color:var(--cream-2,#f6f5fa)!important}
+/* Phones, emails and addresses: the fields themselves, not grey boxes around them. */
+.tendi-skin .fam-editform .cm-mrow,.tendi-skin .cm-person .cm-mrow{background:none!important;border:0!important;border-radius:0!important;overflow:visible}
+.tendi-skin .fam-editform .cm-mmain,.tendi-skin .cm-person .cm-mmain{padding:0!important;gap:8px}
+.tendi-skin .fam-editform .cm-maddr,.tendi-skin .cm-person .cm-maddr{padding:8px 0 0!important;gap:8px}
+.tendi-skin .fam-editform .cm-mbar,.tendi-skin .cm-person .cm-mbar{padding:6px 0 2px!important}
+.tendi-skin .fam-editform .cm-mtypebox,.tendi-skin .cm-person .cm-mtypebox{flex:none;width:118px}
+.tendi-skin .fam-editform .cm-mtypebox select,.tendi-skin .cm-person .cm-mtypebox select{width:100%!important}
+.tendi-skin .fam-editform .cm-mrows,.tendi-skin .cm-person .cm-mrows{gap:10px}
+.tendi-skin .fam-editform .cm-multi,.tendi-skin .cm-person .cm-multi{gap:6px}
+.tendi-skin .fam-editform .fam-hhrows,.tendi-skin .fam-editform .cm-reach{gap:14px}
+.tendi-skin .fam-editform .cm-mtypebox .cm-mtype,.tendi-skin .cm-person .cm-mtypebox .cm-mtype{flex:1 1 auto!important;width:100%!important;min-width:0}
+
+/* ONE RHYTHM: 16px between any two fields or groups, 6px from a label to its field. */
+.tendi-skin .cm-person{display:flex;flex-direction:column;gap:16px}
+.tendi-skin .cm-person > *{margin-top:0!important;margin-bottom:0!important}
+.tendi-skin .cm-person > .cm-lkrow:not(:has(.cm-linked)){margin-bottom:-16px!important}
+.tendi-skin .cm-person .cm-reach{gap:16px;margin:0}
+.tendi-skin .cm-person .cm-pgrid{gap:16px 14px;margin:0!important}
+.tendi-skin .cm-person .cm-pgrid > .form-group{padding:0!important;gap:6px}
+.tendi-skin .cm-person .cm-ptype-cap{margin:0 0 6px}
+.tendi-skin .cm-person .cm-mlabel{margin:0}
+.tendi-skin .cm-person > .cm-pmore{padding-top:16px;border-top:1px solid rgba(95,67,178,.11)}
+.tendi-skin .cm-person .cm-paddrs > [data-part="addrs"],.tendi-skin .cm-person > .cm-pmore > .cm-pgrid{margin-top:16px!important}
+.tendi-skin .fam-editform .vB-editcard{display:flex;flex-direction:column;gap:16px}
+.tendi-skin .fam-editform .vB-editcard > .form-group{margin:0!important;padding:0!important;gap:6px}
+.tendi-skin .fam-editform .fam-hhrows{margin:0;gap:16px}
+.tendi-skin .fam-editform .fam-cards{margin:0;padding-top:16px}
+.tendi-skin .cm-person .cm-pgrid > .form-group{display:flex!important;flex-direction:column;gap:6px}
+.tendi-skin .cm-person .cm-pgrid > .form-group > label{margin:0!important;padding:0!important}
+
+/* Blocks stand clear of each other: 32px above each one, twice the space between its fields. */
+.tendi-skin .fam-editform.tnd-pane-edit{display:flex;flex-direction:column;gap:32px}
+.tendi-skin .fam-tbody{gap:32px}
+.tendi-skin .fam-tbody > .fam-panel-note{margin-top:-22px}
+.tendi-skin .fam-tbody .vB-group > .vB-list + .vB-list{margin-top:6px}
+.tendi-skin .fam-editform .fam-crow,.tendi-skin .fam-editform .fam-cnew{margin-bottom:12px!important}
+.tendi-skin .fam-editform .vB-group > .vB-group-label{margin-bottom:0}
+
+/* The name fields carried hidden space of their own: an empty element beside the label, and a
+   margin under the input. The gap is the label's alone, so they match every other field. */
+.tendi-skin .cm-person .cm-pgrid > .form-group{gap:0!important}
+.tendi-skin .cm-person .cm-pgrid > .form-group > label{margin:0 0 6px!important;line-height:1.3!important}
+.tendi-skin .cm-person .cm-pgrid > .form-group > :empty:not(input):not(select){display:none!important}
+.tendi-skin .cm-person .cm-pgrid > .form-group input{margin:0!important}
+.tendi-skin .cm-person .cm-pgrid > .form-group > div{margin:0!important;padding:0!important}
+.tendi-skin .fam-editform .vB-editcard > .form-group{gap:0!important}
+.tendi-skin .fam-editform .vB-editcard > .form-group > label{margin:0 0 6px!important}
+.tendi-skin .fam-editform .vB-editcard > .form-group input,.tendi-skin .fam-editform .vB-editcard > .form-group select{margin:0!important}
+.tendi-skin .fam-editform .vB-editcard > .form-group > div{margin:0!important;padding:0!important}
+/* Addresses and Work keep the same rhythm as every other field: no rule, no extra room. */
+.tendi-skin .cm-person > .cm-pmore{padding-top:0!important;border-top:0!important}
+
+/* A phone's, email's or address's type: tinted like the fixed Household one beside it in the
+   same form, so the type column reads as one thing. */
+.tendi-skin .fam-editform .cm-mtypebox .cm-mtype,.tendi-skin .cm-person .cm-mtypebox .cm-mtype{
+  background-color:var(--cream-2,#f6f5fa)!important;color:var(--ink-3,#5b5470)!important}
+
+
+/* Addresses in a read-only card: a row of that card, lined up with the rows above it. */
+.tendi-skin .fam-vaddrs{padding:7px 16px 7px 68px}
+.tendi-skin .fam-vaddrs > summary{display:flex;flex-direction:column;gap:3px;cursor:pointer;list-style:none;position:relative;padding-right:18px}
+.tendi-skin .fam-vaddrs > summary::-webkit-details-marker{display:none}
+.tendi-skin .fam-vaddrs > summary::after{content:'';position:absolute;right:2px;top:50%;width:6px;height:6px;margin-top:-5px;
+  border-right:1.5px solid var(--ink-4,#6b6480);border-bottom:1.5px solid var(--ink-4,#6b6480);transform:rotate(45deg)}
+.tendi-skin .fam-vaddrs[open] > summary::after{transform:rotate(-135deg);margin-top:-2px}
+.tendi-skin .fam-vaddrs .vB-row-value{font-size:14px;font-weight:400}
+.tendi-skin .fam-vaddrs-all{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.tendi-skin .fam-vaddrs-all small{color:var(--ink-4,#6b6480);font-size:12px}

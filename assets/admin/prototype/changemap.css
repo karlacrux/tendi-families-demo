@@ -968,3 +968,51 @@ body:not(.cm-off) #frmAddEditRecord .vB-editcard .cm-newblock,
   font-size:13px;font-weight:600;color:var(--ink-2,#332e47);cursor:pointer}
 .tendi-skin .tnd-drawer .cm-actions .cm-share:hover{background:var(--cream-2,#f4eef9)}
 .tendi-skin .tnd-drawer .cm-actions > b{margin-bottom:10px}
+
+/* The permissions, on the side of the relationship: the badge opens them. */
+.cm-permfold{position:relative}
+.cm-permfold > summary{display:inline-flex;align-items:center;gap:6px;cursor:pointer;list-style:none}
+.cm-permfold > summary::-webkit-details-marker{display:none}
+.cm-permfold > summary::after{content:'';width:6px;height:6px;border-right:1.5px solid #6b6480;border-bottom:1.5px solid #6b6480;transform:rotate(45deg);margin:-3px 2px 0 2px}
+.cm-permfold[open] > summary::after{transform:rotate(-135deg);margin-top:3px}
+.cm-permpop{position:absolute;z-index:20;top:calc(100% + 6px);right:0;width:250px;box-sizing:border-box;padding:12px;background:#fff;
+  border:1px solid rgba(95,67,178,.2);border-radius:12px;box-shadow:0 8px 24px rgba(31,26,46,.14)}
+.cm-permpop .cm-plabel{margin-top:0}
+.cm-permpop .cm-perms{flex-direction:column;align-items:stretch}
+.cm-permpop .cm-collect{margin-top:10px}
+.reg-more{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.reg-more .reg-add{margin:0}
+/* The panel resets its buttons: the same dashed add button as in the family's own panel. */
+.tendi-skin .fam-portal .fam-caddview,.tendi-skin.fam-portal .fam-caddview,.tendi-skin .reg-more .reg-add{height:46px;border:1px dashed rgba(95,67,178,.35)!important;background:none!important;border-radius:12px;
+  font-size:13px;font-weight:600;color:var(--ink-2,#332e47);cursor:pointer}
+.tendi-skin .reg-more .reg-add:hover{background:var(--cream-2,#f4eef9)!important}
+
+/* Inside a contact: the controls a single phone or email has
+   no use for (Primary, Remove) only appear once there are two. */
+.cm-person > [data-part="reach"]{margin-top:16px}
+.cm-mrow:only-child .cm-mprim,.cm-mrow:only-child .cm-mrm{display:none!important}
+.cm-mrow:only-child .cm-mbar{display:none!important}
+.cm-mrow--email:only-child .cm-mmain,.cm-mrow--phone:only-child .cm-mmain{padding-bottom:7px}
+/* Messages, beside the phone number: same row, same height. */
+.cm-mmain .cm-mmsgl{display:inline-flex!important;align-items:center;gap:6px!important;flex:none;margin:0!important;font-size:12px;font-weight:500;color:#6b6480;white-space:nowrap}
+.cm-mmain .cm-mmsgl select{width:auto!important;min-width:84px}
+
+/* "Find existing" on Last Name's line, at the right of that field: it is the
+   alternative to typing that name. Takes no line of its own. Once linked, the box below applies. */
+.cm-lkrow:not(:has(.cm-linked)){position:relative;display:block;height:0;margin:0;z-index:1}
+.cm-lkrow:not(:has(.cm-linked)) .cm-lklink{position:absolute;top:0;right:0;white-space:nowrap}
+
+/* "+ Add phone" and "+ Add email" on their title's line, at the right. */
+.cm-multi[data-multi="phone"],.cm-multi[data-multi="email"]{position:relative}
+.cm-multi[data-multi="phone"] > .cm-mfoot,.cm-multi[data-multi="email"] > .cm-mfoot{position:absolute;top:-3px;right:0;margin:0;padding:0}
+
+/* The titles lead; the actions beside them are quiet until pointed at. */
+.cm-multi .cm-mlabel{font-weight:600;color:#332e47}
+.tendi-skin .cm-multi .cm-madd,.tendi-skin .cm-lkrow .cm-lklink{font-size:11.5px!important;font-weight:400!important;color:#6b6480!important}
+.tendi-skin .cm-multi .cm-madd:hover,.tendi-skin .cm-lkrow .cm-lklink:hover{color:#5a3fc2!important}
+
+/* "Find existing" and "+ Add phone / email": one style, one position, on their label's line. */
+.tendi-skin .cm-lkrow:not(:has(.cm-linked)) .cm-lklink,
+.tendi-skin .cm-multi[data-multi="phone"] > .cm-mfoot,.tendi-skin .cm-multi[data-multi="email"] > .cm-mfoot{top:-1px!important;right:0}
+.tendi-skin .cm-multi .cm-madd,.tendi-skin .cm-lkrow .cm-lklink{padding:0!important;line-height:15px!important;height:15px;min-height:0!important;letter-spacing:0!important;font-family:var(--font-sans,inherit)!important}
+.tendi-skin.fam-portal .fam-cadd{color:var(--ink-2,#332e47)!important}
