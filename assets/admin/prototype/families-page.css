@@ -469,3 +469,42 @@ html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
 #tndFamiliesPage .fam-table{margin-bottom:84px}
 #tndFamiliesPage .fam-table .fam-row--people > .fam-hhs{justify-content:flex-start}
 #tndFamiliesPage .fam-table .fam-th--people > *:nth-child(4){text-align:left}
+
+/* ---- the family panel: tabs, each with its own Save (client review, 2026-10-28)
+   Details | Contacts | Children | Billing. The app hides .tnd-tabs on a read-only
+   pane (the child drawer shows one long view there); the family keeps its tabs in
+   both modes, because each tab is edited and saved on its own. */
+/* A child's step in creating a family: the family was step one, so no Family tab. */
+#tndDrawer.reg-famdone .tnd-tab[data-tab-name="Parents Details"]{display:none !important}
+/* The child drawer's own tabs (tendi-skin.css scopes them to #tndDrawer, so they are
+   repeated for this panel). One difference: four tabs share one line. */
+.tendi-skin .tnd-pane.fam-fdrawer .fam-ftabs{display:flex !important;flex-wrap:wrap;column-gap:0;row-gap:6px;
+  margin:0 0 18px;padding:0;background:none;border:0;border-radius:0;box-shadow:none}
+.tendi-skin .fam-ftabs .tnd-tab{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;
+  text-align:center;gap:7px;background:none;border:1px solid transparent;border-bottom:2px solid var(--paper-edge-strong);
+  border-radius:var(--radius-md) var(--radius-md) 0 0;padding:9px 13px;margin:0;font-family:var(--font-sans);
+  font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--ink-4);cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s}
+.tendi-skin .fam-ftabs .tnd-tab:hover{color:var(--ink-2);background:var(--cream-2);border-bottom-color:var(--ink-5)}
+.tendi-skin .fam-ftabs .tnd-tab.is-active,
+.tendi-skin .fam-ftabs .tnd-tab.is-active:hover{color:var(--primary);font-weight:700;background:var(--paper-2);
+  border-color:var(--paper-edge-strong);border-bottom-color:var(--primary)}
+.tendi-skin .fam-ftabs .tnd-tab:focus-visible{outline:2px solid var(--primary);outline-offset:-2px;box-shadow:none}
+.fam-fhero .vB-hero-meta{display:flex;align-items:center;justify-content:center;gap:8px}
+
+.fam-hacts{display:contents}
+.fam-tbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.fam-tbar .btn-sm{display:inline-flex;align-items:center;gap:6px}
+.fam-tbar .btn-sm svg{width:14px;height:14px}
+.fam-tbar-note{font-size:12px;color:var(--ink-4,#6b6480);line-height:1.45;max-width:46ch}
+.fam-newnote{margin:0 2px 14px}
+
+/* Draft: a family saved before its first child. */
+.fam-draft{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;font-size:10.5px;
+  font-weight:700;letter-spacing:.02em;text-transform:uppercase;vertical-align:middle;
+  color:#836a2b;background:rgba(214,170,60,.16);border:1px solid rgba(214,170,60,.35)}
+.fam-fhero .fam-draft{margin-left:0}
+
+.fam-tbar--kids .fam-tbar-note{order:3;flex-basis:100%;max-width:none}
+.fam-empty-note{margin:0;padding:16px;border:1px dashed var(--paper-edge,rgba(95,67,178,.2));border-radius:var(--radius-md,10px);
+  font-size:13px;color:var(--ink-4,#6b6480);text-align:center}

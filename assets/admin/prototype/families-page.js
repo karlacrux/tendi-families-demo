@@ -5,8 +5,8 @@
    Closes the first item in "Still pending": `family_id` exists in the design,
    but nothing in the product lets anyone SEE a whole household. This adds
 
-       Children  >  Children
-                    Families      <- same level, directly under Children
+       Children  >  Families      <- first: the family is the main container
+                    Children         (client review, 2026-10-28)
                     Lunch
                     ...
 
@@ -112,10 +112,6 @@
     return RAMP[h % RAMP.length];
   }
 
-  var ICON_HOME =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
-    'stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/>' +
-    '<path d="M5 9.8V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.8"/><path d="M9.5 21v-6h5v6"/></svg>';
   // Manage Children's own search and clear glyphs, so the two bars match.
   var ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle>' +
@@ -129,7 +125,37 @@
      navigation and only has to be injected once -- the guard makes a repeat
      call from the observer a no-op. */
 
+  /* The AREA is Families too (client review, 2026-10-28): the rail item and the
+     sub-pane title say Families, with a family glyph in place of the single child:
+     a roof over two adults and two children, each a plain head and shoulders. Drawn
+     here because no icon in the rail's set shows a family this size. The group key
+     stays "children", so every page and route in it is unchanged. */
+  var AREA = 'Families';
+  var AREA_ICON = '<svg viewBox="0 0 24 24" width="1.25em" height="1.25em" fill="currentColor" aria-hidden="true">' +
+    '<path d="M2 10.4 12 2.8l10 7.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path>' +
+    '<circle cx="9.3" cy="10.8" r="1.8"></circle><path d="M6.9 20.5v-4.7a2.4 2.4 0 0 1 4.8 0v4.7z"></path>' +
+    '<circle cx="14.7" cy="10.8" r="1.8"></circle><path d="M12.3 20.5v-4.7a2.4 2.4 0 0 1 4.8 0v4.7z"></path>' +
+    '<circle cx="4.4" cy="14.4" r="1.4"></circle><path d="M2.5 20.5v-2a1.9 1.9 0 0 1 3.8 0v2z"></path>' +
+    '<circle cx="19.6" cy="14.4" r="1.4"></circle><path d="M17.7 20.5v-2a1.9 1.9 0 0 1 3.8 0v2z"></path></svg>';
+  function renameArea() {
+    var subnav = document.querySelector('.tnd-subnav[data-group="children"]');
+    var rail = document.querySelector('.tnd-rail-item[data-group="children"]');
+    if (subnav && subnav.getAttribute('data-title') !== AREA) {
+      subnav.setAttribute('data-title', AREA);
+      var title = document.getElementById('tndSubpaneTitle');
+      if (title && !subnav.hidden && title.textContent.trim() === 'Children') title.textContent = AREA;
+    }
+    if (rail) {
+      var lab = rail.querySelector('.tnd-rail-label');
+      if (lab && lab.textContent !== AREA) lab.textContent = AREA;
+      var ico = rail.querySelector('i');
+      if (ico && ico.className !== 'fam-rail-ico') { ico.className = 'fam-rail-ico'; ico.innerHTML = AREA_ICON; }
+      if (rail.getAttribute('title') === 'Children') rail.setAttribute('title', AREA);
+    }
+  }
+
   function injectNav() {
+    renameArea();
     var subnav = document.querySelector('.tnd-subnav[data-group="children"]');
     if (!subnav || subnav.querySelector('[data-url="families"]')) return false;
 
@@ -139,10 +165,9 @@
     a.setAttribute('data-url', 'families');
     a.innerHTML = '<span class="tnd-sub-bullet"></span><span class="tnd-sub-text">Families</span>';
 
-    var after = subnav.querySelector('.tnd-sub-item[data-url="children"]');
-    if (after && after.nextSibling) { subnav.insertBefore(a, after.nextSibling); }
-    else if (after) { subnav.appendChild(a); }
-    else { subnav.insertBefore(a, subnav.firstChild); }
+    // FIRST in the section (client review, 2026-10-28): the family is the main
+    // container, so it comes before Children.
+    subnav.insertBefore(a, subnav.firstChild);
     return true;
   }
 
@@ -180,7 +205,7 @@
     document.querySelectorAll('.tnd-subnav').forEach(function (n) {
       n.hidden = n.getAttribute('data-group') !== 'children';
     });
-    if (title) { title.textContent = 'Children'; }
+    if (title) { title.textContent = AREA; }
     pane.setAttribute('data-open', 'true');
     pane.setAttribute('aria-hidden', 'false');
     document.body.classList.add('tnd-pane-open');
@@ -208,7 +233,7 @@
     var out = (FAMILIES || []).filter(function (f) { return matches(f, q); });
     // Largest household first, then by surname. There is no sort control: the
     // search is how a household is found.
-    out.sort(function (a, b) { return (b.c - a.c) || a.n.localeCompare(b.n); });
+    out.sort(function (a, b) { return (!!b.draft - !!a.draft) || (b.c - a.c) || a.n.localeCompare(b.n); });
     return out;
   }
 
@@ -266,7 +291,7 @@
         selBox('data-sel="' + i + '"', 'the ' + f.n + ' household', on) +
         '<span class="fam-name">' +
           '<span class="fam-av" style="background:' + colour(f.n) + '">' + esc(String(f.n).charAt(0).toUpperCase()) + '</span>' +
-          '<b>' + esc(f.n) + '</b>' +
+          '<b>' + esc(f.n) + '</b>' + (f.draft ? '<span class="fam-draft">Draft</span>' : '') +
         '</span>' +
         kidsCell(f) +
         parentsCell(f) +
@@ -331,18 +356,18 @@
     if (head) {
       head.className = 'fam-th';
       head.innerHTML = selBox('id="famAll"', 'every household in this view', false) +
-        '<span>Household</span><span>Children</span><span>Parents</span><span>Address</span><span>Phone</span><span></span>';
+        '<span>Family</span><span>Children</span><span>Parents</span><span>Address</span><span>Phone</span><span></span>';
     }
     body.innerHTML = rows.length
       ? rows.map(function (f) { return rowHtml(f, (FAMILIES || []).indexOf(f)); }).join('')
-      : '<div class="fam-empty"><b>No household matches that.</b>' +
+      : '<div class="fam-empty"><b>No family matches that.</b>' +
         'The search reads the surname, the address, the phone, every child’s ' +
         'name and every contact’s name.</div>';
 
     if (count) {
       count.innerHTML = rows.length === (FAMILIES || []).length
-        ? '<b>' + rows.length + '</b> households'
-        : '<b>' + rows.length + '</b> of ' + (FAMILIES || []).length + ' households';
+        ? '<b>' + rows.length + '</b> families'
+        : '<b>' + rows.length + '</b> of ' + (FAMILIES || []).length + ' families';
     }
     paintDock(root);
   }
@@ -644,82 +669,675 @@
     STATE.open = null;
   }
 
-  function openDrawer(f) {
+  /* ---- the family (client review, 2026-10-28) ----------------------------
+     The family is the container. Its panel has four tabs — Details (the family and
+     its parents), Children, Other contacts, Billing. As in registering a child, the
+     tabs can be changed at any time, with nothing required: leaving a tab saves it
+     automatically, and if it cannot be saved yet what was typed waits there. 
+     Enrollment, health, transportation and tuition are the child's, so they live on
+     the child's record, which the Children tab opens; a child is only ever added
+     from inside a family. */
+  var QUIET = false;   // an automatic save, on leaving a tab: says nothing, stops nothing
+  function say(m) { if (!QUIET && window.tndToast) window.tndToast.success(m); }
+  var FTABS = [['details', 'Details'], ['children', 'Children'], ['contacts', 'Other contacts'], ['billing', 'Billing']];
+
+  function famName(f) { return f.n ? f.n + ' family' : 'New family'; }
+
+  // Who pays: the contact Billing names, else the first parent.
+  function payerOf(f) {
+    var b = f.billing || {};
+    if (b.payer != null && (f.contacts || [])[b.payer]) return f.contacts[b.payer];
+    if (b.payer === -1) return null;
+    return parentsOf(f)[0] || null;
+  }
+
+  function openDrawer(f, tab, opts) {
+    opts = opts || {};
     var old = document.querySelector('.fam-portal');
+    var stay = !!(old && old._fam === f) || !!opts.instant;   // same family, other tab: no slide
     if (old) old.remove();
-
-    var parents = parentsOf(f);                    // father first, then mother
-    var others = (f.contacts || []).filter(function (c) { return parents.indexOf(c) === -1; });
-    var kidsOf = kidsOfHousehold(f);
-    var names = kids(f);
-    var addr = String(f.a || '').replace(/,?\s*USA$/i, '');
-
-    // One row per child: their name, and where they are now — the profile's words.
-    var childRows = names.map(function (n) {
-      var c = kidsOf.filter(function (x) { return x.f === n; })[0];
-      var where = whereOf(c);
-      // The name is the value, as on every profile row; where they are is its label.
-      return vRow(DI.person, where, n);
-    }).join('');
-
-    /* Each person as the child profile shows a parent: the view's own card of
-       rows — who they are, what they may do, which children they reach, how to
-       reach them. The name row opens the person. Read-only: the Edit at the top
-       turns the whole family into its edit form, as every record in Tendi does. */
-    var personCard = function (c) {
-      var lv = permLevel(c);
-      return '<div class="vB-list">' +
-        vRow(DI.person, c.t, c.n).replace('<div class="vB-row"', '<a class="vB-row vB-row--action fam-toperson" data-person="' +
-          esc(pkey(c)) + '" href="javascript:void(0);"').replace(/<\/div>$/, DI.cta + '</a>') +
-        vRow(DI.group, 'What they may do', { full: 'Full permission', limited: 'Limited permission', none: 'No permission' }[lv]) +
-        primaryRow(listsOf(c, f).phone, 'phone') +
-        primaryRow(listsOf(c, f).email, 'email') +
-      '</div>';
-    };
+    var st = { tab: tab || 'details', edit: !!opts.edit, dirty: false, held: {}, creating: !!opts.creating };
+    // Back to the family step: what was typed on its tabs, as it was left.
+    if (f._held) { st.held = f._held; delete f._held; }
 
     var portal = document.createElement('div');
     portal.className = 'tendi-skin tnd-drawer-portal fam-portal';
+    portal._fam = f;
     portal.innerHTML =
       '<div class="tnd-pane-scrim tnd-drawer-scrim"></div>' +
-      '<aside class="tnd-pane tnd-drawer is-readonly" role="dialog" aria-label="' + esc(f.n) + ' household">' +
+      '<aside class="tnd-pane tnd-drawer fam-fdrawer" role="dialog">' +
         '<div class="tnd-pane-head">' +
-          '<span class="up-head-eyebrow"><span class="up-eb-view">Household</span></span>' +
+          '<span class="up-head-eyebrow"><span class="up-eb-view fam-eb"></span><span class="up-eb-edit fam-eb-edit"></span></span>' +
           '<span class="up-head-spacer"></span>' +
           '<div class="tnd-pane-head-actions">' +
-            '<button type="button" class="btn-sm primary tnd-drawer-edit fam-hedit">' + ICON_EDIT + ' Edit</button>' +
+            '<span class="fam-hacts"></span>' +
             '<button type="button" class="tnd-pane-close" aria-label="Close">' + DI.close + '</button>' +
           '</div>' +
         '</div>' +
-        '<div class="tnd-pane-body is-ready"><div class="tnd-pane-view">' +
-          '<section class="vB-hero">' +
-            '<span class="vB-avatar ' + acc(f.n) + '" aria-hidden="true">' + esc(String(f.n).charAt(0).toUpperCase()) + '</span>' +
-            '<h2 class="vB-name">' + esc(f.n) + ' household</h2>' +
-            '<div class="vB-hero-meta"><span class="vB-idtag">' + f.c + (f.c === 1 ? ' child' : ' children') +
-              ' · ' + (f.contacts || []).length + ' contacts</span></div>' +
-          '</section>' +
-          group('Household',
-            '<div class="vB-list">' +
-              vRow(DI.home, 'Address \u00b7 Household', addr) +
-              vRow(DI.phone, 'Phone \u00b7 Household', f.p, tel(f.p)) +
-            '</div>') +
-          group('Children', '<div class="vB-list">' + childRows + '</div>') +
-          (parents.length ? group('Parents', parents.map(personCard).join('')) : '') +
-          (others.length ? group('Other contacts', others.map(personCard).join('')) : '') +
-        '</div></div>' +
+        '<div class="tnd-pane-body is-ready"><div class="tnd-pane-view fam-fview"></div></div>' +
       '</aside>';
     document.body.appendChild(portal);
-    portal.querySelector('.tnd-pane-scrim').addEventListener('click', closeDrawer);
-    portal.querySelector('.tnd-pane-close').addEventListener('click', closeDrawer);
-    portal.querySelectorAll('.fam-toperson').forEach(function (a) {
-      a.addEventListener('click', function () { var p = personById(a.getAttribute('data-person')); if (p) openPerson(p); });
-    });
-    // View → edit in the same place, no slide: the panel simply becomes the form.
-    portal.querySelector('.fam-hedit').addEventListener('click', function () { editHousehold(f, { instant: true }); });
-    requestAnimationFrame(function () {
-      portal.querySelector('.tnd-pane').classList.add('is-open');
-      portal.querySelector('.tnd-pane-scrim').classList.add('is-open');
+    var pane = portal.querySelector('.tnd-pane'), scrim = portal.querySelector('.tnd-pane-scrim');
+    var host = portal.querySelector('.fam-fview');
+
+    var label = function (k) { return FTABS.filter(function (t) { return t[0] === k; })[0][1]; };
+    var go = function (k, edit) { st.tab = k; st.edit = !!edit; st.dirty = Object.keys(st.held).length > 0; paint(); };
+    // Is the open tab showing a form? Children has none.
+    var editing = function () { return st.edit && st.tab !== 'children'; };
+    // Leaving a tab saves it, silently. A new family saves once it has its name; a form
+    // that cannot be saved yet stays in the page (false) and is set aside by leave().
+    var autosave = function () {
+      var form = host.querySelector('.fam-editform');
+      if (!form) return true;
+      if (f.isNew) {
+        var nm = form.querySelector('[data-k="name"]');
+        if (st.tab !== 'details' || !nm || !nm.value.trim()) return false;
+      } else if (!st.dirty) { form.remove(); delete st.held[st.tab]; return true; }
+      QUIET = true;
+      var res;
+      try { res = TAB_SAVE[st.tab](f, form); } finally { QUIET = false; }
+      if (res === false) return false;
+      form.remove();
+      delete st.held[st.tab];
+      st.dirty = Object.keys(st.held).length > 0;
+      refresh();
+      return true;
+    };
+    var leave = function (k, edit) {
+      autosave();
+      var cur = host.querySelector('.fam-editform');
+      if (cur) { st.held[st.tab] = cur; cur.remove(); }
+      st.tab = k;
+      if (edit) st.edit = true;
+      paint();
+    };
+    /* Creating a family, this panel is two of the registration's steps: the family first,
+       Other contacts last, with each child in between (changemap.js). Return and Next walk
+       them. The family's Next needs its name, as a child's step needs a first name: the
+       children have to have a family to join. Other contacts are optional. */
+    var flush = function (k) {
+      var form = host.querySelector('.fam-editform');
+      if (!form) return true;
+      QUIET = true;
+      var res;
+      try { res = TAB_SAVE[k](f, form); } finally { QUIET = false; }
+      if (res === false) return false;
+      form.remove();
+      return true;
+    };
+    var stepBack = function () {
+      var plan = readPlan() || { kids: [{ m: 'enroll' }], snaps: [] };
+      var form = host.querySelector('.fam-editform');
+      if (st.tab === 'contacts') {
+        // Back to the last child; a contact not finished yet waits here.
+        if (!flush('contacts')) { f._held = { contacts: form }; form.remove(); }
+        plan.cur = plan.kids.length - 1;
+        plan.at = Date.now();
+        writePlan(plan);
+        swapToChild(portal, { n: f.n, a: f.a });
+        return;
+      }
+      if (f.isNew) { if (form) { f._held = { details: form }; form.remove(); } }
+      else flush('details');
+      openSetup(plan.kids.map(function (k) { return { m: k.m }; }), plan, { instant: true });
+    };
+    var stepNext = function () {
+      if (st.tab === 'contacts') {
+        if (!flush('contacts')) {
+          if (window.tndToast) window.tndToast.error('Every contact needs a relationship and a name.');
+          return;
+        }
+        refresh();
+        welcome();
+        return;
+      }
+      var nm = host.querySelector('[data-k="name"]');
+      if (!nm.value.trim()) {
+        if (window.tndToast) window.tndToast.error('Give the family a name.');
+        nm.focus();
+        return;
+      }
+      if (!flush('details')) {
+        if (window.tndToast) window.tndToast.error('Every parent needs a relationship and a name.');
+        return;
+      }
+      refresh();
+      var plan = readPlan();
+      if (plan) { plan.lname = f.n; plan.cur = 0; plan.at = Date.now(); writePlan(plan); }
+      swapToChild(portal, { n: f.n, a: f.a });
+    };
+    // Registered: the children join the family's list, and the last screen says so.
+    var welcome = function () {
+      var plan = readPlan();
+      if (!plan) { closeDrawer(); return; }
+      document.dispatchEvent(new CustomEvent('cm-reg-done', { detail: plan }));
+      clearPlan();
+      st.creating = false;
+      var total = plan.kids.length;
+      if (window.cmRegTrack) window.cmRegTrack(portal.querySelector('.reg-strip'), stepItems(plan.kids, plan.snaps), total + 2);
+      portal.querySelector('.fam-eb-edit').textContent = 'Registration complete';
+      portal.querySelector('.fam-hacts').innerHTML = '<button type="button" class="btn-sm primary reg-btn fam-sdone">Done</button>';
+      host.innerHTML = '<div class="reg-welcome"><div class="reg-wtop"><span class="reg-tile big">' + AREA_ICON + '</span>' +
+        '<h2>Welcome to the ' + esc(f.n) + ' family</h2>' +
+        '<p>' + total + (total === 1 ? ' child' : ' children') + ' registered</p></div>' +
+        group('Children', '<div class="vB-list">' + plan.kids.map(function (k, i) {
+          var sn = plan.snaps[i] || {};
+          return vRow(DI.person, k.m === 'wait' ? 'Waiting list' : 'Enrolled' + (sn.cls ? ' \u00b7 ' + sn.cls : ''),
+            [sn.fname, sn.lname].filter(Boolean).join(' ') || 'Child ' + (i + 1));
+        }).join('') + '</div>') + '</div>';
+      portal.querySelector('.fam-sdone').addEventListener('click', function () {
+        STATE.regFam = null;
+        openDrawer(f, 'children', { instant: true });
+      });
+    };
+
+    function hero() {
+      var n = kids(f).length, nc = (f.contacts || []).length;
+      return '<section class="vB-hero fam-fhero">' +
+        '<span class="vB-avatar ' + acc(f.n || 'new') + '" aria-hidden="true">' + esc(String(f.n || '+').charAt(0).toUpperCase()) + '</span>' +
+        '<h2 class="vB-name">' + esc(famName(f)) + '</h2>' +
+        '<div class="vB-hero-meta"><span class="vB-idtag">' +
+          (f.isNew ? 'Not saved yet' : n + (n === 1 ? ' child' : ' children') + ' · ' + nc + (nc === 1 ? ' contact' : ' contacts')) +
+          '</span>' + (f.draft && !f.isNew ? '<span class="fam-draft">Draft</span>' : '') + '</div>' +
+      '</section>';
+    }
+
+    function tabs() {
+      return '<div class="tnd-tabs fam-ftabs" role="tablist">' + FTABS.map(function (t) {
+        return '<button type="button" role="tab" class="tnd-tab' + (st.tab === t[0] ? ' is-active' : '') + '" data-ftab="' + t[0] + '"' +
+          ' aria-selected="' + (st.tab === t[0]) + '">' + t[1] + '</button>';
+      }).join('') + '</div>';
+    }
+
+    // Tendi's edit rule, in the panel head like every record: Edit in view; Cancel and
+    // Save in edit. They act on the open tab only: each tab saves on its own.
+    function actions() {
+      if (st.creating) {
+        return '<button type="button" class="btn-sm reg-btn fam-sback">Return</button>' +
+          '<button type="button" class="btn-sm primary reg-btn fam-snext">' + (st.tab === 'contacts' ? 'Finish' : 'Next') + '</button>';
+      }
+      if (st.tab === 'children') return '';
+      if (!st.edit) return '<button type="button" class="btn-sm primary tnd-drawer-edit fam-tedit">' + ICON_EDIT + ' Edit</button>';
+      return '<button type="button" class="btn-sm tnd-drawer-cancel fam-tcancel">Cancel</button>' +
+        '<button type="button" class="btn-sm primary tnd-drawer-save fam-tsave">' + ICON_SAVE + ' Save</button>';
+    }
+
+    // Adding a child is not a save, so it stays with the list it adds to.
+    function bar() {
+      if (st.tab === 'children') {
+        return '<div class="fam-tbar fam-tbar--kids"><span class="fam-tbar-note">Each child has their own record: enrollment, health, transportation and tuition.</span>' +
+          '<span class="up-head-spacer"></span>' +
+          '<button type="button" class="btn-sm fam-kidadd" data-m="wait">' + HI.waitlist + 'Add to waiting list</button>' +
+          '<button type="button" class="btn-sm primary fam-kidadd" data-m="enroll">' + HI.plus + 'Enroll a child</button></div>';
+      }
+      return '';
+    }
+
+    function paint() {
+      var on = editing(), held = on ? st.held[st.tab] : null;
+      pane.classList.toggle('is-readonly', !on);
+      pane.classList.toggle('is-editing', on);
+      portal.querySelector('.fam-hacts').innerHTML = actions();
+      portal.querySelector('.fam-eb-edit').textContent = st.creating ? 'New family' : 'Editing ' + label(st.tab).toLowerCase();
+      pane.setAttribute('aria-label', famName(f));
+      portal.querySelector('.fam-eb').textContent = f.isNew ? 'New family' : 'Family';
+      var body = held ? '' : (st.creating && st.tab === 'contacts'
+        ? '<p class="fam-panel-note fam-newnote">Grandparents, babysitters, doctors. This step is optional: press Finish to skip it.</p>' : '') + TAB_BODY[st.tab](f, on);
+      // The registration's icons on top; the family's tabs once it exists.
+      if (st.creating && !portal.querySelector('.reg-strip')) {
+        var strip = document.createElement('div');
+        strip.className = 'reg-strip';
+        var eb = portal.querySelector('.up-head-eyebrow');
+        eb.parentNode.insertBefore(strip, eb.nextSibling);
+        var pl = readPlan();
+        if (window.cmRegTrack && pl) window.cmRegTrack(strip, stepItems(pl.kids, pl.snaps), st.tab === 'contacts' ? pl.kids.length + 1 : 0);
+      }
+      host.innerHTML = (st.creating ? '' : hero() + tabs() + bar()) +
+        (held ? '<div class="fam-heldslot"></div>'
+          : on ? '<form class="form-horizontal tnd-pane-edit fam-editform" onsubmit="return false">' + body + '</form>'
+               : '<div class="fam-tbody">' + body + '</div>');
+      if (held) { host.querySelector('.fam-heldslot').replaceWith(held); delete st.held[st.tab]; }
+      wire(!held);
+      var after = TAB_WIRE[st.tab];
+      if (after && !held) after(f, portal, { edit: on }, opts);
+      opts = {};
+    }
+
+    function wire(fresh) {
+      host.querySelectorAll('[data-ftab]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var k = b.getAttribute('data-ftab');
+          if (k !== st.tab) leave(k);
+        });
+      });
+      var ed = portal.querySelector('.fam-tedit');
+      if (ed) ed.addEventListener('click', function () { go(st.tab, true); });
+      var cn = portal.querySelector('.fam-tcancel');
+      if (cn) cn.addEventListener('click', function () {
+        host.querySelector('.fam-editform').remove();
+        go(st.tab, false);
+      });
+      var sv = portal.querySelector('.fam-tsave');
+      if (sv) sv.addEventListener('click', function () {
+        var form = host.querySelector('.fam-editform');
+        var next = TAB_SAVE[st.tab](f, form);
+        if (next === false) return;
+        form.remove();
+        refresh();
+        go(st.tab, false);
+      });
+      var sb = portal.querySelector('.fam-sback');
+      if (sb) sb.addEventListener('click', stepBack);
+      var sn = portal.querySelector('.fam-snext');
+      if (sn) sn.addEventListener('click', stepNext);
+      var form = host.querySelector('.fam-editform');
+      if (form && fresh) {
+        var mark = function () { st.dirty = true; };
+        form.addEventListener('input', mark);
+        form.addEventListener('change', mark);
+        form.addEventListener('click', function (e) { if (e.target.closest('button')) mark(); });
+      }
+      host.querySelectorAll('.fam-kidadd').forEach(function (b) {
+        b.addEventListener('click', function () { addChild(f, b.getAttribute('data-m')); });
+      });
+      host.querySelectorAll('.fam-toperson').forEach(function (a) {
+        a.addEventListener('click', function () { var p = personById(a.getAttribute('data-person')); if (p) openPerson(p); });
+      });
+      host.querySelectorAll('.fam-tochild').forEach(function (a) {
+        a.addEventListener('click', function () { openChild(a.getAttribute('data-child'), a.getAttribute('data-childname')); });
+      });
+      host.querySelectorAll('[data-goto]').forEach(function (a) {
+        a.addEventListener('click', function () { go(a.getAttribute('data-goto'), false); });
+      });
+    }
+
+    // Leaving the panel saves too, as leaving a tab does; Cancel is how changes are thrown away.
+    var shut = function () {
+      autosave();
+      // Leaving ends the registration. On the last step the children are all done, so they count.
+      if (st.creating) {
+        var pl = readPlan();
+        if (pl && st.tab === 'contacts') document.dispatchEvent(new CustomEvent('cm-reg-done', { detail: pl }));
+        clearPlan();
+      }
+      closeDrawer();
+    };
+    portal.querySelector('.tnd-pane-close').addEventListener('click', shut);
+    scrim.addEventListener('click', shut);
+    paint();
+
+    if (stay) {
+      [pane, scrim].forEach(function (el) { el.style.transition = 'none'; el.classList.add('is-open'); });
+      pane.getBoundingClientRect();
+      setTimeout(function () { [pane, scrim].forEach(function (el) { el.style.transition = ''; }); }, 50);
+    } else {
+      requestAnimationFrame(function () { pane.classList.add('is-open'); scrim.classList.add('is-open'); });
+    }
+    return portal;
+  }
+
+  // The family's children: the matched records, plus any registered here.
+  function childLinks(f) {
+    var kidsOf = kidsOfHousehold(f);
+    return kids(f).map(function (n) {
+      return { n: n, full: n + ' ' + f.n, rec: kidsOf.filter(function (x) { return x.f === n; })[0] };
     });
   }
+  function childRow(k, label) {
+    var row = vRow(DI.person, label || whereOf(k.rec), k.full);
+    return k.rec && k.rec.id ? row.replace('<div class="vB-row"', '<a class="vB-row vB-row--action fam-tochild" data-child="' + k.rec.id +
+      '" data-childname="' + esc(k.full) + '" href="javascript:void(0);"').replace(/<\/div>$/, DI.cta + '</a>') : row;
+  }
+
+  // A contact as the child profile shows a parent: who, what they may do, how to reach them.
+  function contactView(f, c) {
+    var lv = permLevel(c);
+    return '<div class="vB-list">' +
+      vRow(DI.person, c.t, c.n).replace('<div class="vB-row"', '<a class="vB-row vB-row--action fam-toperson" data-person="' +
+        esc(pkey(c)) + '" href="javascript:void(0);"').replace(/<\/div>$/, DI.cta + '</a>') +
+      vRow(DI.group, 'What they may do', { full: 'Full permission', limited: 'Limited permission', none: 'No permission' }[lv]) +
+      primaryRow(listsOf(c, f).phone, 'phone') +
+      primaryRow(listsOf(c, f).email, 'email') +
+    '</div>';
+  }
+
+  var TAB_BODY = {
+    details: function (f, edit) {
+      var addr = String(f.a || '').replace(/,?\s*USA$/i, '');
+      if (!edit) {
+        return group('Family', '<div class="vB-list">' +
+            vRow(DI.group, 'Family name', famName(f)) +
+            vRow(DI.home, 'Address · Household', addr) +
+            vRow(DI.phone, 'Phone · Household', f.p, tel(f.p)) +
+          '</div>') +
+          group('Parents', parentsOf(f).length ? parentsOf(f).map(function (c) { return contactView(f, c); }).join('')
+            : '<p class="fam-empty-note">No parents yet.</p>');
+      }
+      return '<section class="vB-group"><h3 class="vB-group-label">Family</h3><div class="vB-editcard">' +
+          field('Family name', 'name', f.n, ' placeholder="Last name, e.g. Thornley" required') +
+          hhRows(f.p, parseAddr(f.a)) +
+        '</div></section>' +
+        // Creating a family: its parents are part of it. Everyone else is on Contacts.
+        (f.isNew ? '<section class="vB-group"><h3 class="vB-group-label">Father</h3><div class="vB-editcard fam-newparent" data-rel="father"></div></section>' +
+          '<section class="vB-group"><h3 class="vB-group-label">Mother</h3><div class="vB-editcard fam-newparent" data-rel="mother"></div></section>'
+          : '<section class="vB-group"><h3 class="vB-group-label">Parents</h3><div class="vB-editcard fam-clist fam-clist-parents">' +
+              parentsOf(f).map(function (c) { return contactSummary(c, f.contacts.indexOf(c)); }).join('') +
+              (parentsOf(f).length < 2 ? '<button type="button" class="reg-add fam-cadd">' + HI.plus + 'Add parent</button>' : '') +
+            '</div></section>');
+    },
+
+    contacts: function (f, edit) {
+      var others = otherContacts(f);
+      if (!edit) {
+        return group('Other contacts', others.length ? others.map(function (c) { return contactView(f, c); }).join('')
+          : '<p class="fam-empty-note">No other contacts yet.</p>');
+      }
+      return '<section class="vB-group"><h3 class="vB-group-label">Other contacts</h3><div class="vB-editcard fam-clist">' +
+          others.map(function (c) { return contactSummary(c, f.contacts.indexOf(c)); }).join('') +
+          '<button type="button" class="reg-add fam-cadd">' + HI.plus + 'Add contact</button>' +
+        '</div></section>';
+    },
+
+    children: function (f) {
+      var list = childLinks(f);
+      if (!list.length) {
+        return group('Children', '<p class="fam-empty-note">No children yet.</p>') +
+          '<p class="fam-panel-note">The family stays a <b>draft</b> until its first child is registered. ' +
+          'Enroll a child, or add them to the waiting list.</p>';
+      }
+      return group('Children', '<div class="vB-list">' + list.map(function (k) { return childRow(k); }).join('') + '</div>') +
+        '<p class="fam-panel-note">To move a child to another family, open the child and use <b>Change</b> on their Family tab.</p>';
+    },
+
+    /* BILLING IS THE PARENTS', TUITION IS THE CHILD'S. Nothing lives at family level
+       today, so for now this is who pays, and the way to the Payments page. The price,
+       the vouchers and the agency are each child's, on their Tuition tab. */
+    billing: function (f, edit) {
+      var payer = payerOf(f);
+      if (!edit) {
+        return group('Billing', '<div class="vB-list">' +
+            vRow(DI.person, 'Payment responsible', payer ? payer.n + ' \u00b7 ' + payer.t : '') +
+            '<a class="vB-row vB-row--action fam-topayments" href="javascript:void(0);">' +
+              '<span class="vB-row-ico" aria-hidden="true">' + DI.group + '</span>' +
+              '<span class="vB-row-body"><span class="vB-row-label">Payments</span>' +
+              '<span class="vB-row-value">Open the ' + esc(famName(f)) + ' in Payments</span></span>' + DI.cta + '</a>' +
+          '</div>') +
+          '<p class="fam-panel-note">Tuition and vouchers belong to each child: open a child for their <b>Tuition</b> tab.</p>';
+      }
+      var cs = f.contacts || [], pi = payer ? cs.indexOf(payer) : -1;
+      return '<section class="vB-group"><h3 class="vB-group-label">Billing</h3><div class="vB-editcard">' +
+          '<div class="form-group"><label class="col-sm-3 control-label">Payment responsible</label><div class="col-sm-4">' +
+            '<select class="form-control" data-k="payer"><option value="">Nobody yet</option>' + cs.map(function (c, i) {
+              return '<option value="' + i + '"' + (i === pi ? ' selected' : '') + '>' + esc(c.n + ' \u00b7 ' + c.t) + '</option>';
+            }).join('') + '</select></div></div>' +
+        '</div></section>';
+    }
+  };
+
+  function otherContacts(f) {
+    var ps = parentsOf(f);
+    return (f.contacts || []).filter(function (c) { return ps.indexOf(c) === -1; });
+  }
+
+  // The contact rows on a form, saved; `fixed` are the family's contacts not on it.
+  function saveContactRows(f, form, fixed) {
+    var rows = [].slice.call(form.querySelectorAll('.fam-crow, .fam-cnew')).filter(function (row) {
+      if (!row.classList.contains('fam-cnew')) return true;
+      var r0 = readCard(row.querySelector('.cm-extra'));
+      return r0.n;                                              // a card with no name is no contact yet
+    });
+    // Check every open card first, so nothing changes if one is incomplete.
+    for (var i = 0; i < rows.length; i++) {
+      var card = rows[i].querySelector('.cm-extra');
+      if (!card || rows[i].classList.contains('is-removed')) continue;
+      var r = readCard(card);
+      if (!r.t || !r.n) {
+        if (!QUIET) {
+          if (window.tndToast) window.tndToast.error('Every contact needs a relationship and a name.');
+          rows[i].scrollIntoView({ block: 'center' });
+        }
+        return false;
+      }
+    }
+    var keep = fixed.slice();
+    rows.forEach(function (row) {
+      var card = row.querySelector('.cm-extra');
+      if (row.classList.contains('fam-cnew')) {
+        var rn = readCard(card);
+        var nc = { t: rn.t, perm: rn.perm, on: false };
+        PERSON_KEYS.forEach(function (k) { nc[k] = rn[k]; });
+        keep.push(nc);
+        return;
+      }
+      var c = f.contacts[+row.getAttribute('data-ci')];
+      if (row.classList.contains('is-removed')) return;         // the link goes; the person stays elsewhere
+      if (card) {
+        var r2 = readCard(card), p = personById(pkey(c));
+        if (p) applyPerson(p, r2); else { PERSON_KEYS.forEach(function (k) { c[k] = r2[k]; }); }
+        c.t = r2.t;                                             // the relationship is this family's link
+        if (r2.perm) c.perm = r2.perm;
+      }
+      keep.push(c);
+    });
+    // Billing names its payer by position; keep it on the same person.
+    var payer = payerOf(f);
+    f.contacts = keep;
+    if (f.billing && f.billing.payer != null && f.billing.payer > -1) {
+      f.billing.payer = payer && keep.indexOf(payer) > -1 ? keep.indexOf(payer) : null;
+    }
+  }
+
+  var TAB_SAVE = {
+    details: function (f, form) {
+      var v = function (k) { return form.querySelector('[data-k="' + k + '"]').value.trim(); };
+      var name = v('name').replace(/\s+(family|household)$/i, '');
+      if (!name) {
+        if (QUIET) return false;
+        if (window.tndToast) window.tndToast.error('Give the family a name.');
+        form.querySelector('[data-k="name"]').focus();
+        return false;
+      }
+      if (!f.isNew && saveContactRows(f, form, otherContacts(f)) === false) return false;
+      if (f.n && name !== f.n && !f.sur) f.sur = f.n;   // its children are still found by the old surname
+      if (!f.key && f.a) f.key = f.a;                   // ... and the old address: set before it changes
+      f.n = name;
+      f.p = v('phone');
+      f.a = [v('line1'), v('line2') ? 'Apt ' + v('line2').replace(/^apt\.?\s*/i, '') : '', v('city'),
+             [v('state'), v('zip')].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      if (!f.key) f.key = f.a;                          // a new family: found by what it was saved with
+      if (f.isNew) {
+        // A parent left without a first name is not added: not every family has both.
+        form.querySelectorAll('.fam-newparent .cm-extra').forEach(function (card) {
+          var who = window.cmCardValues ? window.cmCardValues(card) : null;
+          if (!who || !who.first) return;
+          var rp = readCard(card), np = { t: rp.t, perm: rp.perm, on: false };
+          PERSON_KEYS.forEach(function (k) { np[k] = rp[k]; });
+          f.contacts.push(np);
+        });
+        // Saved as a draft: it is a family now, and gets its children, then its other contacts.
+        delete f.isNew;
+        f.draft = true;
+        FAMILIES.push(f);
+        if (window.cmAddFamily) window.cmAddFamily(f);
+        return;
+      }
+      say('Details saved.');
+    },
+
+    contacts: function (f, form) {
+      if (saveContactRows(f, form, parentsOf(f)) === false) return false;
+      say('Contacts saved.');
+    },
+
+    billing: function (f, form) {
+      var v = form.querySelector('[data-k="payer"]').value;
+      f.billing = { payer: v === '' ? -1 : +v };
+      say('Billing saved.');
+    }
+  };
+
+  /* To this family on the Payments page: its own Families view, searched for the family.
+     Payments groups families by phone, not by this page's surname and address, so the search
+     is for an enrolled child's full name, which finds exactly their family; a surname could
+     find several. With no enrolled child it falls back to the surname. */
+  function openInPayments(f) {
+    var kid = kidsOfHousehold(f).filter(function (c) { return c.s === 'enrolled'; })[0];
+    var term = kid ? kid.f + ' ' + f.n : f.n;
+    // The published demo is a recorded copy with no Payments page, so it says where this goes.
+    if (window.__TENDI_REPLAY__) {
+      if (window.tndToast) window.tndToast.success('In Tendi this opens the ' + famName(f) + ' on the Payments page.');
+      return;
+    }
+    window.location.hash = 'payments';
+    var t0 = Date.now();
+    (function wait() {
+      var btn = document.querySelector('.pay-view-btn[data-view="families"]');
+      var box = document.getElementById('famSearch');
+      if (!btn || !box) { if (Date.now() - t0 < 8000) setTimeout(wait, 80); return; }
+      btn.click();
+      box.value = term;
+      box.dispatchEvent(new Event('input', { bubbles: true }));
+    })();
+  }
+
+  // The rows on an edit form: each person's card, filled in; Remove; and the add button,
+  // whose new card starts as `rel` when one is given. Returns that button.
+  function wireContactRows(f, portal, rel) {
+    var list = portal.querySelector('.fam-clist');
+    portal.querySelectorAll('.fam-crow').forEach(function (row) {
+      var c = f.contacts[+row.getAttribute('data-ci')];
+      var card = personCard(f, c);
+      if (card) row.querySelector('.fam-crow-card').appendChild(card);
+      row.classList.add('is-editing');
+      row.querySelector('.fam-cremove').addEventListener('click', function () {
+        var off = !row.classList.contains('is-removed');
+        row.classList.toggle('is-removed', off);
+        this.textContent = off ? 'Undo' : 'Remove';
+      });
+    });
+    var add = portal.querySelector('.fam-cadd');
+    if (add) add.addEventListener('click', function () {
+      var wrap = document.createElement('div');
+      wrap.className = 'fam-cnew';
+      wrap.innerHTML = '<div class="fam-cnew-head"><b>New ' + (rel ? 'parent' : 'contact') + '</b><span class="up-head-spacer"></span>' +
+        '<button type="button" class="fam-cremove">Remove</button></div>';
+      var card = personCard(f, null);
+      if (!card) return;
+      wrap.appendChild(card);
+      list.insertBefore(wrap, add);
+      wrap.querySelector('.fam-cremove').addEventListener('click', function () { wrap.remove(); });
+      var sel = card.querySelector('.cm-ptype select');
+      if (sel) {
+        if (rel) { sel.value = rel; sel.dispatchEvent(new Event('change')); }
+        sel.focus();
+      }
+    });
+    return add;
+  }
+
+  // What a tab needs once drawn: the contact cards, filled in; the address switch.
+  var TAB_WIRE = {
+    contacts: function (f, portal, st, opts) {
+      if (!st.edit) return;
+      var add = wireContactRows(f, portal);
+      // "Add a contact": start with an empty card.
+      if (opts.addContact && add) add.click();
+    },
+    details: function (f, portal, st) {
+      if (!st.edit) return;
+      var nm = portal.querySelector('[data-k="name"]');
+      if (!f.isNew) { wireContactRows(f, portal, parentsOf(f)[0] && /^father$/i.test(parentsOf(f)[0].t) ? 'mother' : 'father'); return; }
+      var lasts = [];
+      portal.querySelectorAll('.fam-newparent').forEach(function (hostEl) {
+        var card = personCard(f, null);
+        if (!card) return;
+        var sel = card.querySelector('.cm-ptype select');
+        if (sel) { sel.value = hostEl.getAttribute('data-rel'); sel.dispatchEvent(new Event('change')); }
+        // "Copy the household address" reads what is typed above, not what is saved.
+        var ab = card.querySelector('.cm-multi[data-multi="address"]');
+        if (ab) ab._hhAddr = function () {
+          var v = function (k) { return portal.querySelector('[data-k="' + k + '"]').value.trim(); };
+          return [v('line1'), v('line2'), v('city'), [v('state'), v('zip')].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+        };
+        hostEl.appendChild(card);
+        var gs = card.querySelectorAll('[data-part="name"] .form-group');
+        for (var i = 0; i < gs.length; i++) {
+          var l = gs[i].querySelector('label');
+          if (l && /^last name$/i.test((l.textContent || '').trim())) lasts.push(gs[i].querySelector('input'));
+        }
+      });
+      // The family name is the parents' last name until someone types another one.
+      if (nm) nm.addEventListener('input', function () {
+        lasts.forEach(function (x) { if (x && (!x.value || x.getAttribute('data-auto') === '1')) { x.value = nm.value; x.setAttribute('data-auto', '1'); } });
+      });
+      lasts.forEach(function (x) { if (x) x.addEventListener('input', function () { x.removeAttribute('data-auto'); }); });
+      if (nm) nm.focus();
+    },
+    billing: function (f, portal, st) {
+      if (st.edit) return;
+      var a = portal.querySelector('.fam-topayments');
+      if (a) a.addEventListener('click', function () {
+        clearPlan();                                    // leaving ends a registration
+        closeDrawer();
+        openInPayments(f);
+      });
+    }
+  };
+
+  // The registration's plan, which changemap.js's child steps read and move on.
+  function readPlan() { try { return JSON.parse(sessionStorage.getItem('cm-reg') || 'null'); } catch (err) { return null; } }
+  function writePlan(p) { try { sessionStorage.setItem('cm-reg', JSON.stringify(p)); } catch (err) {} }
+  function clearPlan() { try { sessionStorage.removeItem('cm-reg'); } catch (err) {} }
+  // The icons on top: the family, each child, then other contacts.
+  function stepItems(list, snaps) {
+    return [{ fam: true, title: 'Family' }].concat(list.map(function (k, i) {
+      var sn = snaps && snaps[i];
+      return { w: k.m === 'wait', title: (sn && sn.fname ? sn.fname + ' \u00b7 ' : '') + (k.m === 'wait' ? 'Waiting list' : 'Enrollment') };
+    }), [{ others: true, title: 'Other contacts' }]);
+  }
+
+  // A child joins a family from its Children tab: the regular New child panel, with
+  // the family already picked, enrollment or the waiting list set from the button.
+  function addChild(f, mode) {
+    STATE.regFam = f;
+    writePlan({ kids: [{ m: mode === 'wait' ? 'wait' : 'enroll' }], cur: 0, snaps: [], at: Date.now(), lname: f.n });
+    if (window.cmAddFamily) window.cmAddFamily(f);
+    var portal = document.querySelector('.fam-portal');
+    if (portal) swapToChild(portal, { n: f.n, a: f.a });
+    else newChildPanel({ n: f.n, a: f.a });
+  }
+
+  // Return from the first child: to the family step when the family is being created,
+  // otherwise to the Children tab it was added from.
+  window.cmOpenFamilyContacts = function () {
+    if (STATE.regFam) openDrawer(STATE.regFam, 'contacts', { edit: true, creating: true, instant: true });
+  };
+  window.cmOpenFamilySetup = function (plan) {
+    var f = STATE.regFam;
+    if (!f) return;
+    if (plan && plan.family) openDrawer(f, 'details', { edit: true, creating: true, instant: true });
+    else openDrawer(f, 'children', { instant: true });
+  };
+
+  // Finish: the child is now in the family's list, and the family is no longer a draft.
+  document.addEventListener('cm-reg-done', function (e) {
+    var f = STATE.regFam, plan = e.detail;
+    if (!f || !plan) return;
+    (plan.snaps || []).forEach(function (s, i) {
+      if (!s || !s.fname) return;
+      f.extra = (f.extra || []).concat([{ f: s.fname, l: f.sur || f.n, a: homeKey(f),
+        s: plan.kids[i] && plan.kids[i].m === 'wait' ? 'waitlist' : 'enrolled', cl: s.cls || '' }]);
+      f.k = kids(f).concat([s.fname]).join(', ');
+      f.c = kids(f).length;
+    });
+    f.draft = false;
+    refresh();
+  });
+  document.addEventListener('cm-reg-closed', function () {
+    var f = STATE.regFam;
+    STATE.regFam = null;
+    if (f && document.getElementById('tndFamiliesPage')) setTimeout(function () { openDrawer(f, 'children'); }, 260);
+  });
 
   /* ---- a person (FAM-FAM-6) ----------------------------------------------
      The household panel's parts again: hero, then Details, then Linked to — every
@@ -1027,8 +1645,8 @@
   // on. Editing the address must not un-match them, so the original is kept.
   function homeKey(f) { return String(f.key || f.a).toLowerCase(); }
   function kidsOfHousehold(f) {
-    return CHILDREN_ALL.concat(CHILDREN_OFF).filter(function (c) {
-      return c.l.toLowerCase() === String(f.n).toLowerCase() && c.a.toLowerCase() === homeKey(f);
+    return CHILDREN_ALL.concat(CHILDREN_OFF, f.extra || []).filter(function (c) {
+      return c.l.toLowerCase() === String(f.sur || f.n).toLowerCase() && c.a.toLowerCase() === homeKey(f);
     });
   }
   function activeKids(f) {
@@ -1240,153 +1858,16 @@
     '</div>';
   }
 
+  // Edit family (row menu): the family's panel, its Details tab already in edit.
   function editHousehold(f, opts) {
-    var a = parseAddr(f.a);
-    var contacts = (f.contacts || []).slice().sort(function (x, y) {
-      var r = function (c) { return /^father$/i.test(c.t) ? 0 : /^mother$/i.test(c.t) ? 1 : 2; };
-      return r(x) - r(y);
-    });
-    var parentList = contacts.filter(function (c) { return /^(mother|father)$/i.test(c.t || ''); });
-    var otherList = contacts.filter(function (c) { return parentList.indexOf(c) === -1; });
-    var kidsOf = kidsOfHousehold(f);
-    var childRows = kids(f).map(function (n) {
-      var k = kidsOf.filter(function (x) { return x.f === n; })[0];
-      return '<div class="fam-ckid"><b>' + esc(n + ' ' + f.n) + '</b><span>' + esc(whereOf(k)) + '</span>' +
-        (k ? '<button type="button" class="fam-sub-btn" data-child="' + k.id + '" data-childname="' + esc(n + ' ' + f.n) + '">Open</button>' : '') +
-      '</div>';
-    }).join('');
-
-    var portal = openEditPane('Editing household',
-      '<section class="vB-group"><h3 class="vB-group-label">Household</h3><div class="vB-editcard">' +
-        field('Name', 'name', f.n + ' household', ' readonly') +
-        hhRows(f.p, a) +
-      '</div></section>' +
-      '<section class="vB-group"><h3 class="vB-group-label">Children</h3><div class="vB-editcard">' +
-        (childRows || '<p class="fam-panel-note">No children.</p>') +
-        '<p class="fam-panel-note">To move a child to another household, open the child and use <b>Change</b> on their Family tab.</p>' +
-      '</div></section>' +
-      // Parents, then everyone else — the same two groups the household's view shows.
-      (parentList.length ? '<section class="vB-group"><h3 class="vB-group-label">Parents</h3><div class="vB-editcard fam-clist-parents">' +
-        parentList.map(function (c) { return contactSummary(c, (f.contacts || []).indexOf(c)); }).join('') +
-      '</div></section>' : '') +
-      '<section class="vB-group"><h3 class="vB-group-label">Other contacts</h3><div class="vB-editcard fam-clist">' +
-        otherList.map(function (c) { return contactSummary(c, (f.contacts || []).indexOf(c)); }).join('') +
-        '<button type="button" class="reg-add fam-cadd">' + HI.plus + 'Add contact</button>' +
-      '</div></section>',
-
-      function (portal) {
-        var v = function (k) { return portal.querySelector('[data-k="' + k + '"]').value.trim(); };
-        var rows = [].slice.call(portal.querySelectorAll('.fam-crow, .fam-cnew'));
-        // Check every open card first, so nothing changes if one is incomplete.
-        for (var i = 0; i < rows.length; i++) {
-          var card = rows[i].querySelector('.cm-extra');
-          if (!card || rows[i].classList.contains('is-removed')) continue;
-          var r = readCard(card);
-          if (!r.t || !r.n) {
-            if (window.tndToast) window.tndToast.error('Every contact needs a relationship and a name.');
-            rows[i].scrollIntoView({ block: 'center' });
-            return false;
-          }
-        }
-        var keep = [];
-        rows.forEach(function (row) {
-          var card = row.querySelector('.cm-extra');
-          if (row.classList.contains('fam-cnew')) {
-            var rn = readCard(card);
-            var nc = { t: rn.t, perm: rn.perm, on: false };
-            PERSON_KEYS.forEach(function (k) { nc[k] = rn[k]; });
-            keep.push(nc);
-            return;
-          }
-          var c = f.contacts[+row.getAttribute('data-ci')];
-          if (row.classList.contains('is-removed')) return;       // the link goes; the person stays elsewhere
-          if (card) {
-            var r2 = readCard(card), p = personById(pkey(c));
-            if (p) applyPerson(p, r2); else { PERSON_KEYS.forEach(function (k) { c[k] = r2[k]; }); }
-            c.t = r2.t;                                           // the relationship is this household's link
-            if (r2.perm) c.perm = r2.perm;
-          }
-          keep.push(c);
-        });
-        f.contacts = keep;
-        if (!f.key) f.key = f.a;
-        f.p = v('phone');
-        f.a = [v('line1'), v('line2') ? 'Apt ' + v('line2').replace(/^apt\.?\s*/i, '') : '', v('city'),
-               [v('state'), v('zip')].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-        refresh();
-        if (window.tndToast) window.tndToast.success('Saved.');
-      }, null, opts);
-
-    var list = portal.querySelector('.fam-clist');
-    // Every person is open in the edit form: the full creation card, filled in.
-    portal.querySelectorAll('.fam-crow').forEach(function (row) {
-      var c = f.contacts[+row.getAttribute('data-ci')];
-      var card = personCard(f, c);
-      if (card) row.querySelector('.fam-crow-card').appendChild(card);
-      row.classList.add('is-editing');
-      row.querySelector('.fam-cremove').addEventListener('click', function () {
-        var off = !row.classList.contains('is-removed');
-        row.classList.toggle('is-removed', off);
-        this.textContent = off ? 'Undo' : 'Remove';
-      });
-    });
-    portal.querySelector('.fam-cadd').addEventListener('click', function () {
-      var wrap = document.createElement('div');
-      wrap.className = 'fam-cnew';
-      wrap.innerHTML = '<div class="fam-cnew-head"><b>New contact</b><span class="up-head-spacer"></span>' +
-        '<button type="button" class="fam-cremove">Remove</button></div>';
-      var card = personCard(f, null);
-      if (!card) return;
-      wrap.appendChild(card);
-      list.insertBefore(wrap, this);
-      wrap.querySelector('.fam-cremove').addEventListener('click', function () { wrap.remove(); });
-      var sel = card.querySelector('.cm-ptype select');
-      if (sel) sel.focus();
-    });
-    portal.querySelectorAll('[data-child]').forEach(function (btn) {
-      btn.addEventListener('click', function () { openChild(btn.getAttribute('data-child'), btn.getAttribute('data-childname')); });
-    });
+    return openDrawer(f, 'details', { edit: true, instant: opts && opts.instant });
   }
 
   // 3. ADD A CONTACT — the very card "+ Add contact" builds on a child's Family
   //    tab (relationship, permissions, link existing, name, how to reach, address,
   //    work), added to the household.
   function addContact(f) {
-    var portal = openEditPane('New contact',
-      '<section class="vB-group"><h3 class="vB-group-label">' + esc(f.n) + ' household</h3>' +
-        '<div class="vB-editcard fam-contacthost"></div></section>',
-      function (pt) {
-        var card = pt.querySelector('.cm-extra');
-        var v = window.cmCardValues ? window.cmCardValues(card) : null;
-        if (!v || !v.type || !(v.first || v.last)) {
-          if (window.tndToast) window.tndToast.error('Choose the relationship and give a name.');
-          return false;
-        }
-        f.contacts = f.contacts || [];
-        var rc = readCard(card);
-        var nc = { t: v.typeLabel, perm: rc.perm, on: false };
-        PERSON_KEYS.forEach(function (k) { nc[k] = rc[k]; });
-        f.contacts.push(nc);
-        refresh();
-        if (window.tndToast) window.tndToast.success('Contact added.');
-      });
-    var host = portal.querySelector('.fam-contacthost');
-    if (window.cmExtraCard) {
-      var card = window.cmExtraCard();
-      var rm = card.querySelector('.cm-extra-remove');
-      if (rm) rm.remove();
-      card.setAttribute('data-fam-addr', String(f.a || '').replace(/,?\s*USA$/i, ''));
-      var ab = card.querySelector('.cm-multi[data-multi="address"]');
-      if (ab) {
-        ab._hhAddr = function () { return card.getAttribute('data-fam-addr'); };
-        ab._peers = function () {
-          return (f.contacts || []).map(function (x) { return { who: x.n + ' (' + x.t + ')', items: listsOf(x).address }; });
-        };
-      }
-      host.appendChild(card);
-      var sel = card.querySelector('select');
-      if (sel) sel.focus();
-    }
+    return openDrawer(f, 'contacts', { edit: true, addContact: true });
   }
 
   // 6. ARCHIVE HOUSEHOLD — only when no child in it is enrolled or waiting (the
@@ -1397,7 +1878,7 @@
       FAMILIES = (FAMILIES || []).filter(function (x) { return x !== f; });
       refresh();
       var sub = document.getElementById('famCount');
-      if (sub) sub.innerHTML = '<b>' + FAMILIES.length + '</b> households';
+      if (sub) sub.innerHTML = '<b>' + FAMILIES.length + '</b> families';
       if (window.tndToast) window.tndToast.success('Archived.');
     };
     var msg = 'Archive the ' + f.n + ' household? None of its children is enrolled or on the waiting list. ' +
@@ -1507,21 +1988,24 @@
     root.querySelector('.fam-addwait').addEventListener('click', function () { openSetup([{ m: 'wait' }]); });
   }
 
-  /* ---- a new family: how many children, and enrollment or waiting list ----
-     The first panel of registering a family. Before any form: one row per child
-     with the app's icon tile — a person for enrollment, an hourglass for the
-     waiting list — a choice for each, and a line saying what happens next: they
-     are registered one by one, and the family and shared answers carry over.
-     Start hands the plan to the regular child panel (changemap.js, regFlow),
-     which walks the children with Next and Back and ends on a welcome. */
+  /* ---- a new family ------------------------------------------------------
+     Before any form, how many children and enrollment or waiting list for each. Start
+     goes to the family and its parents, step one; Next from there to each child in turn,
+     in the regular child panel (changemap.js, regFlow); then other contacts, with the
+     icons on top for every step. It ends on a welcome. "Add to waiting list" is the same, set to the waiting list. */
+  function newFamily() {
+    return { n: '', a: '', p: '', k: '', c: 0, contacts: [], isNew: true };
+  }
+
   function openSetup(kids, prior, opt) {
     var old = document.querySelector('.fam-portal');
     if (old) old.remove();
+    if (!prior) STATE.regKeep = false;                  // a fresh start: a new family
     var portal = document.createElement('div');
     portal.className = 'tendi-skin tnd-drawer-portal fam-portal';
     portal.innerHTML =
       '<div class="tnd-pane-scrim tnd-drawer-scrim"></div>' +
-      '<aside class="tnd-pane tnd-drawer is-editing" role="dialog" aria-label="New family">' +
+      '<aside class="tnd-pane tnd-drawer is-editing fam-fdrawer" role="dialog" aria-label="New family">' +
         '<div class="tnd-pane-head">' +
           '<span class="up-head-eyebrow"><span class="up-eb-edit">New family</span></span>' +
           '<div class="reg-strip"></div>' +
@@ -1541,12 +2025,10 @@
       var e = kids.filter(function (k) { return k.m === 'enroll'; }).length, w = kids.length - e;
       // The children, small, in the head row (changemap.js draws the track, so this
       // panel and the child panels share it).
-      if (window.cmRegTrack) window.cmRegTrack(portal.querySelector('.reg-strip'), kids.map(function (k) {
-        return { w: k.m === 'wait', title: k.m === 'wait' ? 'Waiting list' : 'Enrollment' };
-      }), -1);
+      if (window.cmRegTrack) window.cmRegTrack(portal.querySelector('.reg-strip'), stepItems(kids), -1);
       host.innerHTML =
-        '<p class="reg-intro">You\u2019ll register them one by one. The family, and anything the children share, ' +
-          'carries over to the next child, so each one only asks for what\u2019s different.</p>' +
+        '<p class="reg-intro">First the family and its parents, then the children one by one, then any other contacts. The family, and anything ' +
+          'the children share, carries over, so each child only asks for what\u2019s different.</p>' +
         '<section class="vB-group"><h3 class="vB-group-label">Children joining</h3>' +
         kids.map(function (k, i) {
           var wt = k.m === 'wait';
@@ -1573,17 +2055,18 @@
     }
     render();
 
-    var leave = function () { try { sessionStorage.removeItem('cm-reg'); } catch (err) {} closeDrawer(); };
+    var leave = function () { clearPlan(); closeDrawer(); };
     portal.querySelector('.tnd-pane-scrim').addEventListener('click', leave);
     portal.querySelector('.tnd-pane-close').addEventListener('click', leave);
     portal.querySelector('.fam-start').addEventListener('click', function () {
-      // Coming back from the children (Return), what was typed for the children
-      // that are still here is kept; a removed child takes its details with it.
+      // What was typed for the children who are still here is kept; a removed child
+      // takes their details with them. On to the family, step one.
       var snaps = prior && prior.snaps ? prior.snaps.slice(0, kids.length) : [];
-      var plan = { kids: kids.map(function (k) { return { m: k.m }; }), cur: 0, snaps: snaps, at: Date.now() };
-      try { sessionStorage.setItem('cm-reg', JSON.stringify(plan)); } catch (err) {}
-      var fam0 = snaps[0] && snaps[0].fam;
-      swapToChild(portal, fam0 ? { n: fam0.n, a: fam0.a } : { mode: 'new', waitlist: kids[0].m === 'wait' });
+      writePlan({ kids: kids.map(function (k) { return { m: k.m }; }), cur: 0, snaps: snaps, at: Date.now(), family: true });
+      var f = STATE.regKeep && STATE.regFam ? STATE.regFam : newFamily();
+      STATE.regFam = f;
+      STATE.regKeep = true;
+      openDrawer(f, 'details', { edit: true, creating: true, instant: true });
     });
     var paneEl = portal.querySelector('.tnd-pane'), scrimEl = portal.querySelector('.tnd-pane-scrim');
     if (opt && opt.instant) {
@@ -1598,14 +2081,11 @@
       scrimEl.classList.add('is-open');
     });
   }
-  // Return from the first child lands here again, with the plan as it was.
-  window.cmOpenFamilySetup = function (plan, opt) {
-    openSetup((plan.kids || [{ m: 'enroll' }]).map(function (k) { return { m: k.m }; }), plan, opt);
-  };
   var REG_ICO = {
-    kid: SV('<circle cx="12" cy="8" r="4"></circle><path d="M5.5 20a7 7 0 0 1 13 0"></path>', 1.9),
+    kid: SV('<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>', 1.9),   // the Children page's own head icon
     wait: SV('<path d="M6.5 7h11"></path><path d="M6.5 17h11"></path><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"></path><path d="M6 4v2a6 6 0 1 0 12 0V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path>', 1.8)
   };
+
 
   /* ---- the page ---------------------------------------------------------- */
 
@@ -1621,7 +2101,6 @@
       '<div class="tnd-dt-toolbar">' +
       '<nav class="breadcrumbs tnd-list-crumbs" aria-label="Breadcrumb">' +
         '<a href="dashboard" class="ajax-page-link">Dashboard</a><span class="sep">/</span>' +
-        '<a href="children" class="ajax-page-link">Children</a><span class="sep">/</span>' +
         '<span class="current">Families</span>' +
       '</nav>' +
 
@@ -1629,11 +2108,11 @@
          live-count subtitle and .btnContainer of actions — so the two pages share
          one header, buttons included. */
       '<div class="tnd-page-head tnd-page-head--icon fam-pagehead">' +
-        '<div class="tnd-head-ico">' + ICON_HOME + '</div>' +
+        '<div class="tnd-head-ico">' + AREA_ICON + '</div>' +
         '<div class="tnd-page-head-text"><h1 class="tnd-dt-title">Families</h1>' +
           // "120 households", or "2 of 120 households" while a search narrows the list.
           '<p class="tnd-dt-subtitle" id="famCount">' + ((FAMILIES && FAMILIES.length)
-            ? '<b>' + FAMILIES.length + '</b> households' : 'Households') + '</p></div>' +
+            ? '<b>' + FAMILIES.length + '</b> families' : 'Families') + '</p></div>' +
         '<div class="btnContainer text-right">' +
           '<a class="tnd-btn btn-add-waitlist fam-addwait" href="javascript:void(0);">' + HI.waitlist + 'Add to waiting list</a>' +
           '<div class="tnd-fpop-wrap fam-ie" data-fam-menu="">' +
@@ -1666,7 +2145,7 @@
       '<div class="tnd-chl-bar fam-bar">' +
         '<div class="tnd-chl-seg fam-seg" role="tablist" aria-label="View">' +
           '<button type="button" role="tab" class="' + (STATE.view === 'households' ? 'is-active' : '') +
-            '" data-view="households" aria-selected="' + (STATE.view === 'households') + '">Households</button>' +
+            '" data-view="households" aria-selected="' + (STATE.view === 'households') + '">Families</button>' +
           '<button type="button" role="tab" class="' + (STATE.view === 'people' ? 'is-active' : '') +
             '" data-view="people" aria-selected="' + (STATE.view === 'people') + '">Contacts</button>' +
         '</div>' +
@@ -1914,7 +2393,7 @@
     m.innerHTML =
       // Edit household opens the family straight in its edit form (the same one the
       // panel's Edit opens).
-      '<button type="button" class="tnd-chl-mi" role="menuitem" data-act="edit">' + ICON_EDIT + 'Edit household</button>' +
+      '<button type="button" class="tnd-chl-mi" role="menuitem" data-act="edit">' + ICON_EDIT + 'Edit family</button>' +
       '<button type="button" class="tnd-chl-mi" role="menuitem" data-act="addkid">' + ICON_ADDKID + 'Add a child</button>' +
       '<button type="button" class="tnd-chl-mi" role="menuitem" data-act="addcontact">' + ICON_ADDCONTACT + 'Add a contact</button>' +
       '<div class="tnd-chl-msep"></div>' +
@@ -1946,23 +2425,8 @@
       } else if (act === 'archive') {
         archiveHousehold(f);
       } else if (act === 'addkid') {
-        // The app's own side panel (window.TndListDrawer — the same drawer a child
-        // opens in), loaded with the Add child form: the household stays on
-        // screen behind it instead of the page changing. The household is handed
-        // over, so the form opens on Family on file with it already picked.
-        try { sessionStorage.setItem('cm-add-family', JSON.stringify({ n: f.n, a: f.a })); } catch (err) {}
-        closeDrawer();
-        if (window.TndListDrawer && typeof window.TndListDrawer.open === 'function') {
-          window.TndListDrawer.open('children/add', 'Add child');
-        } else {
-          var go = document.createElement('a');
-          go.href = 'children/add';
-          go.className = 'ajax-page-link';
-          go.style.display = 'none';
-          document.body.appendChild(go);
-          go.click();
-          go.remove();
-        }
+        // From inside the family, as everywhere: its Children tab.
+        openDrawer(f, 'children');
       }
     });
   }

@@ -952,3 +952,8 @@ body:not(.cm-off) #frmAddEditRecord .vB-editcard .cm-newblock,
 .cm-dupe .cm-dupe-link{border:1px solid var(--primary,#5a3fc2)!important;background:#fff!important;color:var(--primary,#5a3fc2)!important;
   padding:5px 14px!important;border-radius:8px!important}
 .cm-dupe .cm-dupe-link:hover{background:var(--primary,#5a3fc2)!important;color:#fff!important}
+
+/* The child's Tuition tab says where the family's billing lives (client review, 2026-10-28). */
+.cm-tuinote{font-size:12.5px;line-height:1.5;color:var(--ink-3,#5b5470);margin:0 0 12px;padding:10px 12px;
+  border-radius:var(--radius-md,10px);background:var(--primary-tint,#eeecfa)}
+.cm-tuinote b{color:var(--ink-2,#332e47)}

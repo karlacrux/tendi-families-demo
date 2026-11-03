@@ -117,8 +117,10 @@
   var FAMILIES = [];
   fetch('/tendi-families-demo/assets/admin/prototype/families.json')
     .then(function (r) { return r.json(); })
-    .then(function (d) { FAMILIES = d.families || []; })
-    .catch(function () { FAMILIES = []; });
+    .then(function (d) { FAMILIES = (d.families || []).concat(FAMILIES); })
+    .catch(function () {});
+  // A family saved (or renamed) on the Families page, so the child form can pick it.
+  window.cmAddFamily = function (f) { if (FAMILIES.indexOf(f) < 0) FAMILIES.unshift(f); };
 
   // Active children, for the sibling view on the waiting list.
   var CHILDREN = [];
@@ -790,9 +792,10 @@
     'contact assignment overrides': { to: 'Assigned Staff', why: '' },
     // Everything in it is money: voucher programme, HRA/ACS agency and case,
     // price per month, charge day, payment methods, charges, employer share.
-    // "Privileges" named none of that. This is also where families.billing_contact_id
-    // will land, so the tab is about to carry the statement's addressee too.
-    'privileges': { to: 'Billing', why: '' }
+    // "Privileges" named none of that. TUITION, not Billing (client review,
+    // 2026-10-28): the price and the vouchers are the child's; who pays is the
+    // parents', on the family's Billing tab.
+    'privileges': { to: 'Tuition', why: '' }
   };
 
   // The waiting list is the first stage of enrolment, not a subject of its own, so
@@ -2616,7 +2619,7 @@
     n += renameHead('registration form details', 'Enrollment');
     n += renameHead('parents details', 'Family');
     n += renameHead('contact assignment overrides', 'Assigned Staff');
-    n += renameHead('privileges', 'Billing');
+    n += renameHead('privileges', 'Tuition');
 
     n += householdBlock();
     n += personCards();
@@ -2668,6 +2671,18 @@
       row.appendChild(share);
       n++;
     }
+
+    // Tuition is the child's; who pays is the family's. Said where the price is set.
+    var tui = sectionByHead('tuition');
+    if (tui && !tui.querySelector('.cm-tuinote')) {
+      var note = document.createElement('p');
+      note.className = 'cm-tuinote';
+      note.innerHTML = 'Tuition and vouchers for this child. Who pays is on the family’s <b>Billing</b> tab.';
+      var th = tui.querySelector('.vB-editcard') || tui;
+      var lg = th.firstElementChild;
+      th.insertBefore(note, lg && lg.tagName === 'LEGEND' ? lg.nextSibling : th.firstChild);
+      n++;
+    }
     return n;
   }
 
@@ -2677,7 +2692,7 @@
      here, how they are cared for, how they travel, what it costs, who handles it.
      Billing sits sixth, so a 4/3 wrap keeps it on the second line with the rest. */
   var ORDER = ['Details', 'Family', 'Enrollment', 'Health',
-               'Transportation', 'Billing'];
+               'Transportation', 'Tuition'];
 
   function reorder() {
     var n = 0;
@@ -2724,7 +2739,7 @@
      noise on their record. The toggle already exists and already drives
      children.enrollment_status; this makes the tab follow it. */
   // Kept out of sight while the child is queued, not taken out of the form.
-  var STAGE_HIDDEN = ['Health', 'Transportation', 'Billing'];
+  var STAGE_HIDDEN = ['Health', 'Transportation', 'Tuition'];
 
   /* PICKUP AND DROP-OFF POINTS: THE REGISTERED ADDRESS BY DEFAULT, ANOTHER ONE
      IN THE SAME SHAPE AS EVERY OTHER ADDRESS.
@@ -2826,9 +2841,12 @@
   function regClear() { try { sessionStorage.removeItem('cm-reg'); } catch (e) {} }
 
   var REG_SVG = {
-    kid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M5.5 20a7 7 0 0 1 13 0"></path></svg>',
+    group: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+    // The Children page's own head icon: one child, one glyph, everywhere in the flow.
+    kid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
     wait: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 7h11"></path><path d="M6.5 17h11"></path><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"></path><path d="M6 4v2a6 6 0 1 0 12 0V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path></svg>',
-    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V8l7-5 7 5v13"></path><path d="M9 21v-5h6v5"></path></svg>'
+    // The Families area's own glyph (families-page.js): a roof, two adults, two children.
+    home: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 10.4 12 2.8l10 7.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9.3" cy="10.8" r="1.8"></circle><path d="M6.9 20.5v-4.7a2.4 2.4 0 0 1 4.8 0v4.7z"></path><circle cx="14.7" cy="10.8" r="1.8"></circle><path d="M12.3 20.5v-4.7a2.4 2.4 0 0 1 4.8 0v4.7z"></path><circle cx="4.4" cy="14.4" r="1.4"></circle><path d="M2.5 20.5v-2a1.9 1.9 0 0 1 3.8 0v2z"></path><circle cx="19.6" cy="14.4" r="1.4"></circle><path d="M17.7 20.5v-2a1.9 1.9 0 0 1 3.8 0v2z"></path></svg>'
   };
 
   function regSnapshot(form) {
@@ -2883,13 +2901,15 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"></path></svg></button>' +
       '<div class="reg-track">' + items.map(function (it, i) {
         var st = i === cur ? 'on' : (i < cur ? 'done' : '');
+        // The family's own step comes first, with the family glyph; the children number from 1.
+        var nth = i - (items[0] && items[0].fam ? 1 : 0) + 1;
         // Every child is the same purple person tile; enrollment or waiting list is
         // said by the choice and the tooltip, not by a different colour or glyph.
         // No number: the tile alone, a little larger. "Child 2 · Clara · Enrollment"
         // is in the tooltip and the accessible name.
-        var label = 'Child ' + (i + 1) + ' \u00b7 ' + it.title;
+        var label = it.fam || it.others ? it.title : 'Child ' + nth + ' \u00b7 ' + it.title;
         return '<span class="reg-pi ' + st + '" title="' + esc(label) + '" aria-label="' + esc(label) + '">' +
-          '<span class="reg-tile">' + REG_SVG.kid + '</span></span>';
+          '<span class="reg-tile">' + (it.fam ? REG_SVG.home : it.others ? REG_SVG.group : REG_SVG.kid) + '</span></span>';
       }).join('') + '</div>' +
       '<button type="button" class="reg-nav" data-d="1" aria-label="Later children">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg></button>';
@@ -2936,10 +2956,12 @@
       var eb = head.querySelector('.up-head-eyebrow');
       head.insertBefore(strip, eb ? eb.nextSibling : head.firstChild);
     }
-    window.cmRegTrack(strip, plan.kids.map(function (k, i) {
+    var steps = plan.kids.map(function (k, i) {
       var snap = plan.snaps[i];
       return { w: k.m === 'wait', title: (snap && snap.fname ? snap.fname + ' · ' : '') + (k.m === 'wait' ? 'Waiting list' : 'Enrollment') };
-    }), plan.cur);
+    });
+    // A family being created has its own step first.
+    window.cmRegTrack(strip, plan.family ? [{ fam: true, title: 'Family' }].concat(steps, [{ others: true, title: 'Other contacts' }]) : steps, plan.family ? plan.cur + 1 : plan.cur);
   }
 
   function regButtons(plan, form) {
@@ -2959,7 +2981,8 @@
     back.addEventListener('click', function () { regMove(-1); });
     var next = document.createElement('button');
     next.type = 'button'; next.className = 'btn-sm primary reg-btn reg-next';
-    next.textContent = last ? 'Finish' : 'Next';
+    // Creating a family, other contacts come after the last child.
+    next.textContent = last && !plan.family ? 'Finish' : 'Next';
     acts.insertBefore(next, close);
     next.addEventListener('click', function () { regMove(1); });
   }
@@ -2983,7 +3006,22 @@
       return;
     }
     plan.snaps[plan.cur] = snap;
-    if (dir > 0 && plan.cur === plan.kids.length - 1) { regSave(plan); regWelcome(plan); return; }
+    if (dir > 0 && plan.cur === plan.kids.length - 1) {
+      regSave(plan);
+      if (plan.family && window.cmOpenFamilyContacts) {
+        // Opens on top, already in place; the child panel closes unseen under it.
+        var dr0 = document.getElementById('tndDrawer'), sc0 = document.getElementById('tndDrawerScrim');
+        var still0 = [dr0, sc0].filter(Boolean);
+        window.cmOpenFamilyContacts();
+        still0.forEach(function (el) { el.style.transition = 'none'; });
+        if (window.TndListDrawer) window.TndListDrawer.close(true);
+        regTidy();
+        setTimeout(function () { still0.forEach(function (el) { el.style.transition = ''; }); }, 50);
+        return;
+      }
+      regWelcome(plan);
+      return;
+    }
     if (dir < 0 && plan.cur === 0) {
       // Back to the first screen, keeping what was typed for the children that stay.
       // The first screen opens on top, already in place, and the child panel closes unseen
@@ -3011,7 +3049,8 @@
     var s0 = plan.snaps[0] || {};
     var name = (s0.fam && s0.fam.n) || s0.father || s0.lname || '';
     var eb = pane.querySelector('.up-head-eyebrow');
-    if (eb) eb.textContent = 'Registration complete';
+    // Kept, so the next record opened in this drawer gets its own label back.
+    if (eb) { if (!eb.hasAttribute('data-reg-was')) eb.setAttribute('data-reg-was', eb.innerHTML); eb.textContent = 'Registration complete'; }
     var acts = pane.querySelector('.tnd-pane-head-actions');
     acts.querySelectorAll('button:not(.tnd-pane-close)').forEach(function (b) { b.style.display = 'none'; });
     var done = document.createElement('button');
@@ -3021,6 +3060,8 @@
       regClear();
       if (window.TndListDrawer) window.TndListDrawer.close(true);
       setTimeout(regTidy, 250);
+      // Back to the family the child joined, when it was added from there.
+      document.dispatchEvent(new CustomEvent('cm-reg-closed'));
     });
     Array.prototype.forEach.call(body.children, function (c) { c.style.display = 'none'; });
     var w = document.createElement('div');
@@ -3039,15 +3080,18 @@
           '<span class="vB-row-value">' + esc([sn.fname, sn.lname].filter(Boolean).join(' ') || 'Child ' + (i + 1)) + '</span></span></div>';
       }).join('') + '</div></section>';
     body.appendChild(w);
+    document.dispatchEvent(new CustomEvent('cm-reg-done', { detail: plan }));
     regClear();
   }
 
   function regTidy() {
     var pn = document.getElementById('tndDrawer');
     if (!pn) return;
-    pn.classList.remove('reg-active');
+    pn.classList.remove('reg-active', 'reg-famdone');
     var st = pn.querySelector('.reg-strip');
     if (st) st.remove();
+    var eb = pn.querySelector('.up-head-eyebrow[data-reg-was]');
+    if (eb) { eb.innerHTML = eb.getAttribute('data-reg-was'); eb.removeAttribute('data-reg-was'); }
     pn.querySelectorAll('.reg-btn').forEach(function (b) { b.remove(); });
     // The welcome hid the drawer's own head buttons; give them back.
     pn.querySelectorAll('.tnd-pane-head-actions button').forEach(function (b) {
@@ -3069,6 +3113,10 @@
     if (!form || form.getAttribute('data-cm-reg') === '1') return 0;
     if (!/children\/save\/?$/.test(form.getAttribute('action') || '')) return 0;
     form.setAttribute('data-cm-reg', '1');
+    // The family was the first step, so a child's step does not ask for it again. Hidden,
+    // not removed: the form keeps the family picked for it, and the shared answers.
+    var pn1 = document.getElementById('tndDrawer');
+    if (pn1) pn1.classList.toggle('reg-famdone', !!plan.family);
     regStrip(plan);
     regButtons(plan, form);
     var kid = plan.kids[plan.cur];
@@ -3076,6 +3124,10 @@
       var mine = plan.snaps[plan.cur], prev = plan.snaps[plan.cur - 1];
       if (mine) regRestore(form, mine.entries, false);           // back to a child already typed
       else if (prev) regRestore(form, prev.entries, true);       // a new child: what the family shares
+      else if (plan.lname) {                                     // added from a family: its name
+        var ln0 = form.querySelector('[name="lname"]');
+        if (ln0 && !ln0.value) ln0.value = plan.lname;
+      }
       var wl = form.querySelector('[name="is_waitlist"]');
       if (wl && wl.checked !== (kid.m === 'wait')) wl.click();
       var fn = form.querySelector('[name="fname"]');
@@ -3101,7 +3153,7 @@
        enrolled → everything but the waiting-list fieldset.
      Hidden, never removed: every input still posts. */
   var ADD_WAIT_HIDES = ['therapy', 'health', 'transportation', 'contact assignment overrides',
-                        'assigned staff', 'privileges', 'billing'];
+                        'assigned staff', 'privileges', 'tuition'];
 
   function stageFieldsets(waiting) {
     document.querySelectorAll('#frmAddEditRecord fieldset').forEach(function (fs) {
@@ -3351,7 +3403,7 @@
     };
     var hide = function (rows) { rows.forEach(function (r) { r.style.display = 'none'; }); };
 
-    label(parents, 'Family'); label(reg, 'Enrollment'); label(therapy, 'Health'); label(priv, 'Billing');
+    label(parents, 'Family'); label(reg, 'Enrollment'); label(therapy, 'Health'); label(priv, 'Tuition');
 
     // Details: the child, with the nickname by their name and the comments.
     var lastName = take(details, /^last name$/i)[0];
@@ -3458,7 +3510,7 @@
     if (!first || first === fam) return 0;
     form.setAttribute('data-cm-addorder', '1');
     var after = first;
-    ['family', 'enrollment', 'health', 'transportation', 'billing'].forEach(function (name) {
+    ['family', 'enrollment', 'health', 'transportation', 'tuition'].forEach(function (name) {
       var fs = sectionByHead(name);
       if (!fs || fs === first) return;
       after.parentNode.insertBefore(fs, after.nextSibling);
@@ -3473,6 +3525,16 @@
     var dst = sectionByHead('waitlist') || sectionByHead('enrollment');
     if (!box || !dst) return;
     var waiting = !!box.checked;
+    // No joining date yet, so no end date either: a child who has not started cannot end.
+    // Hidden like the rest of the stage, on the form and on the record's view.
+    document.querySelectorAll('#frmAddEditRecord [name="end_date"]').forEach(function (el) {
+      var g = el.closest('.form-group');
+      if (g && g.style.display !== (waiting ? 'none' : '')) g.style.display = waiting ? 'none' : '';
+    });
+    document.querySelectorAll('#tndDrawer .tnd-pane-view .vB-row').forEach(function (r) {
+      var l = r.querySelector('.vB-row-label');
+      if (l && /^end date$/i.test((l.textContent || '').trim()) && r.style.display !== (waiting ? 'none' : '')) r.style.display = waiting ? 'none' : '';
+    });
     // Text is written only when it differs: applyStage now runs on every pass,
     // and an unconditional write is a DOM change that would trigger the next pass.
     var label = waiting ? 'Waitlist' : 'Enrollment';
