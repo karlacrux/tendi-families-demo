@@ -957,3 +957,14 @@ body:not(.cm-off) #frmAddEditRecord .vB-editcard .cm-newblock,
 .cm-tuinote{font-size:12.5px;line-height:1.5;color:var(--ink-3,#5b5470);margin:0 0 12px;padding:10px 12px;
   border-radius:var(--radius-md,10px);background:var(--primary-tint,#eeecfa)}
 .cm-tuinote b{color:var(--ink-2,#332e47)}
+.cm-tuinote a{margin-left:4px;font-weight:600;color:var(--primary,#5a3fc2);white-space:nowrap}
+.cm-paddrs .cm-multi[data-multi="address"] > .cm-mlabel{display:none}
+.cm-paddrs > [data-part="addrs"]{margin-top:10px}
+.cm-paddrs-sum{margin-left:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:400;letter-spacing:0;text-transform:none;color:#6b6480}
+/* The panel resets its buttons, so this says what it is again: the app's secondary button,
+   the same height as Generate Registration PDF beside it. */
+.tendi-skin .tnd-drawer .cm-actions .cm-share{display:inline-flex;align-items:center;height:40px;padding:0 16px;
+  background:var(--paper-2,#fff);border:1px solid var(--paper-edge-strong,rgba(95,67,178,.2));border-radius:var(--radius-md,10px);
+  font-size:13px;font-weight:600;color:var(--ink-2,#332e47);cursor:pointer}
+.tendi-skin .tnd-drawer .cm-actions .cm-share:hover{background:var(--cream-2,#f4eef9)}
+.tendi-skin .tnd-drawer .cm-actions > b{margin-bottom:10px}

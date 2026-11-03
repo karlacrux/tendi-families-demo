@@ -127,16 +127,19 @@
 
   /* The AREA is Families too (client review, 2026-10-28): the rail item and the
      sub-pane title say Families, with a family glyph in place of the single child:
-     a roof over two adults and two children, each a plain head and shoulders. Drawn
+     a roof over two adults and two children, in lines like the child icon. Drawn
      here because no icon in the rail's set shows a family this size. The group key
      stays "children", so every page and route in it is unchanged. */
   var AREA = 'Families';
-  var AREA_ICON = '<svg viewBox="0 0 24 24" width="1.25em" height="1.25em" fill="currentColor" aria-hidden="true">' +
+  // Solid in the rail, like the icons around it; in lines inside the page and its steps.
+  var RAIL_ICON = '<svg viewBox="0 0 24 24" width="1.25em" height="1.25em" fill="currentColor" aria-hidden="true">' +
     '<path d="M2 10.4 12 2.8l10 7.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path>' +
     '<circle cx="9.3" cy="10.8" r="1.8"></circle><path d="M6.9 20.5v-4.7a2.4 2.4 0 0 1 4.8 0v4.7z"></path>' +
     '<circle cx="14.7" cy="10.8" r="1.8"></circle><path d="M12.3 20.5v-4.7a2.4 2.4 0 0 1 4.8 0v4.7z"></path>' +
     '<circle cx="4.4" cy="14.4" r="1.4"></circle><path d="M2.5 20.5v-2a1.9 1.9 0 0 1 3.8 0v2z"></path>' +
     '<circle cx="19.6" cy="14.4" r="1.4"></circle><path d="M17.7 20.5v-2a1.9 1.9 0 0 1 3.8 0v2z"></path></svg>';
+  var AREA_ICON = '<svg viewBox="0 0 24 24" width="1.25em" height="1.25em" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M2.5 10 12 2.8l9.5 7.2"></path><circle cx="8.7" cy="10.8" r="1.8"></circle><circle cx="15.3" cy="10.8" r="1.8"></circle><path d="M5.8 20.5v-2.2a2.9 2.9 0 0 1 5.8 0v2.2"></path><path d="M12.4 20.5v-2.2a2.9 2.9 0 0 1 5.8 0v2.2"></path><circle cx="3.6" cy="14.6" r="1.2"></circle><circle cx="20.4" cy="14.6" r="1.2"></circle><path d="M1.6 20.5v-1a2 2 0 0 1 2-2"></path><path d="M22.4 20.5v-1a2 2 0 0 0-2-2"></path></svg>';
   function renameArea() {
     var subnav = document.querySelector('.tnd-subnav[data-group="children"]');
     var rail = document.querySelector('.tnd-rail-item[data-group="children"]');
@@ -149,7 +152,7 @@
       var lab = rail.querySelector('.tnd-rail-label');
       if (lab && lab.textContent !== AREA) lab.textContent = AREA;
       var ico = rail.querySelector('i');
-      if (ico && ico.className !== 'fam-rail-ico') { ico.className = 'fam-rail-ico'; ico.innerHTML = AREA_ICON; }
+      if (ico && ico.className !== 'fam-rail-ico') { ico.className = 'fam-rail-ico'; ico.innerHTML = RAIL_ICON; }
       if (rail.getAttribute('title') === 'Children') rail.setAttribute('title', AREA);
     }
   }
@@ -679,16 +682,20 @@
      from inside a family. */
   var QUIET = false;   // an automatic save, on leaving a tab: says nothing, stops nothing
   function say(m) { if (!QUIET && window.tndToast) window.tndToast.success(m); }
+  var PAY_METHODS = ['ACH', 'Cash', 'Credit Card'];
   var FTABS = [['details', 'Details'], ['children', 'Children'], ['contacts', 'Other contacts'], ['billing', 'Billing']];
 
   function famName(f) { return f.n ? f.n + ' family' : 'New family'; }
 
-  // Who pays: the contact Billing names, else the first parent.
+  // Who pays: the contact Billing names, else the first parent. Only a main responsible,
+  // someone with full permission, can be: not the pediatrician, for one.
+  function canPay(c) { return permLevel(c) === 'full'; }
   function payerOf(f) {
     var b = f.billing || {};
-    if (b.payer != null && (f.contacts || [])[b.payer]) return f.contacts[b.payer];
     if (b.payer === -1) return null;
-    return parentsOf(f)[0] || null;
+    var named = b.payer != null && (f.contacts || [])[b.payer];
+    if (named) return canPay(named) ? named : null;
+    return parentsOf(f).filter(canPay)[0] || null;
   }
 
   function openDrawer(f, tab, opts) {
@@ -751,10 +758,10 @@
       if (edit) st.edit = true;
       paint();
     };
-    /* Creating a family, this panel is two of the registration's steps: the family first,
-       Other contacts last, with each child in between (changemap.js). Return and Next walk
-       them. The family's Next needs its name, as a child's step needs a first name: the
-       children have to have a family to join. Other contacts are optional. */
+    /* Creating a family, this panel is three of the registration's steps: the family first,
+       each child next (changemap.js), then Other contacts and Billing last. Return and Next
+       walk them. The family's Next needs its name, as a child's step needs a first name: the
+       children have to have a family to join. Other contacts and Billing are optional. */
     var flush = function (k) {
       var form = host.querySelector('.fam-editform');
       if (!form) return true;
@@ -768,6 +775,12 @@
     var stepBack = function () {
       var plan = readPlan() || { kids: [{ m: 'enroll' }], snaps: [] };
       var form = host.querySelector('.fam-editform');
+      if (st.tab === 'billing') {
+        flush('billing');
+        refresh();
+        go('contacts', true);
+        return;
+      }
       if (st.tab === 'contacts') {
         // Back to the last child; a contact not finished yet waits here.
         if (!flush('contacts')) { f._held = { contacts: form }; form.remove(); }
@@ -782,13 +795,19 @@
       openSetup(plan.kids.map(function (k) { return { m: k.m }; }), plan, { instant: true });
     };
     var stepNext = function () {
+      if (st.tab === 'billing') {
+        flush('billing');
+        refresh();
+        welcome();
+        return;
+      }
       if (st.tab === 'contacts') {
         if (!flush('contacts')) {
           if (window.tndToast) window.tndToast.error('Every contact needs a relationship and a name.');
           return;
         }
         refresh();
-        welcome();
+        go('billing', true);
         return;
       }
       var nm = host.querySelector('[data-k="name"]');
@@ -814,7 +833,7 @@
       clearPlan();
       st.creating = false;
       var total = plan.kids.length;
-      if (window.cmRegTrack) window.cmRegTrack(portal.querySelector('.reg-strip'), stepItems(plan.kids, plan.snaps), total + 2);
+      if (window.cmRegTrack) window.cmRegTrack(portal.querySelector('.reg-strip'), stepItems(plan.kids, plan.snaps), total + 3);
       portal.querySelector('.fam-eb-edit').textContent = 'Registration complete';
       portal.querySelector('.fam-hacts').innerHTML = '<button type="button" class="btn-sm primary reg-btn fam-sdone">Done</button>';
       host.innerHTML = '<div class="reg-welcome"><div class="reg-wtop"><span class="reg-tile big">' + AREA_ICON + '</span>' +
@@ -827,7 +846,7 @@
         }).join('') + '</div>') + '</div>';
       portal.querySelector('.fam-sdone').addEventListener('click', function () {
         STATE.regFam = null;
-        openDrawer(f, 'children', { instant: true });
+        closeDrawer();
       });
     };
 
@@ -854,7 +873,7 @@
     function actions() {
       if (st.creating) {
         return '<button type="button" class="btn-sm reg-btn fam-sback">Return</button>' +
-          '<button type="button" class="btn-sm primary reg-btn fam-snext">' + (st.tab === 'contacts' ? 'Finish' : 'Next') + '</button>';
+          '<button type="button" class="btn-sm primary reg-btn fam-snext">' + (st.tab === 'billing' ? 'Finish' : 'Next') + '</button>';
       }
       if (st.tab === 'children') return '';
       if (!st.edit) return '<button type="button" class="btn-sm primary tnd-drawer-edit fam-tedit">' + ICON_EDIT + ' Edit</button>';
@@ -865,7 +884,7 @@
     // Adding a child is not a save, so it stays with the list it adds to.
     function bar() {
       if (st.tab === 'children') {
-        return '<div class="fam-tbar fam-tbar--kids"><span class="fam-tbar-note">Each child has their own record: enrollment, health, transportation and tuition.</span>' +
+        return '<div class="fam-tbar fam-tbar--kids">' +
           '<span class="up-head-spacer"></span>' +
           '<button type="button" class="btn-sm fam-kidadd" data-m="wait">' + HI.waitlist + 'Add to waiting list</button>' +
           '<button type="button" class="btn-sm primary fam-kidadd" data-m="enroll">' + HI.plus + 'Enroll a child</button></div>';
@@ -882,15 +901,19 @@
       pane.setAttribute('aria-label', famName(f));
       portal.querySelector('.fam-eb').textContent = f.isNew ? 'New family' : 'Family';
       var body = held ? '' : (st.creating && st.tab === 'contacts'
-        ? '<p class="fam-panel-note fam-newnote">Grandparents, babysitters, doctors. This step is optional: press Finish to skip it.</p>' : '') + TAB_BODY[st.tab](f, on);
+        ? '<p class="fam-panel-note fam-newnote">Grandparents, babysitters, doctors. This step is optional: press Next to skip it.</p>' : '') + TAB_BODY[st.tab](f, on);
       // The registration's icons on top; the family's tabs once it exists.
-      if (st.creating && !portal.querySelector('.reg-strip')) {
-        var strip = document.createElement('div');
-        strip.className = 'reg-strip';
-        var eb = portal.querySelector('.up-head-eyebrow');
-        eb.parentNode.insertBefore(strip, eb.nextSibling);
+      if (st.creating) {
+        var strip = portal.querySelector('.reg-strip');
+        if (!strip) {
+          strip = document.createElement('div');
+          strip.className = 'reg-strip';
+          var eb = portal.querySelector('.up-head-eyebrow');
+          eb.parentNode.insertBefore(strip, eb.nextSibling);
+        }
         var pl = readPlan();
-        if (window.cmRegTrack && pl) window.cmRegTrack(strip, stepItems(pl.kids, pl.snaps), st.tab === 'contacts' ? pl.kids.length + 1 : 0);
+        var at = !pl ? 0 : st.tab === 'contacts' ? pl.kids.length + 1 : st.tab === 'billing' ? pl.kids.length + 2 : 0;
+        if (window.cmRegTrack && pl) window.cmRegTrack(strip, stepItems(pl.kids, pl.snaps), at);
       }
       host.innerHTML = (st.creating ? '' : hero() + tabs() + bar()) +
         (held ? '<div class="fam-heldslot"></div>'
@@ -954,10 +977,10 @@
     // Leaving the panel saves too, as leaving a tab does; Cancel is how changes are thrown away.
     var shut = function () {
       autosave();
-      // Leaving ends the registration. On the last step the children are all done, so they count.
+      // Leaving ends the registration. On the last steps the children are all done, so they count.
       if (st.creating) {
         var pl = readPlan();
-        if (pl && st.tab === 'contacts') document.dispatchEvent(new CustomEvent('cm-reg-done', { detail: pl }));
+        if (pl && (st.tab === 'contacts' || st.tab === 'billing')) document.dispatchEvent(new CustomEvent('cm-reg-done', { detail: pl }));
         clearPlan();
       }
       closeDrawer();
@@ -1049,14 +1072,19 @@
         '<p class="fam-panel-note">To move a child to another family, open the child and use <b>Change</b> on their Family tab.</p>';
     },
 
-    /* BILLING IS THE PARENTS', TUITION IS THE CHILD'S. Nothing lives at family level
-       today, so for now this is who pays, and the way to the Payments page. The price,
-       the vouchers and the agency are each child's, on their Tuition tab. */
+    /* BILLING IS THE PARENTS', TUITION IS THE CHILD'S. Who pays and how, and the way to the
+       Payments page, are the family's. The price, the vouchers and the agency are each
+       child's, on their Tuition tab. Cards are drawn as Payments draws them: on file for
+       the whole family. Prototype: no gateway, and only a card's last four digits are kept. */
     billing: function (f, edit) {
       var payer = payerOf(f);
       if (!edit) {
         return group('Billing', '<div class="vB-list">' +
             vRow(DI.person, 'Payment responsible', payer ? payer.n + ' \u00b7 ' + payer.t : '') +
+            vRow(DI.group, 'Payment method', (f.billing || {}).method || '') +
+            ((f.billing || {}).method === 'Credit Card' ? (f.cards || []).map(function (c) {
+              return vRow(DI.person, 'Card on file' + (c.nick ? ' \u00b7 ' + c.nick : ''), c.brand + ' \u2022\u2022\u2022\u2022 ' + c.last4);
+            }).join('') || vRow(DI.person, 'Cards on file', '') : '') +
             '<a class="vB-row vB-row--action fam-topayments" href="javascript:void(0);">' +
               '<span class="vB-row-ico" aria-hidden="true">' + DI.group + '</span>' +
               '<span class="vB-row-body"><span class="vB-row-label">Payments</span>' +
@@ -1068,8 +1096,27 @@
       return '<section class="vB-group"><h3 class="vB-group-label">Billing</h3><div class="vB-editcard">' +
           '<div class="form-group"><label class="col-sm-3 control-label">Payment responsible</label><div class="col-sm-4">' +
             '<select class="form-control" data-k="payer"><option value="">Nobody yet</option>' + cs.map(function (c, i) {
-              return '<option value="' + i + '"' + (i === pi ? ' selected' : '') + '>' + esc(c.n + ' \u00b7 ' + c.t) + '</option>';
+              return canPay(c) ? '<option value="' + i + '"' + (i === pi ? ' selected' : '') + '>' + esc(c.n + ' \u00b7 ' + c.t) + '</option>' : '';
             }).join('') + '</select></div></div>' +
+          '<div class="form-group"><label class="col-sm-3 control-label">Payment method</label><div class="col-sm-4">' +
+            '<select class="form-control" data-k="method"><option value="">Not set</option>' + PAY_METHODS.map(function (m) {
+              return '<option' + ((f.billing || {}).method === m ? ' selected' : '') + '>' + m + '</option>';
+            }).join('') + '</select></div></div>' +
+          '<div class="fam-cards" hidden>' +
+            '<div class="fam-cards-label">Cards on file <span>(shared across the family)</span></div>' +
+            '<div class="fam-cardlist"></div>' +
+            '<button type="button" class="reg-add fam-cardadd">' + HI.plus + 'Add card</button>' +
+            '<div class="fam-cardform" hidden>' +
+              '<div class="form-group"><label class="col-sm-3 control-label">Card number</label><div class="col-sm-4"><input type="text" class="form-control" data-c="num" inputmode="numeric" maxlength="23" placeholder="XXXX XXXX XXXX XXXX" autocomplete="off"></div></div>' +
+              '<div class="fam-cardrow">' +
+                '<div class="form-group"><label class="col-sm-3 control-label">CVV</label><div class="col-sm-4"><input type="text" class="form-control" data-c="cvv" inputmode="numeric" maxlength="4" placeholder="123" autocomplete="off"></div></div>' +
+                '<div class="form-group"><label class="col-sm-3 control-label">Card expiry</label><div class="col-sm-4"><input type="text" class="form-control" data-c="exp" maxlength="5" placeholder="MM/YY" autocomplete="off"></div></div>' +
+              '</div>' +
+              '<div class="form-group"><label class="col-sm-3 control-label">Card holder name</label><div class="col-sm-4"><input type="text" class="form-control" data-c="name" autocomplete="off"></div></div>' +
+              '<div class="form-group"><label class="col-sm-3 control-label">Nickname (optional)</label><div class="col-sm-4"><input type="text" class="form-control" data-c="nick" maxlength="120" placeholder="e.g. Mom\u2019s card" autocomplete="off"></div></div>' +
+              '<div class="fam-cardacts"><button type="button" class="btn-sm fam-cardcancel">Cancel</button><button type="button" class="btn-sm primary fam-cardsave">Save card</button></div>' +
+            '</div>' +
+          '</div>' +
         '</div></section>';
     }
   };
@@ -1171,7 +1218,7 @@
 
     billing: function (f, form) {
       var v = form.querySelector('[data-k="payer"]').value;
-      f.billing = { payer: v === '' ? -1 : +v };
+      f.billing = { payer: v === '' ? -1 : +v, method: form.querySelector('[data-k="method"]').value };
       say('Billing saved.');
     }
   };
@@ -1198,6 +1245,39 @@
       box.value = term;
       box.dispatchEvent(new Event('input', { bubbles: true }));
     })();
+  }
+
+  // Credit Card opens the family's cards on file, and Add card, as on the Payments page.
+  function wireCards(f, portal) {
+    var box = portal.querySelector('.fam-cards'), sel = portal.querySelector('[data-k="method"]');
+    var list = box.querySelector('.fam-cardlist'), form = box.querySelector('.fam-cardform'), add = box.querySelector('.fam-cardadd');
+    var field = function (k) { return form.querySelector('[data-c="' + k + '"]'); };
+    var draw = function () {
+      list.innerHTML = (f.cards || []).length ? f.cards.map(function (c) {
+        return '<div class="fam-cardrowitem"><b>' + esc(c.brand) + '</b> \u2022\u2022\u2022\u2022 ' + esc(c.last4) +
+          (c.nick ? ' <span>' + esc(c.nick) + '</span>' : '') + '</div>';
+      }).join('') : '<p class="fam-empty-note">No cards on file for this family.</p>';
+    };
+    var openForm = function (open) {
+      form.hidden = !open;
+      add.hidden = open;
+      ['num', 'cvv', 'exp', 'name', 'nick'].forEach(function (k) { field(k).value = ''; });
+    };
+    var sync = function () { box.hidden = sel.value !== 'Credit Card'; };
+    sel.addEventListener('change', sync);
+    add.addEventListener('click', function () { openForm(true); field('num').focus(); });
+    box.querySelector('.fam-cardcancel').addEventListener('click', function () { openForm(false); });
+    box.querySelector('.fam-cardsave').addEventListener('click', function () {
+      var num = field('num').value.replace(/\D/g, '');
+      if (!num) { openForm(false); return; }            // nothing typed: nothing to add
+      var brand = { 3: 'Amex', 4: 'Visa', 5: 'Mastercard', 6: 'Discover' }[num.charAt(0)] || 'Card';
+      f.cards = (f.cards || []).concat([{ brand: brand, last4: num.slice(-4), nick: field('nick').value.trim() }]);
+      openForm(false);
+      draw();
+      if (window.tndToast) window.tndToast.success('Card added.');
+    });
+    draw();
+    sync();
   }
 
   // The rows on an edit form: each person's card, filled in; Remove; and the add button,
@@ -1274,7 +1354,7 @@
       if (nm) nm.focus();
     },
     billing: function (f, portal, st) {
-      if (st.edit) return;
+      if (st.edit) { wireCards(f, portal); return; }
       var a = portal.querySelector('.fam-topayments');
       if (a) a.addEventListener('click', function () {
         clearPlan();                                    // leaving ends a registration
@@ -1288,12 +1368,12 @@
   function readPlan() { try { return JSON.parse(sessionStorage.getItem('cm-reg') || 'null'); } catch (err) { return null; } }
   function writePlan(p) { try { sessionStorage.setItem('cm-reg', JSON.stringify(p)); } catch (err) {} }
   function clearPlan() { try { sessionStorage.removeItem('cm-reg'); } catch (err) {} }
-  // The icons on top: the family, each child, then other contacts.
+  // The icons on top: the family, each child, other contacts, then billing.
   function stepItems(list, snaps) {
     return [{ fam: true, title: 'Family' }].concat(list.map(function (k, i) {
       var sn = snaps && snaps[i];
       return { w: k.m === 'wait', title: (sn && sn.fname ? sn.fname + ' \u00b7 ' : '') + (k.m === 'wait' ? 'Waiting list' : 'Enrollment') };
-    }), [{ others: true, title: 'Other contacts' }]);
+    }), [{ others: true, title: 'Other contacts' }, { bill: true, title: 'Billing' }]);
   }
 
   // A child joins a family from its Children tab: the regular New child panel, with
@@ -1306,6 +1386,30 @@
     if (portal) swapToChild(portal, { n: f.n, a: f.a });
     else newChildPanel({ n: f.n, a: f.a });
   }
+
+  // From a child's Tuition tab, wherever the child was opened: to their family's Billing tab.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('.cm-tobilling');
+    if (!a) return;
+    e.preventDefault();
+    var id = String(a.getAttribute('data-child'));
+    load().then(function () {
+      var rec = CHILDREN_ALL.concat(CHILDREN_OFF).filter(function (c) { return String(c.id) === id; })[0];
+      var f = rec && (FAMILIES || []).filter(function (x) { return kidsOfHousehold(x).indexOf(rec) > -1; })[0];
+      if (!f) {
+        if (window.tndToast) window.tndToast.error('This child is not linked to a family yet.');
+        return;
+      }
+      if (window.TndListDrawer) window.TndListDrawer.close(true);
+      if (page() !== 'families') window.location.hash = 'families';
+      var t0 = Date.now();
+      (function wait() {
+        if (!document.getElementById('famRows')) { if (Date.now() - t0 < 8000) setTimeout(wait, 80); return; }
+        highlight();
+        openDrawer(f, 'billing');
+      })();
+    });
+  });
 
   // Return from the first child: to the family step when the family is being created,
   // otherwise to the Children tab it was added from.
@@ -1380,6 +1484,14 @@
     return x ? vRow(ico, listLabel(kind, x, false), x.value, listHref(kind, x.value)) : vRow(ico, LIST_NAME[kind], '');
   }
 
+  // A contact's addresses start closed here too, as on their form.
+  function addressFold(items) {
+    var first = (items.filter(function (i) { return i.primary; })[0] || items[0] || {}).value;
+    return '<details class="cm-pmore cm-paddrs fam-vaddrs"><summary><span>Addresses</span><small class="cm-paddrs-sum">' +
+      esc(first ? first + (items.length > 1 ? ' +' + (items.length - 1) : '') : '') + '</small></summary>' +
+      '<div class="vB-list">' + listRows(items, 'address') + '</div></details>';
+  }
+
   function openPerson(p) {
     var old = document.querySelector('.fam-portal');
     if (old) old.remove();
@@ -1429,9 +1541,8 @@
             '<div class="vB-list">' +
               listRows(listsOf(c, f0).phone, 'phone') +
               listRows(listsOf(c, f0).email, 'email') +
-              listRows(listsOf(c, f0).address, 'address') +
               vRow(DI.group, 'Work', [c.occ, c.emp].filter(Boolean).join(' · ')) +
-            '</div>') +
+            '</div>' + addressFold(listsOf(c, f0).address)) +
           group('Linked to', linked +
             '<p class="fam-panel-note">The relationship and what they may do are set per family, for every child in it.</p>') +
         '</div></div>' +
@@ -1991,8 +2102,8 @@
   /* ---- a new family ------------------------------------------------------
      Before any form, how many children and enrollment or waiting list for each. Start
      goes to the family and its parents, step one; Next from there to each child in turn,
-     in the regular child panel (changemap.js, regFlow); then other contacts, with the
-     icons on top for every step. It ends on a welcome. "Add to waiting list" is the same, set to the waiting list. */
+     in the regular child panel (changemap.js, regFlow); then other contacts and billing,
+     with the icons on top for every step. It ends on a welcome. "Add to waiting list" is the same, set to the waiting list. */
   function newFamily() {
     return { n: '', a: '', p: '', k: '', c: 0, contacts: [], isNew: true };
   }
@@ -2027,7 +2138,7 @@
       // panel and the child panels share it).
       if (window.cmRegTrack) window.cmRegTrack(portal.querySelector('.reg-strip'), stepItems(kids), -1);
       host.innerHTML =
-        '<p class="reg-intro">First the family and its parents, then the children one by one, then any other contacts. The family, and anything ' +
+        '<p class="reg-intro">First the family and its parents, then the children one by one, then any other contacts and billing. The family, and anything ' +
           'the children share, carries over, so each child only asks for what\u2019s different.</p>' +
         '<section class="vB-group"><h3 class="vB-group-label">Children joining</h3>' +
         kids.map(function (k, i) {

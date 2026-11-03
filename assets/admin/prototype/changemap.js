@@ -2098,6 +2098,26 @@
     paint();
   }
 
+  /* A contact's or parent's addresses start closed, to take less room: the fold says what
+     is on file, and opens to the same list as before. The inputs stay in the card. */
+  function foldAddresses(card) {
+    var part = card.querySelector('[data-part="addrs"]');
+    if (!part || part.closest('details')) return;
+    var fold = document.createElement('details');
+    fold.className = 'cm-pmore cm-paddrs';
+    fold.innerHTML = '<summary><span>Addresses</span><small class="cm-paddrs-sum"></small></summary>';
+    part.parentNode.insertBefore(fold, part);
+    fold.appendChild(part);
+    var paint = function () {
+      var list = multiValues(multiBox(card, 'address'));
+      fold.querySelector('.cm-paddrs-sum').textContent = list.length
+        ? list[0].value + (list.length > 1 ? ' +' + (list.length - 1) : '') : '';
+    };
+    card.addEventListener('input', paint);
+    card.addEventListener('change', paint);
+    setTimeout(paint, 0);                               // once the card has been filled in
+  }
+
   function extraCard() {
     var n = ++EXTRA_N, key = 'extra' + n;
     var card = document.createElement('div');
@@ -2120,6 +2140,7 @@
     card.querySelector('[data-part="reach"]').appendChild(multiList('phone'));
     card.querySelector('[data-part="reach"]').appendChild(multiList('email'));
     card.querySelector('[data-part="addrs"]').appendChild(multiList('address'));
+    foldAddresses(card);
 
     wirePerms(card);
     linkExisting(card);
@@ -2530,6 +2551,7 @@
       var addrFold = addrB.closest('details') || addrB;
       addrFold.parentNode.replaceChild(addrsB, addrFold);
       fillLists(card, person, hhNow);
+      foldAddresses(card);
       bindReal(card, {
         phone: 'reg_' + w + '_home_phone', phone2: 'reg_' + w + '_office_phone', email: 'reg_' + w + '_email',
         line1: 'reg_' + w + '_address', work: 'reg_' + w + '_work_address'
@@ -2667,22 +2689,64 @@
       var share = document.createElement('button');
       share.type = 'button';
       share.className = 'cm-share';
-      share.textContent = 'Share enrolment with the family';
+      share.textContent = 'Share enrollment with the family';
       row.appendChild(share);
       n++;
     }
 
-    // Tuition is the child's; who pays is the family's. Said where the price is set.
+    // The enrollment's comments close its tab, under their full name. Checked every pass,
+    // because the staff contacts and the rest arrive in this tab later.
+    var note0 = document.querySelector('#frmAddEditRecord [name="reg_comments"]');
+    var noteG = note0 && note0.closest('.form-group');
+    var enrCard = enr && (enr.querySelector('.vB-editcard') || enr);
+    if (noteG && enrCard && enrCard.contains(noteG)) {
+      var noteL = noteG.querySelector('label');
+      if (noteL && noteL.textContent.trim() !== 'Enrollment comments') noteL.textContent = 'Enrollment comments';
+      if (enrCard.lastElementChild !== noteG) { enrCard.appendChild(noteG); n++; }
+    }
+    document.querySelectorAll('#tndDrawer .tnd-pane-view section.vB-group').forEach(function (s) {
+      var gl = s.querySelector('.vB-group-label');
+      if (!gl || gl.textContent.trim() !== 'Enrollment') return;
+      var list = s.querySelector('.vB-list');
+      s.querySelectorAll('.vB-row').forEach(function (r) {
+        var l = r.querySelector('.vB-row-label');
+        if (!l || !/^(enrollment )?comments$/i.test(l.textContent.trim())) return;
+        if (l.textContent !== 'Enrollment comments') l.textContent = 'Enrollment comments';
+        if (list && list.lastElementChild !== r) list.appendChild(r);
+      });
+    });
+
+    // How the family pays is on its Billing tab, so a child has no payment methods or cards
+    // of its own. Hidden, never removed: the rows stay in the form the app posts.
+    ['payment_methods_container', 'add_card'].forEach(function (id) {
+      var el = document.getElementById(id), g = el && el.closest('.form-group');
+      if (g && g.style.display !== 'none') { g.style.display = 'none'; n++; }
+    });
+    document.querySelectorAll('#tndDrawer .tnd-pane-view .vB-row').forEach(function (r) {
+      var l = r.querySelector('.vB-row-label');
+      if (l && /^payment methods?$/i.test((l.textContent || '').trim()) && r.style.display !== 'none') r.style.display = 'none';
+    });
+
+    // Tuition is the child's; who pays and how is the family's. Said where the price is set,
+    // on the form and on the record's view, with the way there once the child has a record.
+    var saved = /children\/save\/(\d+)/.exec((document.querySelector('#frmAddEditRecord') || { getAttribute: function () { return ''; } }).getAttribute('action') || '');
+    var hosts = [];
     var tui = sectionByHead('tuition');
-    if (tui && !tui.querySelector('.cm-tuinote')) {
+    if (tui) hosts.push(tui.querySelector('.vB-editcard') || tui);
+    document.querySelectorAll('#tndDrawer .tnd-pane-view section.vB-group').forEach(function (s) {
+      var l = s.querySelector('.vB-group-label');
+      if (l && l.textContent.trim() === 'Tuition') hosts.push(s);
+    });
+    hosts.forEach(function (th) {
+      if (th.querySelector('.cm-tuinote')) return;
       var note = document.createElement('p');
       note.className = 'cm-tuinote';
-      note.innerHTML = 'Tuition and vouchers for this child. Who pays is on the family’s <b>Billing</b> tab.';
-      var th = tui.querySelector('.vB-editcard') || tui;
-      var lg = th.firstElementChild;
-      th.insertBefore(note, lg && lg.tagName === 'LEGEND' ? lg.nextSibling : th.firstChild);
+      note.innerHTML = 'Tuition and vouchers for this child. Who pays and how is on the family’s <b>Billing</b> tab.' +
+        (saved ? ' <a href="javascript:void(0);" class="cm-tobilling" data-child="' + saved[1] + '">Open family billing</a>' : '');
+      var first = th.firstElementChild;
+      th.insertBefore(note, first && /^(LEGEND|H3)$/.test(first.tagName) ? first.nextSibling : th.firstChild);
       n++;
-    }
+    });
     return n;
   }
 
@@ -2842,11 +2906,12 @@
 
   var REG_SVG = {
     group: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+    bill: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2.5-1.5L10 21l2-1.5 2 1.5 2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"></path><path d="M9 9h6"></path><path d="M9 13h6"></path></svg>',
     // The Children page's own head icon: one child, one glyph, everywhere in the flow.
     kid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
     wait: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 7h11"></path><path d="M6.5 17h11"></path><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"></path><path d="M6 4v2a6 6 0 1 0 12 0V4a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path></svg>',
     // The Families area's own glyph (families-page.js): a roof, two adults, two children.
-    home: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 10.4 12 2.8l10 7.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="9.3" cy="10.8" r="1.8"></circle><path d="M6.9 20.5v-4.7a2.4 2.4 0 0 1 4.8 0v4.7z"></path><circle cx="14.7" cy="10.8" r="1.8"></circle><path d="M12.3 20.5v-4.7a2.4 2.4 0 0 1 4.8 0v4.7z"></path><circle cx="4.4" cy="14.4" r="1.4"></circle><path d="M2.5 20.5v-2a1.9 1.9 0 0 1 3.8 0v2z"></path><circle cx="19.6" cy="14.4" r="1.4"></circle><path d="M17.7 20.5v-2a1.9 1.9 0 0 1 3.8 0v2z"></path></svg>'
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 10 12 2.8l9.5 7.2"></path><circle cx="8.7" cy="10.8" r="1.8"></circle><circle cx="15.3" cy="10.8" r="1.8"></circle><path d="M5.8 20.5v-2.2a2.9 2.9 0 0 1 5.8 0v2.2"></path><path d="M12.4 20.5v-2.2a2.9 2.9 0 0 1 5.8 0v2.2"></path><circle cx="3.6" cy="14.6" r="1.2"></circle><circle cx="20.4" cy="14.6" r="1.2"></circle><path d="M1.6 20.5v-1a2 2 0 0 1 2-2"></path><path d="M22.4 20.5v-1a2 2 0 0 0-2-2"></path></svg>'
   };
 
   function regSnapshot(form) {
@@ -2907,9 +2972,9 @@
         // said by the choice and the tooltip, not by a different colour or glyph.
         // No number: the tile alone, a little larger. "Child 2 · Clara · Enrollment"
         // is in the tooltip and the accessible name.
-        var label = it.fam || it.others ? it.title : 'Child ' + nth + ' \u00b7 ' + it.title;
+        var label = it.fam || it.others || it.bill ? it.title : 'Child ' + nth + ' \u00b7 ' + it.title;
         return '<span class="reg-pi ' + st + '" title="' + esc(label) + '" aria-label="' + esc(label) + '">' +
-          '<span class="reg-tile">' + (it.fam ? REG_SVG.home : it.others ? REG_SVG.group : REG_SVG.kid) + '</span></span>';
+          '<span class="reg-tile">' + (it.fam ? REG_SVG.home : it.others ? REG_SVG.group : it.bill ? REG_SVG.bill : REG_SVG.kid) + '</span></span>';
       }).join('') + '</div>' +
       '<button type="button" class="reg-nav" data-d="1" aria-label="Later children">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"></path></svg></button>';
@@ -2961,7 +3026,7 @@
       return { w: k.m === 'wait', title: (snap && snap.fname ? snap.fname + ' · ' : '') + (k.m === 'wait' ? 'Waiting list' : 'Enrollment') };
     });
     // A family being created has its own step first.
-    window.cmRegTrack(strip, plan.family ? [{ fam: true, title: 'Family' }].concat(steps, [{ others: true, title: 'Other contacts' }]) : steps, plan.family ? plan.cur + 1 : plan.cur);
+    window.cmRegTrack(strip, plan.family ? [{ fam: true, title: 'Family' }].concat(steps, [{ others: true, title: 'Other contacts' }, { bill: true, title: 'Billing' }]) : steps, plan.family ? plan.cur + 1 : plan.cur);
   }
 
   function regButtons(plan, form) {
@@ -2981,7 +3046,7 @@
     back.addEventListener('click', function () { regMove(-1); });
     var next = document.createElement('button');
     next.type = 'button'; next.className = 'btn-sm primary reg-btn reg-next';
-    // Creating a family, other contacts come after the last child.
+    // Creating a family, other contacts and billing come after the last child.
     next.textContent = last && !plan.family ? 'Finish' : 'Next';
     acts.insertBefore(next, close);
     next.addEventListener('click', function () { regMove(1); });
@@ -3405,10 +3470,9 @@
 
     label(parents, 'Family'); label(reg, 'Enrollment'); label(therapy, 'Health'); label(priv, 'Tuition');
 
-    // Details: the child, with the nickname by their name and the comments.
+    // Details: the child, with the nickname by their name.
     var lastName = take(details, /^last name$/i)[0];
     moveTo(take(reg, /^nickname$/i), details, lastName ? lastName.nextSibling : null);
-    moveTo(take(reg, /^comments$/i), details);
     hide(take(details, /^(address|apartment number|city|state|zip code)$/i));
 
     // Health: the child's health first, therapy last.
@@ -3479,8 +3543,12 @@
               row(ICO.phone, 'Main phone' + (it.phone[0] ? ' \u00b7 ' + it.phone[0].type : ''), c.p, tel(c.p)) +
               row(ICO.mail, 'Main email' + (it.email[0] ? ' \u00b7 ' + it.email[0].type : ''), c.e, c.e ? 'mailto:' + c.e : '') +
               (msgs[key] ? row(ICO.msg, 'Messages to the main phone', msgs[key]) : '') +
-              row(ICO.home, 'Main address \u00b7 Home', c.addr ? c.addr + ' (not the household\u2019s)' : (hhAddr ? 'The household address' : '')) +
-            '</div>';
+            '</div>' +
+            // Closed until asked for, as on every contact's form.
+            '<details class="cm-pmore cm-paddrs fam-vaddrs"><summary><span>Addresses</span><small class="cm-paddrs-sum">' +
+              esc(c.addr || (hhAddr ? 'The household address' : '')) + '</small></summary>' +
+              '<div class="vB-list">' + row(ICO.home, 'Main address \u00b7 Home', c.addr ? c.addr + ' (not the household\u2019s)' : (hhAddr ? 'The household address' : '')) + '</div>' +
+            '</details>';
         }).join('') + '</div>';
 
       // The flat rows' own card is emptied by this, so it goes; the new cards take
