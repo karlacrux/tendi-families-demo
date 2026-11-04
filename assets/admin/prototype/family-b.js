@@ -332,6 +332,8 @@
     var bar = document.querySelector('#tndDrawer .tnd-pane-edit > .tnd-tabs[data-cm-order]');
     if (!bar) return;
     var form = bar.parentNode;
+    // A child being edited on their own keeps the tabs; the areas are for adding one to a family.
+    if (!form.classList.contains('fb-fold') && !html.classList.contains('fb-child') && form.querySelector(':scope > .vB-idstrip')) { tabbedChild(form); return; }
     form.classList.add('fb-fold');
     var at = 0, first = !form.querySelector('.fb-sec');
     var card = childCard(form);
@@ -372,6 +374,22 @@
     var tuition = form.querySelector('.form-group[data-fb-moved]');
     if (tuition) tuition.hidden = waiting;
     paintChild(form);
+  }
+
+  function tabbedChild(form) {
+    form.classList.add('fb-tabbed');
+    var box = form.querySelector('[name="is_waitlist"]');
+    if (!box) return;
+    var row = box.closest('.form-group'), stage = row.querySelector('.fb-stagerow');
+    if (!stage) {
+      stage = document.createElement('div');
+      stage.className = 'fb-stagerow';
+      stage.innerHTML = '<span>This child is</span><div class="fb-seg" role="tablist"><button type="button" role="tab" data-fb-stage="enroll">Enrolling now</button><button type="button" role="tab" data-fb-stage="wait">On the waiting list</button></div>';
+      row.classList.add('fb-stagegroup');
+      row.appendChild(stage);
+    }
+    stage.children[1].children[0].classList.toggle('on', !box.checked);
+    stage.children[1].children[1].classList.toggle('on', box.checked);
   }
 
   // The child as one card: their circle and name, then what is needed, then the areas.
@@ -442,7 +460,7 @@
      and when, allergies and tuition type. The rest of Details goes to an area of its own. Moved
      inside the form, so every field still posts. Run each pass: other scripts place some of
      these fields a moment after the form loads. */
-  var TO_FIRST = ['reg_nickname', 'allergies[]', 'other_allergy', 'hra_acs'], TO_OTHER = ['end_date', 'cir_id', 'nfc_card_uid', 'note'];
+  var FIRST = ['fname', 'lname', 'reg_nickname', 'legal_name', 'hebrew_first', 'hebrew_last', 'profile_picture', 'dob', 'is_waitlist', 'branches', 'class', 'start_date', 'allergies[]', 'other_allergy', 'hra_acs'];
   function splitDetails(form, card, details, at) {
     details.classList.add('fb-first');
     details.classList.remove('fb-closed');
@@ -453,14 +471,19 @@
       other.innerHTML = '<h3 class="vB-group-label">Other details</h3><div class="vB-editcard"></div>';
       card.appendChild(other);
     }
-    var place = function (names, into) {
-      names.forEach(function (n) {
-        var f = card.querySelector('.form-group [name="' + n + '"]'), g = f && f.closest('.form-group');
-        if (g && g.parentNode !== into) into.appendChild(g);
-      });
-    };
-    place(TO_FIRST, details.querySelector('.vB-editcard'));
-    place(TO_OTHER, other.querySelector('.vB-editcard'));
+    var first = details.querySelector('.vB-editcard'), rest = other.querySelector('.vB-editcard');
+    // Named fields come up to the first block from wherever they sit...
+    FIRST.forEach(function (n) {
+      var f = card.querySelector('.form-group [name="' + n + '"]'), g = f && f.closest('.form-group');
+      if (g && g.parentNode !== first && n !== 'dob') first.appendChild(g);
+    });
+    // ...the Hebrew date stays beside the date of birth, and anything else goes to Other details.
+    var dob = first.querySelector('[name="dob"]'), dobGroup = dob && dob.closest('.form-group');
+    if (dobGroup && dobGroup.nextElementSibling) dobGroup.nextElementSibling.setAttribute('data-fb-keep', '1');
+    Array.prototype.forEach.call(first.querySelectorAll(':scope > .form-group'), function (g) {
+      var keep = g.hasAttribute('data-fb-keep') || FIRST.some(function (n) { return g.querySelector('[name="' + n + '"]'); });
+      if (!keep) rest.appendChild(g);
+    });
     var type = card.querySelector('.form-group [name="hra_acs"]');
     if (type) type.closest('.form-group').setAttribute('data-fb-moved', '1');
     other.style.order = at * 10 + 5;
@@ -469,6 +492,9 @@
   new MutationObserver(function (list) {
     list.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { calm(n); noParent(n); people(n); } }); });
     if (!foldTimer && document.querySelector('#tndDrawer .tnd-pane-edit > .tnd-tabs[data-cm-order]')) foldTimer = setTimeout(fold, 30);
+    // The child's profile takes the family panel's look (family-b.css).
+    var drawer = document.getElementById('tndDrawer'), eyebrow = document.getElementById('tndEbView');
+    if (drawer && eyebrow) drawer.classList.toggle('fb-childview', /child profile/i.test(eyebrow.textContent));
   }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
 
   /* A child added from the family keeps the family's head and tabs (swapToChild): its Save

@@ -1504,7 +1504,8 @@
       }).join('');
       return '<div class="vB-list fam-headed fam-linked">' +
         '<a class="vB-row vB-row--action fam-tohh" data-li="' + li + '" href="javascript:void(0);">' +
-          '<span class="vB-row-ico" aria-hidden="true">' + DI.home + '</span>' +
+          // Version B: a family keeps the Families area's own icon; the house is the Household tab's.
+          '<span class="vB-row-ico" aria-hidden="true">' + (document.documentElement.classList.contains('fam-b') ? AREA_ICON : DI.home) + '</span>' +
           '<span class="vB-row-body"><span class="vB-row-label">' + esc(l.c.t) + '</span>' +
           '<span class="vB-row-value">' + esc(l.f.n) + ' family</span></span>' +
           DI.cta + '</a>' +
