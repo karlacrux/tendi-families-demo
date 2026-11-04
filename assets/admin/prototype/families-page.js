@@ -864,8 +864,13 @@
       if (sv) sv.addEventListener('click', function () {
         var form = host.querySelector('.fam-editform');
         if (st.tab !== 'details' && !commitNew()) return;
+        // The last tab of a new family says the family is saved, not the tab.
+        var finishing = !!f.bFlow && st.tab === 'billing';
         // Children, and a family's billing before it exists, have no form of their own.
-        if (form && TAB_SAVE[st.tab](f, form) === false) return;
+        QUIET = finishing;
+        var saved;
+        try { saved = form ? TAB_SAVE[st.tab](f, form) : true; } finally { QUIET = false; }
+        if (saved === false) return;
         delete f.creating;                              // Save is the end of creating it
         if (form) form.remove();
         flushHeld();
@@ -877,6 +882,9 @@
           delete f.bFlow;
           f.draft = false;
           refresh();
+          closeDrawer();
+          if (window.tndToast) window.tndToast.success('Family saved.');
+          return;
         }
         go(st.tab, false);
       });
@@ -1212,7 +1220,7 @@
       f.cards = (f.cards || []).concat([{ brand: brand, last4: num.slice(-4), nick: field('nick').value.trim() }]);
       openForm(false);
       draw();
-      if (window.tndToast) window.tndToast.success('Card added.');
+      if (!QUIET && window.tndToast) window.tndToast.success('Card added.');
     });
     draw();
     sync();
