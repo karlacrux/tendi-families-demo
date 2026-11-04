@@ -121,6 +121,7 @@
     .catch(function () {});
   // A family saved (or renamed) on the Families page, so the child form can pick it.
   window.cmAddFamily = function (f) { if (FAMILIES.indexOf(f) < 0) FAMILIES.unshift(f); };
+  window.cmPeopleIndex = function () { return peopleIndex(); };
 
   // Active children, for the sibling view on the waiting list.
   var CHILDREN = [];
@@ -1645,6 +1646,7 @@
     }
 
     row.querySelector('.cm-lklink').addEventListener('click', open);
+    card._cmLink = linked;                              // the same link, from a search outside the card
 
     /* ALREADY ON FILE? (client review, 2026-10-28) While a new contact is typed, a
        name or a phone close to one on file is offered to link instead, under the

@@ -236,7 +236,7 @@
     var out = (FAMILIES || []).filter(function (f) { return matches(f, q); });
     // Largest household first, then by surname. There is no sort control: the
     // search is how a household is found.
-    out.sort(function (a, b) { return (!!b.draft - !!a.draft) || (b.c - a.c) || a.n.localeCompare(b.n); });
+    out.sort(function (a, b) { return (!!b.top - !!a.top) || (!!b.draft - !!a.draft) || (b.c - a.c) || a.n.localeCompare(b.n); });
     return out;
   }
 
@@ -699,6 +699,11 @@
     return parentsOf(f).filter(canPay)[0] || null;
   }
 
+  // Version B calls the family's first tab Household.
+  function ftabName(t) {
+    return t[0] === 'details' && document.documentElement.classList.contains('fam-b') ? 'Household' : t[1];
+  }
+
   function openDrawer(f, tab, opts) {
     opts = opts || {};
     var old = document.querySelector('.fam-portal');
@@ -706,6 +711,7 @@
     if (old) old.remove();
     var st = { tab: tab || 'details', edit: !!opts.edit, dirty: false, held: {} };
     if (f.isNew) { st.tab = 'details'; st.edit = true; }
+    if (f.bFlow) st.edit = true;
 
     var portal = document.createElement('div');
     portal.className = 'tendi-skin tnd-drawer-portal fam-portal';
@@ -727,10 +733,10 @@
     var pane = portal.querySelector('.tnd-pane'), scrim = portal.querySelector('.tnd-pane-scrim');
     var host = portal.querySelector('.fam-fview');
 
-    var label = function (k) { return FTABS.filter(function (t) { return t[0] === k; })[0][1]; };
+    var label = function (k) { return ftabName(FTABS.filter(function (t) { return t[0] === k; })[0]); };
     var go = function (k, edit) { st.tab = k; st.edit = !!edit; st.dirty = Object.keys(st.held).length > 0; paint(); };
     // Is the open tab showing a form? Children has none, and a family not saved yet has no billing to edit.
-    var editing = function () { return st.edit && st.tab !== 'children' && !(f.isNew && st.tab === 'billing'); };
+    var editing = function () { return st.edit && st.tab !== 'children' && !(f.isNew && st.tab === 'billing' && !document.documentElement.classList.contains('fam-b')); };
     // Leaving a tab saves it, silently. A new family saves once it has its name; a form
     // that cannot be saved yet stays in the page (false) and is set aside by leave().
     var autosave = function () {
@@ -802,7 +808,7 @@
     function tabs() {
       return '<div class="tnd-tabs fam-ftabs" role="tablist">' + FTABS.map(function (t) {
         return '<button type="button" role="tab" class="tnd-tab' + (st.tab === t[0] ? ' is-active' : '') + '" data-ftab="' + t[0] + '"' +
-          ' aria-selected="' + (st.tab === t[0]) + '">' + t[1] + '</button>';
+          ' aria-selected="' + (st.tab === t[0]) + '">' + ftabName(t) + '</button>';
       }).join('') + '</div>';
     }
 
@@ -812,7 +818,7 @@
       // The same on every tab: Edit when viewing; Cancel and Save when editing or creating.
       if (!st.edit) return '<button type="button" class="btn-sm primary tnd-drawer-edit fam-tedit">' + ICON_EDIT + ' Edit</button>';
       return '<button type="button" class="btn-sm tnd-drawer-cancel fam-tcancel">Cancel</button>' +
-        '<button type="button" class="btn-sm primary tnd-drawer-save fam-tsave">' + ICON_SAVE + ' Save</button>';
+        '<button type="button" class="btn-sm primary tnd-drawer-save fam-tsave">' + ICON_SAVE + (f.bFlow && st.tab !== 'billing' ? ' Save and continue' : ' Save') + '</button>';
     }
 
     function bar() { return ''; }
@@ -848,7 +854,7 @@
       if (ed) ed.addEventListener('click', function () { go(st.tab, true); });
       var cn = portal.querySelector('.fam-tcancel');
       if (cn) cn.addEventListener('click', function () {
-        if (f.isNew) { closeDrawer(); return; }
+        if (f.isNew || f.bFlow) { closeDrawer(); return; }
         var open = host.querySelector('.fam-editform');
         if (open) open.remove();
         st.held = {};
@@ -864,6 +870,14 @@
         if (form) form.remove();
         flushHeld();
         refresh();
+        if (f.bFlow) {
+          // On to the next tab, still open; the last one finishes the family.
+          var at = FTABS.map(function (t) { return t[0]; }).indexOf(st.tab);
+          if (at < FTABS.length - 1) { go(FTABS[at + 1][0], true); return; }
+          delete f.bFlow;
+          f.draft = false;
+          refresh();
+        }
         go(st.tab, false);
       });
       var form = host.querySelector('.fam-editform');
@@ -976,7 +990,11 @@
       var add = '<div class="reg-more">' +
         '<button type="button" class="reg-add fam-kidadd" data-m="enroll">+ ' + (list.length ? 'Enroll another child' : 'Enroll a child') + '</button>' +
         '<button type="button" class="reg-add fam-kidadd" data-m="wait">+ Add to waiting list</button></div>';
-      return group('Children', list.map(function (k) { return '<div class="vB-list fam-headed">' + childRow(k) + '</div>'; }).join('') + add);
+      // Version B says so when there are none yet.
+      var none = !list.length && document.documentElement.classList.contains('fam-b') ? '<div class="fb-nokids">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.870"/><path d="M16 3.130a4 4 0 0 1 0 7.750"/></svg>' +
+        '<b>No children yet</b><span>Add each child with a few basics. Everything else can wait.</span></div>' : '';
+      return group('Children', none + list.map(function (k) { return '<div class="vB-list fam-headed">' + childRow(k) + '</div>'; }).join('') + add);
     },
 
     /* BILLING IS THE PARENTS', TUITION IS THE CHILD'S. Who pays and how, and the way to the
@@ -1117,7 +1135,7 @@
         if (window.cmAddFamily) window.cmAddFamily(f);
         return;
       }
-      say('Details saved.');
+      say(ftabName(FTABS[0]) + ' saved.');
     },
 
     contacts: function (f, form) {
@@ -1126,8 +1144,12 @@
     },
 
     billing: function (f, form) {
-      var v = form.querySelector('[data-k="payer"]').value;
-      f.billing = { payer: v === '' ? -1 : +v, method: form.querySelector('[data-k="method"]').value };
+      // A card typed but not added with its own button is still meant to be kept.
+      var typed = form.querySelector('.fam-cardform:not([hidden]) [data-c="num"]');
+      if (typed && typed.value.replace(/\D/g, '')) form.querySelector('.fam-cardsave').click();
+      var who = form.querySelector('[data-k="payer"]'), v = who.value;
+      // Nobody to choose from yet is not choosing nobody: the main contact pays once there is one.
+      f.billing = { payer: v === '' ? (who.options.length > 1 ? -1 : null) : +v, method: form.querySelector('[data-k="method"]').value };
       say('Billing saved.');
     }
   };
@@ -1172,7 +1194,14 @@
       add.hidden = open;
       ['num', 'cvv', 'exp', 'name', 'nick'].forEach(function (k) { field(k).value = ''; });
     };
-    var sync = function () { box.hidden = sel.value !== 'Credit Card'; };
+    var sync = function () {
+      box.hidden = sel.value !== 'Credit Card';
+      // Version B: Credit Card with no card yet goes straight to the card's fields.
+      if (!box.hidden && !(f.cards || []).length && form.hidden && document.documentElement.classList.contains('fam-b')) {
+        form.hidden = false;
+        add.hidden = true;
+      }
+    };
     sel.addEventListener('change', sync);
     add.addEventListener('click', function () { openForm(true); field('num').focus(); });
     box.querySelector('.fam-cardcancel').addEventListener('click', function () { openForm(false); });
@@ -1347,6 +1376,13 @@
   document.addEventListener('cm-reg-closed', function () {
     var f = STATE.regFam;
     STATE.regFam = null;
+    var html = document.documentElement;
+    if (f && html.classList.contains('fam-b') && document.querySelector('.fam-portal')) {
+      var tab = html.getAttribute('data-fb-tab') || 'children';
+      html.removeAttribute('data-fb-tab');
+      openDrawer(f, tab, { edit: true, instant: true });
+      return;
+    }
     // A family still being created goes on to its other contacts and billing, ready to fill in.
     // An existing one goes back to the list the child joined.
     if (f && document.getElementById('tndFamiliesPage')) {
@@ -1946,6 +1982,17 @@
   // the child form is built and the registration head is on it. Nothing slides out and back in.
   function swapToChild(portal, handover) {
     try { sessionStorage.setItem('cm-add-family', JSON.stringify(handover)); } catch (err) {}
+    // Version B: the child opens under the family's own head and tabs (family-b.js), so the
+    // family panel stays; its Save and Cancel act on the child until that is done.
+    if (document.documentElement.classList.contains('fam-b')) {
+      var edit = portal.querySelector('.fam-tedit');
+      if (edit) edit.click();
+      var bar = portal.querySelector('.fam-ftabs');
+      document.documentElement.style.setProperty('--fb-top', (bar ? Math.round(bar.getBoundingClientRect().bottom) : 110) + 'px');
+      document.documentElement.classList.add('fb-child');
+      if (window.TndListDrawer) window.TndListDrawer.open('children/add', 'Add child');
+      return;
+    }
     var drawer = document.getElementById('tndDrawer'), scrim = document.getElementById('tndDrawerScrim');
     var still = [drawer, scrim].filter(Boolean);
     still.forEach(function (el) { el.style.transition = 'none'; });
@@ -2022,8 +2069,29 @@
      "Add family" opens the family's own panel, empty and in edit: the same tabs as any
      family. "Add to waiting list" is the same, with the waiting list first on Children. */
   function newFamily(wait) {
-    return { n: '', a: '', p: '', k: '', c: 0, contacts: [], isNew: true, wait: !!wait };
+    // bFlow, Version B: created tab by tab, every tab open, finished by Save on the last one.
+    return { n: '', a: '', p: '', k: '', c: 0, contacts: [], isNew: true, wait: !!wait, bFlow: document.documentElement.classList.contains('fam-b') };
   }
+
+  /* What Version B of Add family (family-b.js) reads and hands back. */
+  window.famApi = {
+    ready: load,
+    families: function () { return FAMILIES || []; },
+    children: function () { return CHILDREN_ALL.concat(CHILDREN_OFF); },
+    add: function (f) {
+      FAMILIES.forEach(function (x) { delete x.top; });
+      f.top = true;
+      FAMILIES.push(f);
+      if (window.cmAddFamily) window.cmAddFamily(f);
+      refresh();
+      var sub = document.getElementById('famCount');
+      if (sub) sub.innerHTML = '<b>' + FAMILIES.length + '</b> families';
+    },
+    open: function (f, tab) { openDrawer(f, tab || 'details', { instant: true }); },
+    close: closeDrawer,
+    types: function () { return TYPES.slice(); },
+    icon: function () { return AREA_ICON; }
+  };
 
   /* ---- the page ---------------------------------------------------------- */
 

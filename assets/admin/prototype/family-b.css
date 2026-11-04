@@ -1,0 +1,249 @@
+/* ---------------------------------------------------------------------------
+   PROTOTYPE — Families, Version B (family-b.js). Sandbox only, never deployed.
+   A skin over Version A's panel: same markup, fields and text. Everything hangs
+   on html.fam-b, so Version A is untouched when the class is absent.
+--------------------------------------------------------------------------- */
+html.fam-b .tnd-drawer-portal .tnd-drawer{--fb-edge:var(--paper-edge,rgba(95,67,178,.13));--fb-field:var(--paper-edge-strong,rgba(95,67,178,.22));background:var(--cream,#faf9fe)!important}
+
+html.fam-b .tnd-drawer-portal .tnd-drawer{width:800px!important;max-width:100vw!important}
+
+/* Head: eyebrow, title and meta on white, tabs underneath */
+html.fam-b .tnd-drawer-portal .tnd-pane-head{background:#fff!important;border:0!important;padding:12px 22px 10px!important;min-height:0!important;box-shadow:none!important}
+html.fam-b .tnd-drawer-portal .fam-fdrawer .tnd-pane-head{padding-bottom:0!important}
+html.fam-b .tnd-drawer-portal .up-head-eyebrow,html.fam-b .tnd-drawer-portal .up-head-eyebrow span{font-size:10.5px!important;font-weight:600!important;letter-spacing:.1em!important;text-transform:uppercase;color:var(--primary,#5a3fc2)!important}
+html.fam-b .tnd-drawer-portal .tnd-pane-body{padding:0!important;background:transparent!important}
+html.fam-b .tnd-drawer-portal .fam-fview{display:flex;flex-direction:column;padding:0!important;margin:0!important}
+html.fam-b .tnd-drawer-portal .fam-fhero.vB-hero{display:block!important;margin:0!important;padding:0 22px 8px!important;background:#fff!important;border:0!important;border-radius:0!important;box-shadow:none!important;min-height:0!important}
+html.fam-b .tnd-drawer-portal .fam-fhero .vB-avatar{display:none!important}
+html.fam-b .tnd-drawer-portal .fam-fhero .vB-name{margin:0!important;font-size:21px!important;font-weight:700!important;letter-spacing:-.02em;line-height:1.25!important;color:var(--ink,#1f1a2e)}
+html.fam-b .tnd-drawer-portal .fam-fhero .vB-hero-meta{margin:1px 0 0!important}
+html.fam-b .tnd-drawer-portal .fam-fhero .vB-idtag{padding:0!important;background:none!important;border:0!important;font-size:12px!important;font-weight:400!important;color:var(--ink-4,#6b6480)!important}
+
+html.fam-b .tnd-drawer-portal .fam-fhero.vB-hero{position:sticky;top:0;z-index:5;height:54px;box-sizing:border-box}
+/* Tabs: an underline and an icon, held in view while the page scrolls */
+html.fam-b .tnd-drawer-portal .tnd-tabs{position:sticky;top:0;z-index:4;display:flex!important;gap:2px!important;margin:0!important;padding:0 14px!important;background:#fff!important;border:0!important;border-bottom:1px solid var(--fb-edge)!important;border-radius:0!important;box-shadow:none!important}
+html.fam-b .tnd-drawer-portal .fam-ftabs .tnd-tab{display:inline-flex!important;align-items:center;gap:6px}
+html.fam-b .tnd-drawer-portal .tnd-tabs .tnd-tab{flex:0 0 auto!important;width:auto!important;margin:0 0 -1px!important;padding:11px 9px 10px!important;background:none!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;box-shadow:none!important;font-size:13px!important;font-weight:500!important;color:var(--ink-3,#5b5470)!important;white-space:nowrap}
+html.fam-b .tnd-drawer-portal .tnd-tabs .tnd-tab:hover{color:var(--ink,#1f1a2e)!important}
+html.fam-b .tnd-drawer-portal .tnd-tabs .tnd-tab.is-active{color:var(--primary,#5a3fc2)!important;font-weight:600!important;border-bottom-color:var(--primary,#5a3fc2)!important}
+html.fam-b .tnd-drawer-portal .fam-ftabs .tnd-tab::before{content:"";flex:none;width:15px;height:15px;background:currentColor;-webkit-mask:var(--fb-ico) center/contain no-repeat;mask:var(--fb-ico) center/contain no-repeat}
+html.fam-b .tnd-drawer-portal .tnd-tab[data-ftab="details"]{--fb-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 10.5 12 3l9 7.5'/%3E%3Cpath d='M5 9.8V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.8'/%3E%3Cpath d='M9.5 21v-6h5v6'/%3E%3C/svg%3E")}
+html.fam-b .tnd-drawer-portal .tnd-tab[data-ftab="children"]{--fb-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M23 21v-2a4 4 0 0 0-3-3.870'/%3E%3Cpath d='M16 3.130a4 4 0 0 1 0 7.750'/%3E%3C/svg%3E")}
+html.fam-b .tnd-drawer-portal .tnd-tab[data-ftab="contacts"]{--fb-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M19 8v6M22 11h-6'/%3E%3C/svg%3E")}
+html.fam-b .tnd-drawer-portal .tnd-tab[data-ftab="billing"]{--fb-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 3v18l2.500-1.500L10 21l2-1.500 2 1.500 2.500-1.500L19 21V3l-2.500 1.500L14 3l-2 1.500L10 3 7.500 4.500z'/%3E%3Cpath d='M9 9h6M9 13h6'/%3E%3C/svg%3E")}
+
+html.fam-b .tnd-drawer-portal .fam-ftabs.tnd-tabs{top:54px}
+
+/* Every block a white card, its title inside */
+html.fam-b .tnd-drawer-portal .tnd-pane-body > .tnd-form-page,html.fam-b .tnd-drawer-portal .tnd-pane-body .box,html.fam-b .tnd-drawer-portal .tnd-pane-body .box-content{margin:0!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important}
+html.fam-b .tnd-drawer-portal .tnd-pane-body .tnd-form-page > .col-xs-12{padding:0!important}
+html.fam-b .tnd-drawer-portal form.tnd-pane-edit:not(.fam-editform){display:flex;flex-direction:column;gap:16px;margin:0!important;padding:0 22px 24px!important}
+html.fam-b .tnd-drawer-portal form.tnd-pane-edit:not(.fam-editform) > .tnd-tabs{margin:0 -22px 2px!important}
+html.fam-b .tnd-drawer-portal .fam-fview > form,html.fam-b .tnd-drawer-portal .fam-fview > .fam-heldslot{display:flex;flex-direction:column;gap:16px;margin:0!important;padding:18px 22px 24px!important}
+html.fam-b .tnd-drawer-portal .fam-fview > :not(.fam-fhero):not(.fam-ftabs):not(form):not(.fam-heldslot){margin:18px 22px 0!important}
+html.fam-b .tnd-drawer-portal .fam-fview > :not(.fam-fhero):not(.fam-ftabs):not(form):not(.fam-heldslot):last-child{margin-bottom:24px!important}
+html.fam-b .tnd-drawer-portal .vB-group{margin:0!important;padding:18px!important;background:#fff!important;border:1px solid var(--fb-edge)!important;border-radius:14px!important;box-shadow:none!important}
+html.fam-b .tnd-drawer-portal .vB-group > .vB-group-label{margin:0 0 14px!important;padding:0!important;font-size:14.5px!important;font-weight:600!important;letter-spacing:-.005em!important;text-transform:none!important;color:var(--ink,#1f1a2e)!important}
+html.fam-b .tnd-drawer-portal .vB-editcard{margin:0!important;padding:0!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+
+/* One label, one field */
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer label.control-label,html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .cm-pgrid > .form-group > label,html.fam-b .tnd-drawer-portal .cm-mlabel,html.fam-b .tnd-drawer-portal .cm-mmsgl > span,html.fam-b .tnd-drawer-portal .cm-ptype-cap,html.fam-b .tnd-drawer-portal .vB-row-label{font-size:12px!important;font-weight:500!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink-2,#332e47)!important}
+html.fam-b .tnd-drawer-portal .form-control,html.fam-b .tnd-drawer-portal form.tnd-pane-edit select,html.fam-b .tnd-drawer-portal form.tnd-pane-edit input:not([type=checkbox]):not([type=radio]):not([type=file]){box-sizing:border-box;height:38px!important;min-height:38px!important;font-size:13.5px!important;font-weight:400!important;color:var(--ink,#1f1a2e);background-color:#fff;border:1px solid var(--fb-field)!important;border-radius:9px!important;box-shadow:none!important}
+html.fam-b .tnd-drawer-portal .form-control:focus,html.fam-b .tnd-drawer-portal form.tnd-pane-edit select:focus,html.fam-b .tnd-drawer-portal form.tnd-pane-edit input:not([type=checkbox]):not([type=radio]):not([type=file]):focus{outline:none;border-color:var(--primary,#5a3fc2)!important;box-shadow:0 0 0 3px rgba(90,63,194,.12)!important}
+
+/* Buttons */
+html.fam-b .tnd-drawer-portal .tnd-pane-head .btn-sm{height:34px;border-radius:9px!important;font-size:13px!important;font-weight:500!important;box-shadow:none!important}
+html.fam-b .tnd-drawer-portal .reg-add{border-radius:9px!important;font-size:13px!important;font-weight:500!important}
+html.fam-b .tnd-drawer-portal .cm-pmore > summary{font-size:12.5px!important;font-weight:500!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink,#1f1a2e)!important}
+
+/* No father / mother on file */
+html.fam-b .tnd-drawer-portal .vB-group:has(> .fb-none){position:relative}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer label.fb-none{position:absolute;top:18px;right:18px;display:inline-flex;align-items:center;gap:6px;margin:0;padding:0;background:none;border:0;border-radius:0;font-size:12px;font-weight:400;color:var(--ink-4,#6b6480);cursor:pointer}
+html.fam-b .tnd-drawer-portal .fb-isnone > .vB-group-label{margin-bottom:0!important}
+html.fam-b .tnd-drawer-portal .fam-newparent[hidden]{display:none!important}
+.fb-cb{display:inline-flex;flex:none}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fb-cb input{position:static!important;opacity:1!important;appearance:auto!important;-webkit-appearance:checkbox!important;display:block!important;width:14px!important;height:14px!important;min-height:0!important;margin:0!important;padding:0!important;accent-color:var(--primary,#5a3fc2)}
+
+/* Billing and messages: selects Version A drew without an arrow, and the card form's rhythm */
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-editform select[data-k],html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer select.cm-mmsg{padding-right:30px!important;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6480' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center/14px!important}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cards-label{font-size:12px!important;font-weight:500!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink-2,#332e47)!important}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform .form-group{margin:0 0 14px!important}
+
+/* The child form: areas that open, in place of tabs */
+html.fam-b #tndDrawer .fb-fold > .tnd-tabs{display:none!important}
+html.fam-b #tndDrawer .fb-fold{padding-top:18px!important}
+html.fam-b #tndDrawer .fb-childcard > section.fb-sec:not(.fb-off){display:block!important}
+html.fam-b #tndDrawer .fb-childcard > section.fb-off{display:none!important}
+html.fam-b #tndDrawer .fb-sec > .vB-group-label{position:relative;display:flex;align-items:center;gap:8px;margin:-18px -18px 0!important;padding:16px 42px 16px 18px!important;cursor:pointer;border-radius:14px}
+html.fam-b #tndDrawer .fb-sec:not(.fb-closed) > .vB-group-label{margin-bottom:6px!important}
+html.fam-b #tndDrawer .fb-sec > .vB-group-label:hover{background:#faf9fe}
+html.fam-b #tndDrawer .fb-sec > .vB-group-label::after{content:"";position:absolute;right:18px;top:50%;width:15px;height:15px;margin-top:-7.5px;background:var(--ink-4,#6b6480);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center/contain no-repeat}
+html.fam-b #tndDrawer .fb-sec:not(.fb-closed) > .vB-group-label::after{transform:rotate(180deg)}
+html.fam-b #tndDrawer .fb-sec.fb-closed{padding-bottom:0!important}
+html.fam-b #tndDrawer .fb-sec.fb-closed > :not(.vB-group-label){display:none!important}
+html.fam-b #tndDrawer .fb-seccount{display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:#c0392b;color:#fff;font-size:10.5px;font-weight:600}
+
+/* A child added from the family: under the family's own head and tabs */
+html.fb-child #tndDrawerScrim{display:none!important}
+html.fb-child #tndDrawer{top:var(--fb-top,110px)!important;bottom:0!important;right:0!important;height:auto!important;transform:none!important;transition:none!important;box-shadow:none!important;background:var(--cream,#faf9fe)!important;z-index:3011!important}
+html.fb-child #tndDrawer > .tnd-pane-head{display:none!important}
+
+/* Father and Mother as two tabs of one Parents block */
+html.fam-b .tnd-drawer-portal .fb-parentbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
+html.fam-b .tnd-drawer-portal .fb-seg{display:inline-flex;gap:2px;padding:3px;border-radius:9px;background:#f0eefa}
+html.fam-b .tnd-drawer-portal .fb-seg button{padding:6px 18px!important;background:none!important;border:0!important;border-radius:7px!important;box-shadow:none!important;font-size:13px!important;font-weight:500!important;color:var(--ink-3,#5b5470)!important;cursor:pointer}
+html.fam-b .tnd-drawer-portal .fb-seg button.on{background:#fff!important;color:var(--primary,#5a3fc2)!important;font-weight:600!important;box-shadow:0 1px 2px rgba(31,26,46,.1)!important}
+html.fam-b .tnd-drawer-portal .fb-parents > .vB-group{padding:0!important;background:none!important;border:0!important;border-radius:0!important}
+html.fam-b .tnd-drawer-portal .fb-parents > .vB-group[hidden]{display:none!important}
+html.fam-b .tnd-drawer-portal .fb-parents > .vB-group > .vB-group-label{display:none!important}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fb-parentbar label.fb-none{position:static}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fb-parentbar label.fb-none[hidden]{display:none!important}
+
+/* The circle, with the person's name and relationship beside it */
+html.fam-b .tnd-drawer-portal .fb-av{display:inline-grid!important;place-items:center;flex:none;width:36px!important;height:36px!important;min-width:36px;padding:0!important;border:0!important;border-radius:50%!important;color:#fff!important;font-size:14px!important;font-weight:600!important;line-height:1!important;box-shadow:none!important}
+html.fam-b .tnd-drawer-portal .fb-av.is-empty{background:var(--primary,#5a3fc2)}
+html.fam-b .tnd-drawer-portal .fb-av svg{width:17px;height:17px;color:#fff;stroke:#fff}
+html.fam-b .tnd-drawer-portal .fb-phead{display:flex;align-items:center;gap:10px;min-width:0}
+html.fam-b .tnd-drawer-portal .cm-extra > .fb-phead{margin:0 0 14px}
+html.fam-b .tnd-drawer-portal .fb-who{display:flex;flex-direction:column;min-width:0;text-align:left}
+html.fam-b .tnd-drawer-portal .fb-who b{font-size:14px;font-weight:600;line-height:1.25;color:var(--ink,#1f1a2e);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.fam-b .tnd-drawer-portal .fb-who small{font-size:12px;line-height:1.3;color:var(--ink-4,#6b6480)}
+html.fam-b .tnd-drawer-portal .fb-who small[hidden]{display:none}
+
+/* What they may do: across the card, in rows, so it fits without scrolling */
+html.fam-b .tnd-drawer-portal .cm-ptype-row{position:relative}
+html.fam-b .tnd-drawer-portal .cm-permfold{position:static}
+html.fam-b .tnd-drawer-portal .cm-permpop{left:0;right:0;width:auto;padding:12px 14px}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-plabel{margin-bottom:8px!important;font-size:12px!important;font-weight:500!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink-2,#332e47)!important}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-perms{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-perms > label{flex:0 0 auto;white-space:nowrap}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-collect:not([hidden]){display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-collect-head{margin:0!important;font-size:12px!important;font-weight:500!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink-2,#332e47)!important}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-collect-when > label{white-space:nowrap}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-collect-range:not([hidden]){display:flex;align-items:center;gap:12px;flex:1 1 300px;margin:0!important;padding:0!important;border:0!important}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-collect-range label{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0}
+html.fam-b .tnd-drawer-portal .cm-permpop .cm-collect-range span{flex:none;margin:0!important;font-size:12px!important;font-weight:500!important;letter-spacing:0!important;text-transform:none!important}
+
+/* Children tab, before there are any */
+html.fam-b .tnd-drawer-portal .fb-nokids{display:flex;flex-direction:column;align-items:center;gap:4px;margin:0 0 12px;padding:26px 18px;text-align:center;border:1px dashed var(--fb-field,rgba(95,67,178,.22));border-radius:14px}
+html.fam-b .tnd-drawer-portal .fb-nokids svg{width:30px;height:30px;margin-bottom:6px;color:#b4a8e0}
+html.fam-b .tnd-drawer-portal .fb-nokids b{font-size:14px;font-weight:600;color:var(--ink,#1f1a2e)}
+html.fam-b .tnd-drawer-portal .fb-nokids span{font-size:12.5px;color:var(--ink-4,#6b6480)}
+
+/* The child's fields in rows, like the parents': short ones side by side, long ones across.
+   Everything starts full width, so anything not named here simply stays in one line. */
+html.fam-b #tndDrawer .fb-sec > .vB-editcard{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px 12px;align-items:start}
+html.fam-b #tndDrawer .fb-sec > .vB-editcard > *{grid-column:1 / -1;min-width:0;margin:0!important}
+html.fam-b #tndDrawer .fb-sec > .vB-editcard > .form-group > [class*="col-sm"]{width:100%!important;max-width:100%!important;float:none!important;padding:0!important}
+html.fam-b #tndDrawer .fb-sec > .vB-editcard > .form-group:not(:has(textarea, input[type="radio"], [name="reg_enrolled_days[]"], [name="allergies[]"], [name="is_waitlist"], [name="has_therapy"], [name="has_transportation"])):has(input, select){grid-column:span 6}
+/* Details */
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="is_waitlist"]){order:1}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="branches"]){order:2}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="class"]){order:3}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="fname"]){order:4;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="lname"]){order:5;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="reg_nickname"]){order:6;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="hebrew_first"]){order:7;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="hebrew_last"]){order:8;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="legal_name"]){order:9;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="dob"]){order:10;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="dob"]) + .form-group{order:11;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="profile_picture"]){order:12;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="start_date"]){order:13;grid-column:span 3!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="end_date"]){order:14;grid-column:span 3!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="cir_id"]){order:15;grid-column:span 3!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="nfc_card_uid"]){order:16;grid-column:span 3!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="note"]){order:17}
+/* Health: the two notes side by side */
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="reg_medical_conditions"]),html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="reg_allergy_special_instructions"]){grid-column:span 6}
+html.fam-b #tndDrawer .fb-sec > .vB-editcard textarea{min-height:64px!important;height:64px}
+
+/* One child, one card: circle and name, then what is mandatory, then the areas inside it */
+html.fam-b #tndDrawer .fb-childcard{display:flex;flex-direction:column;gap:10px;padding:18px;background:#fff;border:1px solid var(--fb-edge,rgba(95,67,178,.13));border-radius:14px}
+html.fam-b #tndDrawer .fb-childhead{order:0;margin-bottom:6px}
+html.fam-b #tndDrawer .fb-childcard > .fb-sec{padding:14px!important;border-radius:10px!important;box-shadow:none!important}
+html.fam-b #tndDrawer .fb-childcard > .fb-sec > .vB-group-label{margin:-14px -14px 0!important;padding:12px 40px 12px 14px!important;font-size:13px!important;font-weight:500!important;border-radius:10px}
+html.fam-b #tndDrawer .fb-childcard > .fb-sec:not(.fb-closed) > .vB-group-label{margin-bottom:8px!important}
+html.fam-b #tndDrawer .fb-childcard > .fb-sec > .vB-group-label::after{right:14px}
+html.fam-b #tndDrawer .fb-childcard > .fb-first{padding:0 0 8px!important;background:none!important;border:0!important;border-radius:0!important}
+html.fam-b #tndDrawer .fb-childcard > .fb-first > .vB-group-label{display:none!important}
+html.fam-b #tndDrawer .form-group[data-fb-moved][hidden]{display:none!important}
+html.fam-b #tndDrawer .fb-fold > .fb-kidadds{display:flex;gap:8px;margin:0}
+html.fam-b #tndDrawer .fb-fold > .fb-kidadds .reg-add{flex:1}
+html.fam-b #tndDrawer .fb-donekids{display:flex;flex-direction:column;gap:8px}
+html.fam-b #tndDrawer .fb-donekid{padding:10px 14px;background:#fff;border:1px solid var(--fb-edge,rgba(95,67,178,.13));border-radius:12px}
+/* The mandatory block: names and birth, then where and when, then tuition */
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="fname"]){order:1;grid-column:span 3!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="lname"]){order:2;grid-column:span 3!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="dob"]){order:3;grid-column:span 3!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="dob"]) + .form-group{order:4;grid-column:span 3!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="is_waitlist"]){order:5}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="branches"]){order:6;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="class"]){order:7;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="start_date"]){order:8;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="hra_acs"]){order:9}
+/* Other details */
+html.fam-b #tndDrawer .fb-other .form-group:has([name="end_date"]),html.fam-b #tndDrawer .fb-other .form-group:has([name="cir_id"]),html.fam-b #tndDrawer .fb-other .form-group:has([name="nfc_card_uid"]){grid-column:span 4!important}
+html.fam-b #tndDrawer .fb-childcard > .fb-sec.fb-closed{padding-bottom:0!important}
+html.fam-b #tndDrawer .fb-childcard > .fb-sec.fb-closed > .vB-group-label{margin-bottom:0!important}
+
+/* The first block, row by row: picture and name; nickname and legal name; Hebrew names; birth;
+   waiting list; where and when; allergies; tuition type */
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="profile_picture"]){order:1;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="fname"]){order:2;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="lname"]){order:3;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="reg_nickname"]){order:4;grid-column:span 6!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="legal_name"]){order:5;grid-column:span 6!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="hebrew_first"]){order:6;grid-column:span 6!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="hebrew_last"]){order:7;grid-column:span 6!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="dob"]){order:8;grid-column:span 6!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="dob"]) + .form-group{order:9;grid-column:span 6!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="is_waitlist"]){order:10}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="branches"]){order:11;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="class"]){order:12;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="start_date"]){order:13;grid-column:span 4!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="allergies[]"]){order:14;grid-column:1 / -1!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="hra_acs"]){order:15;grid-column:1 / -1!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="other_allergy"]){order:14;grid-column:1 / -1!important}
+
+/* The card's fields on the same 16px rhythm as the rest of the panel */
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cards{display:flex;flex-direction:column;gap:16px;margin-top:16px;padding:0;border:0}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cards[hidden]{display:none}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform{gap:16px;margin:0}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform[hidden]{display:none}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardrow{gap:12px;margin:0}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform .form-group{margin:0!important;padding:0!important}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform .form-group > [class*="col-sm"]{width:100%!important;float:none!important;padding:0!important}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform .form-group > label{display:block;margin:0 0 6px!important;padding:0!important}
+/* No card yet: just the fields */
+html.fam-b .tnd-drawer-portal .fam-cards:has(.fam-empty-note):has(.fam-cardform:not([hidden])) > .fam-cards-label,html.fam-b .tnd-drawer-portal .fam-cards:has(.fam-empty-note):has(.fam-cardform:not([hidden])) > .fam-cardlist{display:none!important}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform .form-group{gap:0!important}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform .form-control{margin:0!important}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cards{margin-top:0}
+
+/* Two to a row, each taking half; the picture on its own line above the names */
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="profile_picture"]){grid-column:1 / -1!important}
+html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="fname"]),html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="lname"]),html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="branches"]),html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="class"]),html.fam-b #tndDrawer .vB-editcard > .form-group:has([name="start_date"]){grid-column:span 6!important}
+html.fam-b #tndDrawer .fb-other .form-group:has([name="end_date"]),html.fam-b #tndDrawer .fb-other .form-group:has([name="cir_id"]),html.fam-b #tndDrawer .fb-other .form-group:has([name="nfc_card_uid"]){grid-column:span 6!important}
+
+/* Enrolling or Waiting list, at the right of the child's name */
+html.fam-b .tnd-drawer-portal .fb-phead .fb-who{flex:1 1 auto}
+html.fam-b .tnd-drawer-portal .fb-stagepill{flex:none;margin-left:auto;padding:3px 10px;border-radius:999px;background:#e4f3ea;color:#1f7a4d;font-size:11.5px;font-weight:500;line-height:1.3;white-space:nowrap}
+html.fam-b .tnd-drawer-portal .fb-stagepill.is-wait{background:#fdf0d6;color:#8a6410}
+
+/* This child is: Enrolling now / On the waiting list, over the original switch */
+html.fam-b #tndDrawer .vB-editcard > .fb-stagegroup{display:none!important}
+html.fam-b #tndDrawer .fb-stagerow{display:flex;align-items:center;gap:12px;flex:none;margin-left:auto}
+html.fam-b #tndDrawer .fb-stagerow > span{font-size:12px;font-weight:500;color:var(--ink-2,#332e47)}
+
+/* Other contacts: search before adding */
+html.fam-b .tnd-drawer-portal .fb-csearch{margin:0 0 14px}
+html.fam-b .tnd-drawer-portal .fb-csearch-in{position:relative}
+html.fam-b .tnd-drawer-portal .fb-csearch-in svg{position:absolute;left:11px;top:11px;width:16px;height:16px;color:var(--ink-4,#6b6480);z-index:1;pointer-events:none}
+html.fam-b .tnd-drawer-portal .fam-editform .fb-csearch-in input{width:100%;padding-left:34px!important}
+html.fam-b .tnd-drawer-portal .fb-csearch-out:not(:empty){margin-top:6px;padding:4px;border:1px solid var(--fb-edge,rgba(95,67,178,.13));border-radius:10px;background:#fff}
+html.fam-b .tnd-drawer-portal .fb-csearch-out p{margin:8px;font-size:12.5px;color:var(--ink-4,#6b6480)}
+html.fam-b .tnd-drawer-portal .fb-csearch-out button{width:100%;padding:7px 8px!important;background:none!important;border:0!important;border-radius:7px!important;box-shadow:none!important;cursor:pointer;text-align:left}
+html.fam-b .tnd-drawer-portal .fb-csearch-out button:hover{background:#f4f2fc!important}
+html.fam-b .tnd-drawer-portal .fb-csearch-out em{flex:none;margin-left:auto;font-style:normal;font-size:12.5px;font-weight:500;color:var(--primary,#5a3fc2)}
+html.fam-b .tnd-drawer-portal .fam-crow-facts .fam-type{display:inline-block!important;width:auto!important;height:auto!important;margin:0 0 0 6px!important;padding:0 7px!important;vertical-align:1px}
