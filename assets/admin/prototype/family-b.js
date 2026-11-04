@@ -77,7 +77,11 @@
       else card.insertBefore(head, card.firstChild);
       paintHead(card);
     });
+    Array.prototype.forEach.call(root.querySelectorAll('.fb-payview'), function (row) {
+      paintCircle(row.querySelector('.fb-phead-av'), row.getAttribute('data-name'));
+    });
     contactSearch(root);
+    billingBlocks(root);
     Array.prototype.forEach.call(root.querySelectorAll('.fam-clist:not(.fam-clist-parents) .fam-cadd, .fam-caddview'), function (b) {
       b.textContent = '+ Add new contact';
     });
@@ -144,6 +148,84 @@
         if (hits[0]) pick(hits[0]);
       });
     });
+  }
+  /* Billing in three blocks: who pays, how, and to what address. The two original selects stay
+     in the form, hidden, and are what gets saved; the card fields keep their own wiring. */
+  function billingBlocks(root) {
+    var method = root.querySelector('.fam-editform [data-k="method"]') || (root.matches('.fam-editform') ? root.querySelector('[data-k="method"]') : null);
+    var form = method && method.closest('.fam-editform');
+    if (!form || form.querySelector('.fb-pays')) return;
+    var payer = form.querySelector('[data-k="payer"]'), group = method.closest('.vB-group');
+    var f = (form.closest('.fam-portal') || {})._fam || {}, b = f.billing || {}, p = b.parts || {};
+    var section = function (title) {
+      var s = document.createElement('section');
+      s.className = 'vB-group';
+      s.innerHTML = '<h3 class="vB-group-label">' + title + '</h3>';
+      return s;
+    };
+
+    var who = section('Who pays');
+    var pays = document.createElement('div');
+    pays.className = 'fb-pays';
+    who.appendChild(pays);
+    var people = Array.prototype.filter.call(payer.options, function (o) { return o.value !== ''; });
+    var drawPays = function () {
+      Array.prototype.forEach.call(pays.children, function (c) { c.classList.toggle('on', c.getAttribute('data-v') === payer.value); });
+    };
+    people.forEach(function (o) {
+      var c = document.createElement('button'), bits = o.text.split(' \u00b7 ');
+      c.type = 'button';
+      c.setAttribute('data-v', o.value);
+      c.innerHTML = '<i></i><span class="fb-who"><b></b><small></small></span>';
+      c.querySelector('b').textContent = bits[0];
+      c.querySelector('small').textContent = bits[1] || '';
+      c.addEventListener('click', function () { payer.value = o.value; payer.dispatchEvent(new Event('change', { bubbles: true })); drawPays(); });
+      pays.appendChild(c);
+    });
+    if (!people.length) pays.innerHTML = '<p class="fb-paynone">Nobody with payment permission yet</p>';
+    if (people.length === 1 && !payer.value) payer.value = people[0].value;
+    drawPays();
+    payer.closest('.form-group').classList.add('fb-orig');
+    who.appendChild(payer.closest('.form-group'));
+    group.parentNode.insertBefore(who, group);
+
+    group.querySelector('.vB-group-label').textContent = 'Payment method';
+    var row = method.closest('.form-group');
+    row.classList.add('fb-orig');
+    var seg = document.createElement('div');
+    seg.className = 'fb-seg fb-methods';
+    var drawSeg = function () {
+      Array.prototype.forEach.call(seg.children, function (c) { c.classList.toggle('on', c.textContent === method.value); });
+    };
+    ['ACH', 'Credit Card', 'Cash'].forEach(function (m) {
+      var c = document.createElement('button');
+      c.type = 'button';
+      c.textContent = m;
+      c.addEventListener('click', function () { method.value = m; method.dispatchEvent(new Event('change', { bubbles: true })); drawSeg(); });
+      seg.appendChild(c);
+    });
+    row.parentNode.insertBefore(seg, row);
+    drawSeg();
+
+    var addr = section('Billing address');
+    var home = String(f.a || '').replace(/,?\s*USA$/i, '');
+    addr.insertAdjacentHTML('beforeend',
+      '<label class="fb-samecard"><span class="fb-cb"><input type="checkbox" data-k="billsame"></span><span class="fb-who"><b>Same as the home address</b><small></small></span></label>' +
+      '<div class="fb-billaddr">' + [['bill1', 'Address line 1', 'line1'], ['bill2', 'Address line 2', 'line2'], ['billcity', 'City', 'city'], ['billstate', 'State', 'state'], ['billzip', 'ZIP code', 'zip']].map(function (x) {
+        return '<input type="text" class="form-control" data-k="' + x[0] + '" placeholder="' + x[1] + '" autocomplete="off">';
+      }).join('') + '</div>');
+    var small = addr.querySelector('small');
+    small.textContent = home;
+    small.hidden = !home;
+    [['bill1', 'line1'], ['bill2', 'line2'], ['billcity', 'city'], ['billstate', 'state'], ['billzip', 'zip']].forEach(function (x) {
+      addr.querySelector('[data-k="' + x[0] + '"]').value = p[x[1]] || '';
+    });
+    var same = addr.querySelector('[data-k="billsame"]'), card = addr.querySelector('.fb-samecard'), fields = addr.querySelector('.fb-billaddr');
+    var drawSame = function () { card.classList.toggle('on', same.checked); fields.hidden = same.checked; };
+    same.checked = b.same !== false;
+    same.addEventListener('change', drawSame);
+    drawSame();
+    group.parentNode.insertBefore(addr, group.nextSibling);
   }
   function repaintAll() {
     document.querySelectorAll('.fam-portal .cm-extra').forEach(paintHead);

@@ -247,3 +247,47 @@ html.fam-b .tnd-drawer-portal .fb-csearch-out button{width:100%;padding:7px 8px!
 html.fam-b .tnd-drawer-portal .fb-csearch-out button:hover{background:#f4f2fc!important}
 html.fam-b .tnd-drawer-portal .fb-csearch-out em{flex:none;margin-left:auto;font-style:normal;font-size:12.5px;font-weight:500;color:var(--primary,#5a3fc2)}
 html.fam-b .tnd-drawer-portal .fam-crow-facts .fam-type{display:inline-block!important;width:auto!important;height:auto!important;margin:0 0 0 6px!important;padding:0 7px!important;vertical-align:1px}
+
+/* Billing: who pays, how, and to what address */
+html.fam-b .tnd-drawer-portal .fb-orig{display:none!important}
+html.fam-b .tnd-drawer-portal .fb-pays{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+html.fam-b .tnd-drawer-portal .fb-pays button{display:flex;align-items:center;gap:11px;min-height:62px;padding:10px 14px!important;background:#fff!important;border:1px solid var(--fb-field,rgba(95,67,178,.22))!important;border-radius:11px!important;box-shadow:none!important;text-align:left;cursor:pointer}
+html.fam-b .tnd-drawer-portal .fb-pays button:hover{border-color:var(--primary,#5a3fc2)!important}
+html.fam-b .tnd-drawer-portal .fb-pays button.on{background:#f4f2fc!important;border-color:var(--primary,#5a3fc2)!important}
+html.fam-b .tnd-drawer-portal .fb-pays i{flex:none;box-sizing:border-box;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink-5,#9a93ad);background:#fff}
+html.fam-b .tnd-drawer-portal .fb-pays button.on i{border:5px solid var(--primary,#5a3fc2)}
+html.fam-b .tnd-drawer-portal .fb-paynone{margin:0;font-size:12.5px;color:var(--ink-4,#6b6480)}
+html.fam-b .tnd-drawer-portal .fb-methods{margin:0 0 4px}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cards:not([hidden]){margin-top:16px}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardform:not([hidden]){display:grid;grid-template-columns:1fr 1fr;gap:16px 12px}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer .fam-cardacts{grid-column:1 / -1}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer label.fb-samecard{display:flex;align-items:center;gap:11px;margin:0;padding:12px 14px;background:#fff;border:1px solid var(--fb-field,rgba(95,67,178,.22));border-radius:11px;cursor:pointer;font-weight:400}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer label.fb-samecard.on{background:#f4f2fc;border-color:var(--primary,#5a3fc2)}
+html.fam-b .tnd-drawer-portal .fb-billaddr:not([hidden]){display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+html.fam-b .tnd-drawer-portal .fb-billaddr[hidden]{display:none}
+
+/* Linked to: the family is the link, its children plain names */
+html.fam-b .tnd-drawer-portal .fam-linked > div.vB-row .vB-row-value{color:var(--ink,#1f1a2e)!important;cursor:default}
+
+/* Billing once saved: the same blocks, plain */
+html.fam-b .tnd-drawer-portal .fb-paytext{margin:0;font-size:13.5px;color:var(--ink,#1f1a2e)}
+html.fam-b .tnd-drawer-portal .fb-paytext.is-none{color:var(--ink-5,#9a93ad)}
+html.fam-b .tnd-drawer-portal .fb-paycard{margin-top:4px;font-size:12.5px;color:var(--ink-4,#6b6480)}
+html.fam-b .tnd-drawer-portal .fb-paylink{font-size:13.5px;color:var(--primary,#5a3fc2);text-decoration:none}
+html.fam-b .tnd-drawer-portal .fb-paylink:hover{text-decoration:underline}
+html.fam-b .tnd-drawer-portal .fam-fview > .fam-panel-note{margin:14px 24px 24px!important}
+
+/* Billing's choices take the room they need, not the whole width */
+html.fam-b .tnd-drawer-portal .fb-pays{display:flex;flex-wrap:wrap;gap:10px}
+html.fam-b .tnd-drawer-portal .fb-pays button{flex:0 0 auto;width:220px;min-height:58px}
+html.fam-b .tnd-drawer-portal .fb-methods{display:inline-flex;width:fit-content;align-self:flex-start}
+html.fam-b .tendi-skin.tnd-drawer-portal .tnd-drawer label.fb-samecard{display:inline-flex;width:fit-content;max-width:100%}
+
+/* Household once saved: the family's block plain, its icon only on the tab */
+html.fam-b .fam-fdrawer:has(.tnd-tab[data-ftab="details"].is-active) .fam-fview .vB-group:not(:has(.fam-toperson)) .vB-row-ico{display:none!important}
+html.fam-b .fam-fdrawer:has(.tnd-tab[data-ftab="details"].is-active) .fam-fview .vB-group:not(:has(.fam-toperson)) > .vB-list{padding:0!important;background:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+html.fam-b .fam-fdrawer:has(.tnd-tab[data-ftab="details"].is-active) .fam-fview .vB-group:not(:has(.fam-toperson)) .vB-row{padding-left:0!important;padding-right:0!important;grid-template-columns:1fr!important;background:none!important}
+
+/* Who pays once saved: in a lined block, like a contact */
+html.fam-b .tnd-drawer-portal .fb-payview{padding:12px 14px;background:#fff;border:1px solid var(--fb-edge,rgba(95,67,178,.13));border-radius:12px}
+html.fam-b .tnd-drawer-portal .fb-payview{border-radius:16px}

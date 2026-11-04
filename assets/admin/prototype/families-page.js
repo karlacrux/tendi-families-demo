@@ -690,13 +690,24 @@
 
   // Who pays: the contact Billing names, else the first parent. Only a main responsible,
   // someone with full permission, can be: not the pediatrician, for one.
-  function canPay(c) { return permLevel(c) === 'full'; }
+  function canPay(c) {
+    // Version B keeps each person's own Payment responsible tick; without one, full permission decides.
+    if (c.pays != null && document.documentElement.classList.contains('fam-b')) return c.pays;
+    return permLevel(c) === 'full';
+  }
   function payerOf(f) {
     var b = f.billing || {};
     if (b.payer === -1) return null;
     var named = b.payer != null && (f.contacts || [])[b.payer];
     if (named) return canPay(named) ? named : null;
     return parentsOf(f).filter(canPay)[0] || null;
+  }
+
+  // Version B's billing address: the home one unless another was given.
+  function billAddress(f) {
+    var b = f.billing || {}, p = b.parts || {};
+    if (b.same !== false) return String(f.a || '').replace(/,?\s*USA$/i, '');
+    return [p.line1, p.line2, p.city, [p.state, p.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   }
 
   // Version B calls the family's first tab Household.
@@ -959,7 +970,8 @@
       var addr = String(f.a || '').replace(/,?\s*USA$/i, '');
       if (!edit) {
         return group('Family', '<div class="vB-list fam-headed">' +
-            vRow(DI.home, 'Family name', famName(f)) +
+            // Version B: the panel's title already names the family.
+            (document.documentElement.classList.contains('fam-b') ? '' : vRow(DI.home, 'Family name', famName(f))) +
             vRow(DI.home, 'Address · Household', addr) +
             vRow(DI.phone, 'Phone · Household', f.p, tel(f.p)) +
           '</div>') +
@@ -1011,6 +1023,19 @@
        the whole family. Prototype: no gateway, and only a card's last four digits are kept. */
     billing: function (f, edit) {
       var payer = payerOf(f);
+      if (!edit && document.documentElement.classList.contains('fam-b')) {
+        // Version B: the same three blocks as the form, with no icons of their own.
+        var how = (f.billing || {}).method, cards = how === 'Credit Card' ? (f.cards || []) : [], home = billAddress(f);
+        var line = function (v) { return v ? '<p class="fb-paytext">' + esc(v) + '</p>' : '<p class="fb-paytext is-none">Not set</p>'; };
+        return group('Who pays', payer ? '<div class="fb-phead fb-payview" data-name="' + esc(payer.n) + '"><span class="fb-phead-av"></span>' +
+              '<span class="fb-who"><b>' + esc(payer.n) + '</b><small>' + esc(payer.t) + '</small></span></div>' : line('')) +
+          group('Payment method', line(how) + cards.map(function (c) {
+            return '<p class="fb-paytext fb-paycard">' + esc(c.brand) + ' \u2022\u2022\u2022\u2022 ' + esc(c.last4) + (c.nick ? ' \u00b7 ' + esc(c.nick) : '') + '</p>';
+          }).join('')) +
+          group('Billing address', line(home)) +
+          group('Payments', '<a class="fb-paylink fam-topayments" href="javascript:void(0);">Open the ' + esc(famName(f)) + ' in Payments</a>') +
+          '<p class="fam-panel-note">Tuition and vouchers belong to each child: open a child for their <b>Tuition</b> tab.</p>';
+      }
       if (!edit) {
         return group('Billing', '<div class="vB-list">' +
             vRow(DI.bill, 'Payment responsible', payer ? payer.n + ' \u00b7 ' + payer.t : '') +
@@ -1085,7 +1110,7 @@
       var card = row.querySelector('.cm-extra');
       if (row.classList.contains('fam-cnew')) {
         var rn = readCard(card);
-        var nc = { t: rn.t, perm: rn.perm, on: false };
+        var nc = { t: rn.t, perm: rn.perm, pays: rn.pays, on: false };
         PERSON_KEYS.forEach(function (k) { nc[k] = rn[k]; });
         keep.push(nc);
         return;
@@ -1097,6 +1122,7 @@
         if (p) applyPerson(p, r2); else { PERSON_KEYS.forEach(function (k) { c[k] = r2[k]; }); }
         c.t = r2.t;                                             // the relationship is this family's link
         if (r2.perm) c.perm = r2.perm;
+        c.pays = r2.pays;
       }
       keep.push(c);
     });
@@ -1131,7 +1157,7 @@
         form.querySelectorAll('.fam-newparent .cm-extra').forEach(function (card) {
           var who = window.cmCardValues ? window.cmCardValues(card) : null;
           if (!who || !who.first) return;
-          var rp = readCard(card), np = { t: rp.t, perm: rp.perm, on: false };
+          var rp = readCard(card), np = { t: rp.t, perm: rp.perm, pays: rp.pays, on: false };
           PERSON_KEYS.forEach(function (k) { np[k] = rp[k]; });
           f.contacts.push(np);
         });
@@ -1157,7 +1183,14 @@
       if (typed && typed.value.replace(/\D/g, '')) form.querySelector('.fam-cardsave').click();
       var who = form.querySelector('[data-k="payer"]'), v = who.value;
       // Nobody to choose from yet is not choosing nobody: the main contact pays once there is one.
-      f.billing = { payer: v === '' ? (who.options.length > 1 ? -1 : null) : +v, method: form.querySelector('[data-k="method"]').value };
+      f.billing = Object.assign({}, f.billing, { payer: v === '' ? (who.options.length > 1 ? -1 : null) : +v, method: form.querySelector('[data-k="method"]').value });
+      // Version B's billing address (family-b.js).
+      var same = form.querySelector('[data-k="billsame"]');
+      if (same) {
+        var part = function (k) { return form.querySelector('[data-k="' + k + '"]').value.trim(); };
+        f.billing.same = same.checked;
+        f.billing.parts = { line1: part('bill1'), line2: part('bill2'), city: part('billcity'), state: part('billstate'), zip: part('billzip') };
+      }
       say('Billing saved.');
     }
   };
@@ -1464,6 +1497,8 @@
         var k = kidsOf.filter(function (x) { return x.f === n; })[0];
         var where = whereOf(k);
         var row = vRow(DI.person, where, n + ' ' + l.f.n);
+        // Version B: only the family is a link here; its children are just named.
+        if (document.documentElement.classList.contains('fam-b')) return row;
         return k ? row.replace('<div class="vB-row"', '<a class="vB-row vB-row--action fam-tochild" data-child="' + k.id +
           '" data-childname="' + esc(n + ' ' + l.f.n) + '" href="javascript:void(0);"').replace(/<\/div>$/, DI.cta + '</a>') : row;
       }).join('');
@@ -1881,6 +1916,12 @@
     if (window.cmMulti) window.cmMulti.fill(card, c, hh);
     set(inp('work', /^occupation$/i), c.occ);
     set(inp('work', /^employer$/i), c.emp);
+    // Their Payment responsible tick, as last saved.
+    var paysBox = card.querySelector('[data-perm="payer"]');
+    if (paysBox && c.pays != null && paysBox.checked !== c.pays) {
+      paysBox.checked = c.pays;
+      paysBox.dispatchEvent(new Event('change'));
+    }
     return card;
   }
 
@@ -1911,6 +1952,7 @@
       // Living at the household address is no own address, as before.
       addr: home && home.value.toLowerCase() !== hh ? home.value : '',
       occ: inp('work', /^occupation$/i), emp: inp('work', /^employer$/i),
+      pays: !!card.querySelector('[data-perm="payer"]:checked'),
       perm: note && /\b(full|limited|none)\b/.test(note.className) ? note.className.match(/\b(full|limited|none)\b/)[1] : ''
     };
   }

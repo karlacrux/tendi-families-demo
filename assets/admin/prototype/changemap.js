@@ -2212,6 +2212,8 @@
 
     function paint() {
       var locked = main.checked;
+      // Version B, a family's own contacts: anyone may be given Payment responsible on its own.
+      var payAny = document.documentElement.classList.contains('fam-b') && !card.closest('#tndDrawer');
       Object.keys(boxes).forEach(function (k) {
         var b = boxes[k];
         b.parentNode.classList.toggle('on', b.checked);
@@ -2221,9 +2223,9 @@
         // the car service. It is its own choice there — two main responsible parents
         // can genuinely differ on it — and it is off and out of sight otherwise.
         if (k === 'payer') {
-          if (!locked) b.checked = false;
+          if (!locked && !payAny) b.checked = false;
           b.parentNode.classList.toggle('on', b.checked);
-          b.parentNode.style.display = locked ? '' : 'none';
+          b.parentNode.style.display = locked || payAny ? '' : 'none';
           return;
         }
         // The other three are part of Main responsible, so while it is on they are
@@ -2239,7 +2241,7 @@
          is_emergency_contact "a label, not a right", and the old list said it
          outright — "Contact list only: grants no permission." */
       var state = locked ? 'full'
-        : (boxes.notify.checked || boxes.collect.checked) ? 'limited' : 'none';
+        : (boxes.notify.checked || boxes.collect.checked || (payAny && boxes.payer && boxes.payer.checked)) ? 'limited' : 'none';
       note.hidden = false;
       note.className = 'cm-permnote ' + state;
       note.textContent = { full: 'Full permission', limited: 'Limited permission',
