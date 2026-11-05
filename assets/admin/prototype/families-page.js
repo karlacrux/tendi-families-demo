@@ -388,7 +388,6 @@
   }
 
   var DOCK_ICO = {
-    msg: SVG_I('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>'),
     exp: SVG_I('<path d="M12 21V8"></path><path d="m7 13 5-5 5 5"></path><path d="M3 3h18"></path>'),
     arc: SVG_I('<rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"></path>'),
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>'
@@ -400,8 +399,7 @@
 
   /* The dock: Manage Children's own .tnd-seldock — the count, then what can be done
      to every selected row at once, then × to clear. Households: export them, archive
-     them (only those with no child enrolled or waiting). Contacts: message them,
-     export them. Nothing is sent or saved. */
+     them (only those with no child enrolled or waiting). Contacts: export them. */
   function paintDock(root) {
     var dock = document.getElementById('famSelDock');
     if (!dock) {
@@ -426,7 +424,6 @@
     dock.innerHTML =
       '<span class="cnt" aria-live="polite"><b>' + n + '</b> ' + noun + ' selected</span>' +
       '<div class="vdiv"></div>' +
-      (ppl ? '<button type="button" class="tnd-dockbtn" data-dock="msg">' + DOCK_ICO.msg + 'Send a message</button>' : '') +
       '<button type="button" class="tnd-dockbtn" data-dock="export">' + DOCK_ICO.exp + 'Export</button>' +
       (ppl ? '' : '<button type="button" class="tnd-dockbtn danger" data-dock="archive"' + (canArc ? '' : ' disabled') +
         ' title="' + (canArc ? 'Only households with no child enrolled or waiting' : 'Every selected household has a child enrolled or waiting') + '">' +
@@ -441,11 +438,6 @@
     var toast = function (m) { if (window.tndToast) window.tndToast.success(m); };
     if (act === 'clear') { SEL[STATE.view] = {}; renderList(root); return; }
     if (act === 'export') { if (ppl) exportPeople(list); else exportCsv('sel', list); return; }
-    if (act === 'msg') {
-      toast('Prototype: a message to ' + list.length + (ppl ? (list.length === 1 ? ' contact' : ' contacts')
-        : (list.length === 1 ? ' household' : ' households')) + ' would open here. Nothing is sent.');
-      return;
-    }
     if (act === 'archive') {
       var ok = list.filter(function (f) { return !activeKids(f).length; });
       var msg = 'Archive ' + ok.length + (ok.length === 1 ? ' household' : ' households') + '? ' +
