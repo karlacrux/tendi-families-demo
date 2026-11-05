@@ -664,17 +664,6 @@ html:has(#tndFamiliesPage):has(#tndDrawer.is-open){overflow:hidden}
   background-color:var(--cream-2,#f6f5fa)!important;color:var(--ink-3,#5b5470)!important}
 
 
-/* Addresses in a read-only card: a row of that card, lined up with the rows above it. */
-.tendi-skin .fam-vaddrs{padding:7px 16px 7px 68px}
-.tendi-skin .fam-vaddrs > summary{display:flex;flex-direction:column;gap:3px;cursor:pointer;list-style:none;position:relative;padding-right:18px}
-.tendi-skin .fam-vaddrs > summary::-webkit-details-marker{display:none}
-.tendi-skin .fam-vaddrs > summary::after{content:'';position:absolute;right:2px;top:50%;width:6px;height:6px;margin-top:-5px;
-  border-right:1.5px solid var(--ink-4,#6b6480);border-bottom:1.5px solid var(--ink-4,#6b6480);transform:rotate(45deg)}
-.tendi-skin .fam-vaddrs[open] > summary::after{transform:rotate(-135deg);margin-top:-2px}
-.tendi-skin .fam-vaddrs .vB-row-value{font-size:14px;font-weight:400}
-.tendi-skin .fam-vaddrs-all{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.tendi-skin .fam-vaddrs-all small{color:var(--ink-4,#6b6480);font-size:12px}
-
 /* Inside a tab's block, the add buttons keep the same 16px from the cards as the cards do. */
 .tendi-skin .fam-tbody .vB-group > .fam-caddview,.tendi-skin .fam-tbody .vB-group > .reg-more{margin-top:6px}
 

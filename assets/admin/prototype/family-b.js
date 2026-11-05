@@ -86,7 +86,7 @@
       b.textContent = '+ Add new contact';
     });
     // Rows already saved: the same circle in place of their icon or initials.
-    Array.prototype.forEach.call(root.querySelectorAll('.fam-toperson, .vB-group:has(.fam-kidadd) .vB-row'), function (row) {
+    Array.prototype.forEach.call(root.querySelectorAll('.fam-toperson, .fam-linked > a.vB-row, .vB-group:has(.fam-kidadd) .vB-row'), function (row) {
       var ico = row.querySelector('.vB-row-ico'), val = row.querySelector('.vB-row-value');
       if (ico && val) paintCircle(ico, val.textContent);
     });
@@ -330,11 +330,19 @@
   function fold() {
     foldTimer = null;
     var bar = document.querySelector('#tndDrawer .tnd-pane-edit > .tnd-tabs[data-cm-order]');
+    // A child on the waiting list has no Enrollment or Tuition, so changemap.js never orders
+    // their strip: their tabs still take the same look.
+    if (!bar && !html.classList.contains('fb-child')) {
+      var open = document.querySelector('#tndDrawer .tnd-pane-edit > .tnd-tabs');
+      var waits = document.querySelector('#tndDrawer .tnd-pane-edit [name="is_waitlist"]');
+      if (open && waits && waits.checked) tabbedChild(open.parentNode);
+      return;
+    }
     if (!bar) return;
     var form = bar.parentNode;
-    // A child being edited on their own keeps the tabs; the areas are for adding one to a family.
-    if (!form.classList.contains('fb-fold') && !html.classList.contains('fb-child') && form.querySelector(':scope > .vB-idstrip')) { tabbedChild(form); return; }
-    form.classList.add('fb-fold');
+    // Tabs for a child on their own, edited or added; the areas are for adding one inside a family.
+    if (!form.classList.contains('fb-fold') && !html.classList.contains('fb-child')) { tabbedChild(form); return; }
+    if (!form.classList.contains('fb-fold')) form.classList.add('fb-fold');
     var at = 0, first = !form.querySelector('.fb-sec');
     var card = childCard(form);
     var waiting = form.querySelector('[name="is_waitlist"]');
@@ -374,10 +382,17 @@
     var tuition = form.querySelector('.form-group[data-fb-moved]');
     if (tuition) tuition.hidden = waiting;
     paintChild(form);
+    // A family's children can fill the screen: go to the new one, ready to type.
+    if (first && html.classList.contains('fb-child')) {
+      card.scrollIntoView({ block: 'start' });
+      var name1 = form.querySelector('[name="fname"]');
+      if (name1) name1.focus({ preventScroll: true });
+    }
   }
 
   function tabbedChild(form) {
-    form.classList.add('fb-tabbed');
+    // Adding a class it already has still counts as a change, and would run this again.
+    if (!form.classList.contains('fb-tabbed')) form.classList.add('fb-tabbed');
     var box = form.querySelector('[name="is_waitlist"]');
     if (!box) return;
     var row = box.closest('.form-group'), stage = row.querySelector('.fb-stagerow');
@@ -390,6 +405,46 @@
     }
     stage.children[1].children[0].classList.toggle('on', !box.checked);
     stage.children[1].children[1].classList.toggle('on', box.checked);
+    editTitles(form);
+  }
+
+  // Editing a child names the same parts as their profile (PROFILE), above the part's first field.
+  var EDIT_TITLES = [
+    ['Child', 'profile_picture'], ['School', 'branches'], ['Notes', 'required_vaccines_forms[] note'],
+    ['Schedule', 'reg_enrolled_days[]'], ['Contacts', 'enrollment_contact_id'], ['Comments', 'reg_comments'],
+    ['Allergies and conditions', 'allergies[]'], ['Therapy', 'has_therapy'],
+    ['Service', 'has_transportation'],
+    ['Plan', 'payment_monthly_cost'], ['Case', 'case_name'], ['Groups', 'group_ids[]']
+  ];
+  function editTitles(form) {
+    EDIT_TITLES.forEach(function (t) {
+      // The part's first field showing: a child on the waiting list has no branch or class yet.
+      var part = null;
+      t[1].split(' ').some(function (name) {
+        var el = form.querySelector('.vB-editcard [name="' + name + '"]');
+        while (el && el.parentNode && !el.parentNode.classList.contains('vB-editcard')) el = el.parentNode;
+        if (el && !el.parentNode) el = null;
+        if (el && window.getComputedStyle(el).display !== 'none') part = el;
+        return !!part;
+      });
+      var old = form.querySelector('.fb-esub[data-t="' + t[0] + '"]');
+      if (!part) { if (old && !old.hidden) old.hidden = true; return; }
+      if (old && old.hidden) old.hidden = false;
+      var card = part.parentNode;
+      var head = form.querySelector('.fb-esub[data-t="' + t[0] + '"]');
+      if (!head) {
+        head = document.createElement('h4');
+        head.className = 'fb-esub';
+        head.setAttribute('data-t', t[0]);
+        head.textContent = t[0];
+      }
+      if (part.previousElementSibling !== head) card.insertBefore(head, part);
+      var order = window.getComputedStyle(part).order;
+      if (head.style.order !== order) head.style.order = order;
+      if (/^(Child|Schedule|Allergies and conditions|Service)$/.test(t[0]) && !head.classList.contains('is-first')) head.classList.add('is-first');
+      var sec = card.closest('section.vB-group');
+      if (sec && !sec.classList.contains('fb-etitled')) sec.classList.add('fb-etitled');
+    });
   }
 
   // The child as one card: their circle and name, then what is needed, then the areas.
@@ -489,18 +544,186 @@
     other.style.order = at * 10 + 5;
   }
 
+  // Editing a child, Family tab: its contacts wear the family panel's circle and its button.
+  function childContacts(root) {
+    if (!root.querySelectorAll) return;
+    Array.prototype.forEach.call(root.querySelectorAll('.cm-pick'), function (row) {
+      var av = row.querySelector('.cm-pav'), who = row.querySelector('.cm-pwho b');
+      if (av && who) paintCircle(av, who.textContent);
+    });
+    Array.prototype.forEach.call(root.querySelectorAll('.cm-hav'), function (av) { paintCircle(av, av.textContent); });
+    Array.prototype.forEach.call(root.querySelectorAll('.cm-addcontact'), function (b) {
+      if (b.textContent !== '+ Add new contact') b.textContent = '+ Add new contact';
+    });
+  }
+
+  /* One circle everywhere a person or a family is listed: the first letter, and that letter's
+     colour, so the same name looks the same in a list and in its panel. */
+  var CIRCLES = '.fam-av, .fam-sub-av, .cm-pav, .cm-hav, .pc-av, .tnd-rowav, .att-ini';
+  var circleTimer = null;
+  function oneCircle() {
+    circleTimer = null;
+    // The Children list, as the Families list reads: its plain name, and a name only once.
+    var title = document.querySelector('h1.tnd-dt-title');
+    if (title && title.textContent.trim() === 'Manage Children') title.textContent = 'Children';
+    Array.prototype.forEach.call(document.querySelectorAll('.tnd-nm:not([data-fb-once])'), function (nm) {
+      nm.setAttribute('data-fb-once', '1');
+      var n1 = nm.querySelector('.n1'), n2 = nm.querySelector('.n2');
+      if (n1 && n2 && n1.textContent.trim().toLowerCase() === n2.textContent.trim().toLowerCase()) n2.classList.add('fb-hide');
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(CIRCLES), function (el) {
+      if (el.children.length) return;
+      var letter = el.textContent.trim().charAt(0).toUpperCase();
+      if (!/[A-Z0-9]/.test(letter) || el.getAttribute('data-fb-letter') === letter && el.textContent === letter) return;
+      el.textContent = letter;
+      el.setAttribute('data-fb-letter', letter);
+      var circle = el.classList.contains('att-ini') ? el.parentNode : el;
+      circle.style.setProperty('background', RAMP[letter.charCodeAt(0) % RAMP.length], 'important');
+      circle.style.setProperty('color', '#fff', 'important');
+      el.style.setProperty('color', '#fff', 'important');
+    });
+  }
+
+  /* The child's profile: what is filled in (the empty rows are hidden in family-b.css), under
+     the headings that belong together. The rows stay where the view drew them and are only
+     ordered, because changemap.js reads them back. The card's own title would repeat the tab. */
+  var PROFILE = {
+    Details: [
+      ['Child', [/^first name/i, /^last name/i, /^nickname/i, /^legal name/i, /^hebrew first/i, /^hebrew last/i, /^dob/i, /^hebrew dob/i]],
+      ['School', [/^branch/i, /^class/i, /waiting list/i, /^join date/i, /^end date/i, /^cir id/i, /^nfc/i]],
+      ['Address', [/^address/i, /^apartment/i, /^city/i, /^state/i, /^zip/i]],
+      ['Notes', [/./]]
+    ],
+    Enrollment: [
+      ['Schedule', [/^days enrolled/i]],
+      ['Father', [/^father/i]],
+      ['Mother', [/^mother/i]],
+      ['Contacts', [/contact$/i, /^secretary/i, /^director/i, /department$/i]],
+      ['Comments', [/./]]
+    ],
+    Health: [
+      ['Allergies and conditions', [/allerg/i, /medical/i]],
+      ['Pediatrician', [/pediatrician/i]],
+      ['Therapy', [/./]]
+    ],
+    Transportation: [
+      ['Service', [/^has transportation/i, /^price/i]],
+      ['Pick up', [/^pick/i]],
+      ['Drop off', [/^drop/i]]
+    ],
+    Tuition: [
+      ['Plan', [/^tuition type/i, /^price/i, /^charge day/i, /^charge start/i, /^charges/i, /^payment methods/i, /^eligibility/i]],
+      ['Programs', [/^headstart/i, /^lunch/i, /^voucher/i]],
+      ['Case', [/^case/i]],
+      ['Groups', [/./]]
+    ]
+  };
+  var sortTimer = null;
+  /* A child on the waiting list: their Waitlist tab opens the Enrollment panel, while what they
+     filled in stays in the Wait List Details panel, whose tab is hidden. Show it under Waitlist. */
+  function waitlistTab() {
+    var view = document.querySelector('#tndDrawer.fb-childview .tnd-pane-view');
+    var tab = view && view.querySelector('.tnd-tab[data-tab-name="Registration Form Details"]');
+    if (!tab || tab.textContent.trim() !== 'Waitlist' || view.querySelector('[data-fb-waitlist]')) return;
+    var from = view.querySelector('section.vB-group[data-panel="' + view.querySelector('.tnd-tab[data-tab-name="Wait List Details"]').getAttribute('data-tab') + '"] > .vB-list');
+    var to = view.querySelector('section.vB-group[data-panel="' + tab.getAttribute('data-tab') + '"]');
+    if (!from || !to || !to.querySelector(':scope > .vB-list')) return;
+    to.setAttribute('data-fb-waitlist', '1');
+    to.querySelector('.vB-group-label').textContent = 'Waitlist';
+    to.classList.remove('fb-sectioned', 'fb-none');
+    Array.prototype.forEach.call(to.querySelectorAll(':scope > .vB-list > .fb-vsub'), function (h) { h.remove(); });
+    Array.prototype.forEach.call(from.querySelectorAll(':scope > .vB-row'), function (r) { to.querySelector(':scope > .vB-list').appendChild(r); });
+  }
+  // The profile's Family tab: each parent as the family panel draws them, circle and lined block.
+  function childFamily() {
+    Array.prototype.forEach.call(document.querySelectorAll('#tndDrawer.fb-childview .tnd-pane-view .cm-vfam > .cm-vsub:not([data-fb-person])'), function (sub) {
+      var list = sub.nextElementSibling;
+      if (!list || !list.classList.contains('vB-list')) return;
+      var first = !sub.parentNode.querySelector('[data-fb-parents]');
+      sub.setAttribute('data-fb-person', '1');
+      list.setAttribute('data-fb-person', '1');
+      var nameRow = Array.prototype.filter.call(list.children, function (r) {
+        return ((r.querySelector('.vB-row-label') || {}).textContent || '').trim() === 'Name';
+      })[0];
+      var who = nameRow ? nameRow.querySelector('.vB-row-value').textContent.trim() : '';
+      if (nameRow) nameRow.classList.add('fb-hide');
+      var head = document.createElement('div');
+      head.className = 'fb-phead fb-personhead';
+      head.innerHTML = '<span class="fb-phead-av"></span><span class="fb-who"><b></b><small></small></span>';
+      head.querySelector('b').textContent = who;
+      head.querySelector('small').textContent = sub.textContent.trim();
+      paintCircle(head.querySelector('.fb-phead-av'), who);
+      list.insertBefore(head, list.firstChild);
+      if (first) {
+        var title = document.createElement('h4');
+        title.className = 'fb-vsub';
+        title.setAttribute('data-fb-parents', '');
+        title.textContent = 'Parents';
+        sub.parentNode.insertBefore(title, sub);
+      }
+    });
+  }
+  function sortProfile() {
+    sortTimer = null;
+    waitlistTab();
+    childFamily();
+    document.querySelectorAll('#tndDrawer.fb-childview .tnd-pane-view .vB-group > .vB-list').forEach(function (list) {
+      var label = list.parentNode.querySelector('.vB-group-label');
+      var map = label && PROFILE[label.textContent.trim()];
+      if (!map) return;
+      if (!list.parentNode.classList.contains('fb-sectioned')) list.parentNode.classList.add('fb-sectioned');
+      var filled = map.map(function () { return 0; });
+      Array.prototype.forEach.call(list.querySelectorAll(':scope > .vB-row'), function (row) {
+        var name = ((row.querySelector('.vB-row-label') || {}).textContent || '').trim();
+        // Enrolled or waiting is already beside the child's number.
+        if (/^on the waiting list$/i.test(name) && !row.classList.contains('fb-hide')) row.classList.add('fb-hide');
+        map.some(function (sec, i) {
+          return sec[1].some(function (re, j) {
+            if (!re.test(name)) return false;
+            var order = String((i + 1) * 100 + j + 1);
+            if (row.style.order !== order) row.style.order = order;
+            if (getComputedStyle(row).display !== 'none') filled[i]++;
+            return true;
+          });
+        });
+      });
+      var none = !filled.some(Boolean);
+      if (list.parentNode.classList.contains('fb-none') !== none) list.parentNode.classList.toggle('fb-none', none);
+      var first = true;
+      map.forEach(function (sec, i) {
+        var head = list.querySelector(':scope > .fb-vsub[data-sec="' + i + '"]');
+        if (!head) {
+          head = document.createElement('h4');
+          head.className = 'fb-vsub';
+          head.setAttribute('data-sec', i);
+          head.style.order = (i + 1) * 100;
+          head.textContent = sec[0];
+          list.appendChild(head);
+        }
+        if (head.hidden !== !filled[i]) head.hidden = !filled[i];
+        var lead = first && !!filled[i];
+        if (head.classList.contains('is-first') !== lead) head.classList.toggle('is-first', lead);
+        if (filled[i]) first = false;
+      });
+    });
+  }
+
   new MutationObserver(function (list) {
-    list.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { calm(n); noParent(n); people(n); } }); });
-    if (!foldTimer && document.querySelector('#tndDrawer .tnd-pane-edit > .tnd-tabs[data-cm-order]')) foldTimer = setTimeout(fold, 30);
+    list.forEach(function (m) { m.addedNodes.forEach(function (n) { if (n.nodeType === 1) { calm(n); noParent(n); people(n); childContacts(n); } }); });
+    if (!foldTimer && document.querySelector('#tndDrawer .tnd-pane-edit > .tnd-tabs')) foldTimer = setTimeout(fold, 30);
     // The child's profile takes the family panel's look (family-b.css).
     var drawer = document.getElementById('tndDrawer'), eyebrow = document.getElementById('tndEbView');
     if (drawer && eyebrow) drawer.classList.toggle('fb-childview', /child profile/i.test(eyebrow.textContent));
+    if (!sortTimer && document.querySelector('#tndDrawer.fb-childview .tnd-pane-view .vB-group > .vB-list')) sortTimer = setTimeout(sortProfile, 40);
+    if (!circleTimer) circleTimer = setTimeout(oneCircle, 40);
   }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
 
   /* A child added from the family keeps the family's head and tabs (swapToChild): its Save
      and Cancel, and a change of tab, act on the child first. Saving goes through the child
      form's own steps; a child left without a first name is simply not added. */
   var html = document.documentElement;
+  // A child left half added in a family does not survive a reload: its steps would take over Add Child.
+  if (html.classList.contains('fam-b')) { try { sessionStorage.removeItem('cm-reg'); } catch (err) {} }
   function dropChild() {
     try { sessionStorage.removeItem('cm-reg'); } catch (err) {}
     html.classList.remove('fb-child');

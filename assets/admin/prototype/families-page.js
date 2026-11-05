@@ -399,9 +399,9 @@
   }
 
   /* The dock: Manage Children's own .tnd-seldock — the count, then what can be done
-     to every selected row at once, then × to clear. Households: message the
-     families, export them, archive them (only those with no child enrolled or
-     waiting). Contacts: message them, export them. Nothing is sent or saved. */
+     to every selected row at once, then × to clear. Households: export them, archive
+     them (only those with no child enrolled or waiting). Contacts: message them,
+     export them. Nothing is sent or saved. */
   function paintDock(root) {
     var dock = document.getElementById('famSelDock');
     if (!dock) {
@@ -426,7 +426,7 @@
     dock.innerHTML =
       '<span class="cnt" aria-live="polite"><b>' + n + '</b> ' + noun + ' selected</span>' +
       '<div class="vdiv"></div>' +
-      '<button type="button" class="tnd-dockbtn" data-dock="msg">' + DOCK_ICO.msg + 'Send a message</button>' +
+      (ppl ? '<button type="button" class="tnd-dockbtn" data-dock="msg">' + DOCK_ICO.msg + 'Send a message</button>' : '') +
       '<button type="button" class="tnd-dockbtn" data-dock="export">' + DOCK_ICO.exp + 'Export</button>' +
       (ppl ? '' : '<button type="button" class="tnd-dockbtn danger" data-dock="archive"' + (canArc ? '' : ' disabled') +
         ' title="' + (canArc ? 'Only households with no child enrolled or waiting' : 'Every selected household has a child enrolled or waiting') + '">' +
@@ -1033,8 +1033,8 @@
             return '<p class="fb-paytext fb-paycard">' + esc(c.brand) + ' \u2022\u2022\u2022\u2022 ' + esc(c.last4) + (c.nick ? ' \u00b7 ' + esc(c.nick) : '') + '</p>';
           }).join('')) +
           group('Billing address', line(home)) +
-          group('Payments', '<a class="fb-paylink fam-topayments" href="javascript:void(0);">Open the ' + esc(famName(f)) + ' in Payments</a>') +
-          '<p class="fam-panel-note">Tuition and vouchers belong to each child: open a child for their <b>Tuition</b> tab.</p>';
+          group('Payments', '<a class="fb-paylink fam-topayments" href="javascript:void(0);">Open the ' + esc(famName(f)) + ' in Payments</a>' +
+            '<p class="fam-panel-note">Tuition and vouchers belong to each child: open a child for their <b>Tuition</b> tab.</p>');
       }
       if (!edit) {
         return group('Billing', '<div class="vB-list">' +
@@ -1475,15 +1475,10 @@
     return x ? vRow(ico, listLabel(kind, x, false), x.value, listHref(kind, x.value)) : vRow(ico, LIST_NAME[kind], '');
   }
 
-  // A contact's addresses start closed here too, as on their form.
-  function addressFold(items) {
-    var first = (items.filter(function (i) { return i.primary; })[0] || items[0] || {}).value;
-    if (!first) return '';
-    return '<details class="fam-vaddrs"><summary><span class="vB-row-label">Addresses</span>' +
-      '<span class="vB-row-value">' + esc(first + (items.length > 1 ? ' +' + (items.length - 1) : '')) + '</span></summary>' +
-      (items.length > 1 ? '<div class="fam-vaddrs-all">' + items.map(function (i) {
-        return '<div class="vB-row-value">' + esc(i.value) + ' <small>' + esc(i.type) + '</small></div>';
-      }).join('') + '</div>' : '') + '</details>';
+  // A contact's main address; Edit shows the whole list.
+  function primaryAddress(items) {
+    var x = items.filter(function (i) { return i.primary; })[0] || items[0];
+    return x && x.value ? vRow(DI.home, listLabel('address', x, false), x.value) : '';
   }
 
   function openPerson(p) {
@@ -1540,7 +1535,7 @@
               listRows(listsOf(c, f0).phone, 'phone') +
               listRows(listsOf(c, f0).email, 'email') +
               vRow(DI.group, 'Work', [c.occ, c.emp].filter(Boolean).join(' · ')) +
-              addressFold(listsOf(c, f0).address) +
+              primaryAddress(listsOf(c, f0).address) +
             '</div>') +
           group('Linked to', linked) +
           '</div>' +
@@ -2063,24 +2058,38 @@
     })();
   }
 
+  /* The whole family, one row per person: its parents, its children and its other
+     contacts, each carrying the family's address and billing, so the file can be
+     filtered by family or by kind of person. */
   function exportCsv(scope, picked) {
     var rows = picked || (scope === 'view' ? visible() : (FAMILIES || []));
     var q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var lines = [['Household', 'Address', 'Household phone', 'Children', 'Mother', 'Father', 'Other contacts'].join(',')];
+    var lines = [['Family', 'Family address', 'Family phone', 'Payment responsible', 'Payment method', 'Billing address', 'Type', 'Name',
+      'Relationship', 'Status', 'Class', 'Date of birth', 'Phones', 'Emails', 'Addresses', 'Permission'].map(q).join(',')];
+    var all = function (items) { return items.map(function (x) { return x.value; }).filter(Boolean).join('; '); };
+    var perms = { full: 'Full permission', limited: 'Limited permission', none: 'No permission' };
     rows.forEach(function (f) {
-      var who = function (t) { return (f.contacts || []).filter(function (c) { return (c.t || '').toLowerCase() === t; }).map(function (c) { return c.n; }).join('; '); };
-      var other = (f.contacts || []).filter(function (c) { return !/^(mother|father)$/i.test(c.t || ''); })
-        .map(function (c) { return c.n + ' (' + c.t + ')'; }).join('; ');
-      lines.push([f.n, f.a, f.p, kids(f).join('; '), who('mother'), who('father'), other].map(q).join(','));
+      var payer = payerOf(f);
+      var fam = [f.n, String(f.a || '').replace(/,?\s*USA$/i, ''), f.p, payer ? payer.n : '', (f.billing || {}).method || '', billAddress(f)];
+      var people = [];
+      parentsOf(f).concat((f.contacts || []).filter(function (c) { return !/^(mother|father)$/i.test(c.t || ''); })).forEach(function (c) {
+        var l = listsOf(c, f), lv = permLevel(c);
+        people.push([/^(mother|father)$/i.test(c.t || '') ? 'Parent' : 'Other contact', c.n, c.t, '', '', '', all(l.phone), all(l.email), all(l.address), perms[lv] || lv || '']);
+      });
+      kidsOfHousehold(f).forEach(function (c) {
+        people.push(['Child', c.f + ' ' + c.l, '', c.s === 'waitlist' ? 'Waiting list' : c.s === 'inactive' ? 'Not enrolled' : 'Enrolled', c.cl || '', c.dob || '', '', '', '', '']);
+      });
+      if (!people.length) people.push(['', '', '', '', '', '', '', '', '', '']);
+      people.forEach(function (p) { lines.push(fam.concat(p).map(q).join(',')); });
     });
-    var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    var blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = scope === 'sel' ? 'households-selected.csv' : scope === 'view' ? 'households-this-view.csv' : 'households.csv';
+    a.download = scope === 'sel' ? 'families-selected.csv' : scope === 'view' ? 'families-this-view.csv' : 'families.csv';
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-    if (window.tndToast) window.tndToast.success(rows.length + (rows.length === 1 ? ' household' : ' households') + ' exported.');
+    if (window.tndToast) window.tndToast.success(rows.length + (rows.length === 1 ? ' family' : ' families') + ' exported.');
   }
   function exportPeople(list) {
     var q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
@@ -2484,6 +2493,11 @@
       } else if (act === 'addkid') {
         // From inside the family, as everywhere: its Children tab.
         openDrawer(f, 'children');
+        // Version B: straight to the new child's fields, under the family's head and tabs.
+        if (document.documentElement.classList.contains('fam-b')) {
+          var enroll = document.querySelector('.fam-portal .fam-kidadd[data-m="enroll"]');
+          if (enroll) enroll.click();
+        }
       }
     });
   }

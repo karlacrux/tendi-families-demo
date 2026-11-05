@@ -404,6 +404,10 @@
         return String(k.l).toLowerCase() === String(f.n).toLowerCase() &&
                String(k.a).toLowerCase() === String(f.key || f.a).toLowerCase();
       });
+      // Version B names them for the child being edited, who is not their own sibling.
+      var famB = document.documentElement.classList.contains('fam-b');
+      var selfFirst = ((document.querySelector('#frmAddEditRecord [name="fname"]') || {}).value || '').trim().toLowerCase();
+      var shownKids = famB ? famKids.filter(function (k) { return String(k.f).toLowerCase() !== selfFirst; }) : famKids;
       var nContacts = (f.contacts || []).length;
       /* THE SAME BLOCK AS A NEW FAMILY'S (client review, 2026-10-27): a header bar
          "Household" with Edit and Remove, then which household it is, then its
@@ -448,8 +452,8 @@
               '<input type="text" class="form-control" value="' + esc(f.p || '') + '" placeholder="Phone number" aria-label="Household phone"></div></div>' +
           '</div>' +
         '</div>' +
-        (famKids.length ? '<div class="cm-hsec"><div class="cm-hsec-label">Children in this family</div>' +
-          '<div class="cm-hkids">' + famKids.map(function (k) {
+        (shownKids.length ? '<div class="cm-hsec"><div class="cm-hsec-label">' + (famB ? 'Siblings' : 'Children in this family') + '</div>' +
+          '<div class="cm-hkids">' + shownKids.map(function (k) {
             var where = k.s === 'waitlist' ? 'Waiting list' : 'Enrolled' + (k.cl ? ' \u00b7 ' + k.cl : '');
             return '<span class="cm-hkid"><b>' + esc(k.f) + '</b><i>' + esc(where) + '</i></span>';
           }).join('') + '</div></div>' : '');
@@ -682,7 +686,7 @@
       return c.l.toLowerCase() === childL.toLowerCase() && c.a.toLowerCase() === addrL;
     }).length || 1;
     return {
-      n: surname, a: householdSummary(), p: v('home_phone'), c: kids,
+      n: surname, a: householdSummary(), key: v('address'), p: v('home_phone'), c: kids,
       contacts: [father, mother].filter(Boolean)          // father first, as everywhere
     };
   }
@@ -3277,7 +3281,7 @@
      so the column still says something true until the migration replaces it with
      the family link. */
   function siblingHousehold() {
-    if (FAMILY_PICKED && PICKED_FAMILY) return { n: PICKED_FAMILY.n, a: PICKED_FAMILY.a, how: 'picked' };
+    if (FAMILY_PICKED && PICKED_FAMILY) return { n: PICKED_FAMILY.n, a: PICKED_FAMILY.key || PICKED_FAMILY.a, how: 'picked' };
     var f = document.querySelector('#frmAddEditRecord');
     var ln = ((f.querySelector('[name="lname"]') || {}).value || '').trim().toLowerCase();
     var ad = ((f.querySelector('[name="address"]') || {}).value || '').trim().toLowerCase();
@@ -3314,6 +3318,7 @@
 
     var self = function () {
       var f = document.querySelector('#frmAddEditRecord');
+      if (!f) return ['', ''];
       return [((f.querySelector('[name="fname"]') || {}).value || '').trim().toLowerCase(),
               ((f.querySelector('[name="lname"]') || {}).value || '').trim().toLowerCase()];
     };
@@ -3345,7 +3350,7 @@
       html += fromFamily.map(function (c) { return row(c, false); }).join('');
       html += extra.map(function (c) { return row(c, true); }).join('');
       if (!fromFamily.length && !extra.length) {
-        html += '<div class="cm-sibnone">' + (hh ? 'No other children in this household.' : 'No siblings linked.') +
+        html += '<div class="cm-sibnone">' + (hh || document.documentElement.classList.contains('fam-b') ? 'No other children in this household.' : 'No siblings linked.') +
           (input.value.trim() ? ' <span>Typed before: ' + esc(input.value.trim()) + '</span>' : '') + '</div>';
       }
       html += '<button type="button" class="cm-lklink cm-siblink">Link a sibling</button>';
@@ -3547,6 +3552,22 @@
       var tel = function (v) { return v ? 'tel:' + String(v).replace(/[^\d+]/g, '') : ''; };
       var hhAddr = String(cur.a || '').replace(/,?\s*USA$/i, '');
 
+      // Version B: the rest of the family's children, under the parents.
+      var siblingRows = function () {
+        if (!document.documentElement.classList.contains('fam-b')) return '';
+        var nameRow = all.filter(function (r) { return /^first name$/i.test(rowLabel(r)); })[0];
+        var self = nameRow ? ((nameRow.querySelector('.vB-row-value') || {}).textContent || '').trim().toLowerCase() : '';
+        var sibs = CHILDREN.filter(function (k) {
+          return String(k.l).toLowerCase() === String(cur.n).toLowerCase() &&
+                 String(k.a).toLowerCase() === String(cur.key || cur.a).toLowerCase() &&
+                 String(k.f).toLowerCase() !== self;
+        });
+        if (!sibs.length) return '';
+        return '<h4 class="fb-vsub">Siblings</h4><div class="vB-list fb-siblist">' + sibs.map(function (k) {
+          return row(ICO.person, k.s === 'waitlist' ? 'Waiting list' : 'Enrolled' + (k.cl ? ' \u00b7 ' + k.cl : ''), k.f + ' ' + k.l);
+        }).join('') + '</div>';
+      };
+
       // The household card sits straight under the section's own label; only the
       // parents get a sub-label, because FAMILY already names the first card.
       var html = '<div class="cm-vfam">' +
@@ -3565,11 +3586,9 @@
               row(ICO.phone, 'Main phone' + (it.phone[0] ? ' \u00b7 ' + it.phone[0].type : ''), c.p, tel(c.p)) +
               row(ICO.mail, 'Main email' + (it.email[0] ? ' \u00b7 ' + it.email[0].type : ''), c.e, c.e ? 'mailto:' + c.e : '') +
               (msgs[key] ? row(ICO.msg, 'Messages to the main phone', msgs[key]) : '') +
-            // Closed until asked for, as on every contact's form.
-            '<details class="fam-vaddrs"><summary><span class="vB-row-label">Addresses</span>' +
-              '<span class="vB-row-value">' + esc(c.addr || (hhAddr ? 'The household address' : 'Not set')) + '</span></summary></details>' +
+              row(ICO.home, 'Address', c.addr || (hhAddr ? 'The household address' : '')) +
             '</div>';
-        }).join('') + '</div>';
+        }).join('') + siblingRows() + '</div>';
 
       // The flat rows' own card is emptied by this, so it goes; the new cards take
       // its place under the section's label.
