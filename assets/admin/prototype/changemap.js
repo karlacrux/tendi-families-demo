@@ -1316,11 +1316,11 @@
      because a main responsible adult may always collect. */
   var PERMS = [
     { key: 'main',      label: 'Main responsible',    on: true,
-      why: 'The first adult for the family\u2019s children — includes every permission below' },
+      why: 'The first adult for the family\u2019s children, with every permission below' },
     { key: 'notify',    label: 'Notifications',       on: true,
       why: 'Receives notifications about every child in the family' },
     { key: 'collect',   label: 'May collect',         on: true,
-      why: 'May take the child — always, or between two dates' },
+      why: 'May take the child: always, or between two dates' },
     { key: 'emergency', label: 'Emergency contact',   on: false,
       why: 'Called when no responsible adult answers' },
     /* WHO PAYS IS A PERSON, AND THE FORM NEVER ASKED.
@@ -1331,7 +1331,7 @@
        a comment field. On its own it is off: for a parent it comes with Main
        responsible, for anyone else it is an explicit tick. */
     { key: 'payer',     label: 'Payment responsible', on: false,
-      why: 'Owes the family\u2019s fees — nobody is assumed' }
+      why: 'Owes the family\u2019s fees. Nobody is assumed' }
   ];
 
   /* ONE ADDRESS STANDARD, EVERYWHERE AN ADDRESS IS ASKED FOR.
@@ -1807,9 +1807,10 @@
      not exist). A parent card binds its primary values back into the reg_* inputs
      (bindReal) so the child form still saves what it always saved. */
   var MULTI = {
-    phone:   { label: 'Phones',    add: 'Add phone',   types: ['Cell', 'Home', 'Work', 'Other'] },
+    phone:   { label: 'Phones',    add: 'Add phone',   types: ['Mobile', 'Home', 'Work', 'Other'] },
     email:   { label: 'Emails',    add: 'Add email',   types: ['Personal', 'Work', 'Other'] },
-    address: { label: 'Addresses', add: 'Add address', types: ['Home', 'Work', 'Office', 'Other'] }
+    // The same address types everywhere: Settings > Address types (families-page.js), active ones in order.
+    address: { label: 'Addresses', add: 'Add address', get types() { return window.famAddrTypesAll ? window.famAddrTypesAll() : ['Home', 'Mailing', 'Work', 'Other']; } }
   };
   var MSG_OPTS = ['None', 'SMS', 'Voice', 'SMS & Voice'];
   var MULTI_N = 0;
@@ -1824,6 +1825,7 @@
        to say what it is ("Grandma's house", "Summer cell"); that name is then the
        type shown everywhere. A type on file that is not in the list arrives as
        Other with its name filled in. */
+    if (kind === 'phone' && item.type === 'Cell') item = Object.assign({}, item, { type: 'Mobile' });   // "Cell" is now "Mobile"
     var custom = item.type && spec.types.indexOf(item.type) < 0 ? item.type : '';
     var cur = custom ? 'Other' : item.type;
     var type = '<select class="form-control cm-mtype" aria-label="Type">' + spec.types.map(function (t) {
@@ -1834,12 +1836,16 @@
       { phone: 'Grandma\u2019s cell', email: 'School email', address: 'Grandma\u2019s house' }[kind] + '" value="' + esc(custom) + '"></div>';
     type = '<div class="cm-mtypebox">' + type + other + '</div>';
     var prim = '<label class="cm-mprim"><input type="radio" form="cm-proto-none" name="' + grp + '"' +
-      (item.primary ? ' checked' : '') + '><span class="cm-mdot" aria-hidden="true"></span><span>Primary</span></label>';
+      (item.primary ? ' checked' : '') + '><span class="cm-mdot" aria-hidden="true"></span><span>' +
+      (kind === 'phone' ? 'Primary phone for this contact' : 'Primary') + '</span></label>';   // a phone's Primary is the person's, not the family's
+    /* PERMISSIONS BELONG TO THE NUMBER (design review 11/18, 3.3): Text, MMS and Voice, three
+       independent switches beside it. A new number starts with all three off. */
+    var pp = item.perm || { text: /SMS/.test(item.msg || ''), mms: false, voice: /Voice/.test(item.msg || '') };
     var msg = kind === 'phone'
-      ? '<label class="cm-mmsgl"><span>Messages</span><select class="form-control cm-mmsg" aria-label="Messages to this phone">' +
-        MSG_OPTS.map(function (o) {
-          return '<option' + ((item.msg || 'None') === o ? ' selected' : '') + '>' + o + '</option>';
-        }).join('') + '</select></label>'
+      ? '<span class="cm-mperms" role="group" aria-label="What this number may receive">' + [['text', 'Text'], ['mms', 'MMS'], ['voice', 'Voice']].map(function (k) {
+          return '<label class="cm-mpp' + (pp[k[0]] ? ' on' : '') + '"><input type="checkbox" form="cm-proto-none" data-pp="' + k[0] + '"' +
+            (pp[k[0]] ? ' checked' : '') + '><span class="cm-mpp-track" aria-hidden="true"></span><span>' + k[1] + '</span></label>';
+        }).join('') + '</span>'
       : '';
     var foot = '<div class="cm-mbar">' + prim +
       '<button type="button" class="cm-mrm">Remove</button></div>';
@@ -1853,9 +1859,12 @@
         '<div class="cm-maddr">' + inp('line2', 'Address line 2') + inp('city', 'City') + inp('state', 'State') +
           inp('zip', 'ZIP code') + '</div>' + foot + '</div>';
     }
+    // A family number picked into a person's list is linked: the family's, shown, not retyped.
     var val = '<input type="' + (kind === 'phone' ? 'tel' : 'email') + '" class="form-control cm-mval" aria-label="' +
       (kind === 'phone' ? 'Phone' : 'Email') + '" placeholder="' + (kind === 'phone' ? 'Phone number' : 'Email address') +
-      '" value="' + esc(item.value || '') + '">';
+      '" value="' + esc(item.value || '') + '"' + (item.linked ? ' readonly title="Linked to the family\u2019s number"' : '') + '>';
+    if (item.linked) return '<div class="cm-mrow cm-mrow--' + kind + ' cm-mlinked"><div class="cm-mmain">' + type + val +
+      '<span class="cm-mlinktag">Family number</span>' + msg + '</div>' + foot + '</div>';
     // A phone's messages sit beside the number they are about.
     return '<div class="cm-mrow cm-mrow--' + kind + '"><div class="cm-mmain">' + type + val + msg + '</div>' + foot + '</div>';
   }
@@ -1913,12 +1922,17 @@
     box.className = 'cm-multi';
     box.setAttribute('data-multi', kind);
     box.innerHTML = '<div class="cm-mlabel">' + spec.label + '</div><div class="cm-mrows"></div>' +
-      '<div class="cm-mfoot"><button type="button" class="cm-madd">+ ' + spec.add + '</button>' +
-      (kind === 'address' ? '<select class="form-control cm-mcopy" aria-label="Copy an address from the household">' +
-        '<option value="">Copy an address from\u2026</option></select>' : '') + '</div>';
+      // No "Copy an address from\u2026" (design review 11/18, 2): addresses are linked, never copied.
+      '<div class="cm-mfoot"><button type="button" class="cm-madd">+ ' + spec.add + '</button></div>';
     var rows = box.querySelector('.cm-mrows');
     var add = function (item) { rows.insertAdjacentHTML('beforeend', multiRow(kind, grp, item)); };
     (items && items.length ? items : [{}]).forEach(add);
+    // Others may add a row (the family panel's "Pick a family number").
+    box._add = function (item) {
+      var empty = [].filter.call(rows.querySelectorAll('.cm-mrow'), function (r) { var v = r.querySelector('.cm-mval'); return v && !v.value.trim(); })[0];
+      if (empty) empty.remove();
+      add(item); paintPrimary(box); box.dispatchEvent(new Event('change', { bubbles: true }));
+    };
     paintPrimary(box);
     box.addEventListener('click', function (e) {
       var changed = false;
@@ -1975,6 +1989,7 @@
       });
     }
     box.addEventListener('change', function (e) {
+      if (e.target.matches && e.target.matches('[data-pp]')) e.target.closest('.cm-mpp').classList.toggle('on', e.target.checked);
       if (e.target.classList && e.target.classList.contains('cm-mtype')) {
         var o = e.target.closest('.cm-mrow').querySelector('.cm-mother');
         if (o) {
@@ -2003,6 +2018,12 @@
       if (v) o.value = v.value.trim();
       var m = r.querySelector('.cm-mmsg');
       if (m) o.msg = m.value;
+      if (r.querySelector('[data-pp]')) {
+        o.perm = {};
+        r.querySelectorAll('[data-pp]').forEach(function (x) { o.perm[x.getAttribute('data-pp')] = x.checked; });
+        o.msg = o.perm.text && o.perm.voice ? 'SMS & Voice' : o.perm.text ? 'SMS' : o.perm.voice ? 'Voice' : 'None';
+      }
+      if (r.classList.contains('cm-mlinked')) o.linked = true;
       if (r.querySelector('[data-a]')) {
         o.addr = {};
         r.querySelectorAll('[data-a]').forEach(function (x) { o.addr[x.getAttribute('data-a')] = x.value.trim(); });
@@ -2039,10 +2060,11 @@
   function contactItems(c, hhAddr) {
     c = c || {};
     return {
-      phone: c.phones || [c.p && { type: 'Cell', value: c.p, msg: c.msg || 'None', primary: true },
+      phone: c.phones || [c.p && { type: 'Mobile', value: c.p, msg: c.msg || 'None', primary: true },
                           (c.p2 || c.phone2) && { type: 'Work', value: c.p2 || c.phone2 }].filter(Boolean),
       email: c.emails || [c.e && { type: 'Personal', value: c.e, primary: true }].filter(Boolean),
-      address: c.addrs || [(c.addr || hhAddr) && { type: 'Home', value: c.addr || hhAddr, primary: true },
+      // A deactivated address (Manage addresses, families-page.js) is kept but not shown on the card.
+      address: (c.addrs && c.addrs.filter(function (a) { return !a.off; })) || [(c.addr || hhAddr) && { type: 'Home', value: c.addr || hhAddr, primary: true },
                            c.workAddr && { type: 'Work', value: c.workAddr }].filter(Boolean)
     };
   }
@@ -2116,6 +2138,15 @@
     part.parentNode.insertBefore(fold, part);
     fold.appendChild(part);
     var paint = function () {
+      // A parent in the family panel has the address picker (families-page.js): the fold says what it picked.
+      var pk = card.querySelector('.fam-apick');
+      if (pk && pk.style.display !== 'none') {
+        var s = pk.querySelector('select'), o = s && s.options[s.selectedIndex];
+        fold.querySelector('summary > span').textContent = 'Address';
+        fold.querySelector('.cm-paddrs-sum').textContent = o ? o.text : '';
+        return;
+      }
+      fold.querySelector('summary > span').textContent = 'Addresses';
       var list = multiValues(multiBox(card, 'address'));
       fold.querySelector('.cm-paddrs-sum').textContent = list.length
         ? list[0].value + (list.length > 1 ? ' +' + (list.length - 1) : '') : '';

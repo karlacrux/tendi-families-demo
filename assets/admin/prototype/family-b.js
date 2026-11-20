@@ -149,14 +149,15 @@
       });
     });
   }
-  /* Billing in three blocks: who pays, how, and to what address. The two original selects stay
-     in the form, hidden, and are what gets saved; the card fields keep their own wiring. */
+  /* Billing in two blocks: who pays and to what address (design review 11/18, 6.2 and 6.3). The
+     original select stays in the form, hidden, and is what gets saved. No payment method here:
+     cards, bank accounts and automatic payments are shown and acted on in the Billing view. */
   function billingBlocks(root) {
-    var method = root.querySelector('.fam-editform [data-k="method"]') || (root.matches('.fam-editform') ? root.querySelector('[data-k="method"]') : null);
-    var form = method && method.closest('.fam-editform');
+    var payer = root.querySelector('.fam-editform [data-k="payer"]') || (root.matches('.fam-editform') ? root.querySelector('[data-k="payer"]') : null);
+    var form = payer && payer.closest('.fam-editform');
     if (!form || form.querySelector('.fb-pays')) return;
-    var payer = form.querySelector('[data-k="payer"]'), group = method.closest('.vB-group');
-    var f = (form.closest('.fam-portal') || {})._fam || {}, b = f.billing || {}, p = b.parts || {};
+    var group = payer.closest('.vB-group');
+    var f = (form.closest('.fam-portal') || {})._fam || {}, b = f.billing || {};
     var section = function (title) {
       var s = document.createElement('section');
       s.className = 'vB-group';
@@ -164,7 +165,7 @@
       return s;
     };
 
-    var who = section('Who pays');
+    var who = section('Who pays' + (window.famInfo ? window.famInfo('The primary contact pays unless you pick someone else. Each child can have a different payer on their Tuition tab.') : ''));
     var pays = document.createElement('div');
     pays.className = 'fb-pays';
     who.appendChild(pays);
@@ -182,49 +183,42 @@
       c.addEventListener('click', function () { payer.value = o.value; payer.dispatchEvent(new Event('change', { bubbles: true })); drawPays(); });
       pays.appendChild(c);
     });
-    if (!people.length) pays.innerHTML = '<p class="fb-paynone">Nobody with payment permission yet</p>';
-    if (people.length === 1 && !payer.value) payer.value = people[0].value;
+    if (!people.length) pays.innerHTML = '<p class="fb-paynone">Nobody in the family yet</p>';
     drawPays();
     payer.closest('.form-group').classList.add('fb-orig');
     who.appendChild(payer.closest('.form-group'));
+
     group.parentNode.insertBefore(who, group);
+    group.hidden = true;
 
-    group.querySelector('.vB-group-label').textContent = 'Payment method';
-    var row = method.closest('.form-group');
-    row.classList.add('fb-orig');
-    var seg = document.createElement('div');
-    seg.className = 'fb-seg fb-methods';
-    var drawSeg = function () {
-      Array.prototype.forEach.call(seg.children, function (c) { c.classList.toggle('on', c.textContent === method.value); });
+    /* BILLING ADDRESS (design review 11/18, 6.3): a dropdown of the family's addresses,
+       Home by default, and "Add new", a pop-up whose address joins the family's and is
+       chosen. No free text and no "same as" box: an address is typed once, in one place. */
+    var addr = section('Billing address' + (window.famInfo ? window.famInfo('Choose one of the family\u2019s addresses. Moving the Home moves this too.') : ''));
+    var FA = window.famAddr;
+    addr.insertAdjacentHTML('beforeend', '<div class="fb-billpick"><select class="form-control" data-k="billaddr" aria-label="Billing address"></select>' +
+      '</div>');
+    var pick = addr.querySelector('[data-k="billaddr"]');
+    var drawPick = function (v) {
+      var list = FA ? FA.list(f) : [];
+      pick.innerHTML = (list.length ? list.map(function (a) {
+        var o = document.createElement('option');
+        o.value = a.id;
+        o.textContent = a.type + ' · ' + a.value;
+        return o.outerHTML;
+      }).join('') : '<option value="home">Home (add it on Household)</option>') + '<option value="__add">+ Add new address</option>';
+      pick.value = v && FA && FA.byId(f, v) ? v : (list[0] ? list[0].id : 'home');
+      pick._was = pick.value;
     };
-    ['ACH', 'Credit Card', 'Cash'].forEach(function (m) {
-      var c = document.createElement('button');
-      c.type = 'button';
-      c.textContent = m;
-      c.addEventListener('click', function () { method.value = m; method.dispatchEvent(new Event('change', { bubbles: true })); drawSeg(); });
-      seg.appendChild(c);
+    drawPick(b.addrId || 'home');
+    pick._redraw = function () { drawPick(pick.value); };   // after Manage addresses
+    pick.addEventListener('change', function () {
+      if (pick.value !== '__add') { pick._was = pick.value; return; }
+      var back = pick._was;
+      if (!FA) { pick.value = back; return; }
+      FA.pop(f, function (a) { var n = FA.add(f, a.type, a.value); drawPick(n.id); pick.dispatchEvent(new Event('input', { bubbles: true })); },
+        function () { pick.value = back; });
     });
-    row.parentNode.insertBefore(seg, row);
-    drawSeg();
-
-    var addr = section('Billing address');
-    var home = String(f.a || '').replace(/,?\s*USA$/i, '');
-    addr.insertAdjacentHTML('beforeend',
-      '<label class="fb-samecard"><span class="fb-cb"><input type="checkbox" data-k="billsame"></span><span class="fb-who"><b>Same as the home address</b><small></small></span></label>' +
-      '<div class="fb-billaddr">' + [['bill1', 'Address line 1', 'line1'], ['bill2', 'Address line 2', 'line2'], ['billcity', 'City', 'city'], ['billstate', 'State', 'state'], ['billzip', 'ZIP code', 'zip']].map(function (x) {
-        return '<input type="text" class="form-control" data-k="' + x[0] + '" placeholder="' + x[1] + '" autocomplete="off">';
-      }).join('') + '</div>');
-    var small = addr.querySelector('small');
-    small.textContent = home;
-    small.hidden = !home;
-    [['bill1', 'line1'], ['bill2', 'line2'], ['billcity', 'city'], ['billstate', 'state'], ['billzip', 'zip']].forEach(function (x) {
-      addr.querySelector('[data-k="' + x[0] + '"]').value = p[x[1]] || '';
-    });
-    var same = addr.querySelector('[data-k="billsame"]'), card = addr.querySelector('.fb-samecard'), fields = addr.querySelector('.fb-billaddr');
-    var drawSame = function () { card.classList.toggle('on', same.checked); fields.hidden = same.checked; };
-    same.checked = b.same !== false;
-    same.addEventListener('change', drawSame);
-    drawSame();
     group.parentNode.insertBefore(addr, group.nextSibling);
   }
   function repaintAll() {
