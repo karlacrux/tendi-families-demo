@@ -165,7 +165,7 @@
       return s;
     };
 
-    var who = section('Who pays' + (window.famInfo ? window.famInfo('The primary contact pays unless you pick someone else. Each child can have a different payer on their Tuition tab.') : ''));
+    var who = section('Who pays' + (window.famInfo ? window.famInfo('The primary contact pays unless you pick someone else.') : ''));
     var pays = document.createElement('div');
     pays.className = 'fb-pays';
     who.appendChild(pays);
@@ -189,6 +189,7 @@
     who.appendChild(payer.closest('.form-group'));
 
     group.parentNode.insertBefore(who, group);
+
     group.hidden = true;
 
     /* BILLING ADDRESS (design review 11/18, 6.3): a dropdown of the family's addresses,
@@ -326,7 +327,7 @@
     var bar = document.querySelector('#tndDrawer .tnd-pane-edit > .tnd-tabs[data-cm-order]');
     // A child on the waiting list has no Enrollment or Tuition, so changemap.js never orders
     // their strip: their tabs still take the same look.
-    if (!bar && !html.classList.contains('fb-child')) {
+    if (!bar && !html.classList.contains('fb-child') && !html.classList.contains('fb-childedit')) {
       var open = document.querySelector('#tndDrawer .tnd-pane-edit > .tnd-tabs');
       var waits = document.querySelector('#tndDrawer .tnd-pane-edit [name="is_waitlist"]');
       if (open && waits && waits.checked) tabbedChild(open.parentNode);
@@ -335,7 +336,8 @@
     if (!bar) return;
     var form = bar.parentNode;
     // Tabs for a child on their own, edited or added; the areas are for adding one inside a family.
-    if (!form.classList.contains('fb-fold') && !html.classList.contains('fb-child')) { tabbedChild(form); return; }
+    // Also a child opened inside its family (fb-childedit, family-review.js): the same steps.
+    if (!form.classList.contains('fb-fold') && !html.classList.contains('fb-child') && !html.classList.contains('fb-childedit')) { tabbedChild(form); return; }
     if (!form.classList.contains('fb-fold')) form.classList.add('fb-fold');
     var at = 0, first = !form.querySelector('.fb-sec');
     var card = childCard(form);
@@ -588,7 +590,7 @@
       ['Address', [/^address/i, /^apartment/i, /^city/i, /^state/i, /^zip/i]],
       ['Notes', [/./]]
     ],
-    Enrollment: [
+    'Schedule and classroom': [
       ['Schedule', [/^days enrolled/i]],
       ['Father', [/^father/i]],
       ['Mother', [/^mother/i]],

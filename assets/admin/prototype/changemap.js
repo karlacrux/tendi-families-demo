@@ -337,7 +337,7 @@
       var hits = people(q);
       if (!hits.length) {
         out.innerHTML = '<div class="cm-findhint">Nobody on file matches' +
-          (mode === 'new' ? ' \u2014 go ahead, this is a new family.' : '.') + '</div>';
+          (mode === 'new' ? '. Go ahead, this is a new family.' : '.') + '</div>';
         box.setAttribute('aria-expanded', 'false');
         return;
       }
@@ -426,7 +426,7 @@
           '<div class="cm-hacts"><button type="button" class="cm-hedit">Edit</button>' +
           (h.current
             ? '<button type="button" class="cm-hexcl" title="Move this child to another household">Change</button>'
-            : '<button type="button" class="cm-hexcl" title="Not this household \u2014 search again">Remove</button>') +
+            : '<button type="button" class="cm-hexcl" title="Not this household: search again">Remove</button>') +
           '</div></div>' +
         '<div class="cm-hsec">' +
           '<div class="cm-hnameline"><span class="cm-hav" aria-hidden="true">' + esc(String(f.n).charAt(0).toUpperCase()) + '</span>' +
@@ -790,7 +790,7 @@
   var TABS = {
     'parents details': { to: 'Family', why: '' },
     'therapy': { to: 'Health', why: '' },
-    'registration form details': { to: 'Enrollment', why: '' },
+    'registration form details': { to: 'Schedule and classroom', why: '' },
     // Names the mechanism, not the thing. These five columns say WHICH STAFF MEMBER
     // handles this child, overriding the class/branch default. Nothing to do with
     // the family module — a cheap, separate win.
@@ -884,7 +884,9 @@
     if (!secs.length) secs = document.querySelectorAll('#frmAddEditRecord fieldset');
     for (var i = 0; i < secs.length; i++) {
       var h = secs[i].querySelector('h1,h2,h3,h4,legend,.vB-grouphead');
-      if (h && (h.textContent || '').trim().toLowerCase().indexOf(text) === 0) return secs[i];
+      var ht = h ? (h.textContent || '').trim().toLowerCase() : '';
+      // The Enrollment tab is called "Schedule and classroom" now: looked up by either name.
+      if (h && (ht.indexOf(text) === 0 || (text === 'enrollment' && ht.indexOf('schedule and classroom') === 0))) return secs[i];
     }
     return null;
   }
@@ -1618,7 +1620,7 @@
             '<i>' + (h.where ? esc(h.where) + ' \u00b7 ' : '') +
             (h.kids ? h.kids + (h.kids === 1 ? ' child' : ' children') : '') +
             (h.a ? ' \u00b7 ' + esc(h.a) : '') + '</i></button>';
-        }).join('') : '<div class="cm-findhint">Nobody on file matches \u2014 fill the card in as a new contact.</div>';
+        }).join('') : '<div class="cm-findhint">Nobody on file matches. Fill the card in as a new contact.</div>';
         out.querySelectorAll('.cm-fhit').forEach(function (b) {
           b.addEventListener('click', function () { linked(hits[+b.getAttribute('data-i')]); close(); });
         });
@@ -1960,7 +1962,7 @@
         srcs = addressSources(box);
         copy.innerHTML = '<option value="">Copy an address from\u2026</option>' + (srcs.length
           ? srcs.map(function (x, i) {
-              return '<option value="' + i + '">' + esc(x.who + ' \u00b7 ' + x.type + ' \u2014 ' + x.value) + '</option>';
+              return '<option value="' + i + '">' + esc(x.who + ' \u00b7 ' + x.type + ' \u00b7 ' + x.value) + '</option>';
             }).join('')
           : '<option value="" disabled>No addresses in this household yet</option>');
       };
@@ -2702,7 +2704,7 @@
   function relocateMedical() {
     var n = 0;
     n += renameHead('therapy', 'Health');
-    n += renameHead('registration form details', 'Enrollment');
+    n += renameHead('registration form details', 'Schedule and classroom');
     n += renameHead('parents details', 'Family');
     n += renameHead('contact assignment overrides', 'Assigned Staff');
     n += renameHead('privileges', 'Tuition');
@@ -2770,7 +2772,7 @@
     }
     document.querySelectorAll('#tndDrawer .tnd-pane-view section.vB-group').forEach(function (s) {
       var gl = s.querySelector('.vB-group-label');
-      if (!gl || gl.textContent.trim() !== 'Enrollment') return;
+      if (!gl || gl.textContent.trim() !== 'Schedule and classroom') return;
       var list = s.querySelector('.vB-list');
       s.querySelectorAll('.vB-row').forEach(function (r) {
         var l = r.querySelector('.vB-row-label');
@@ -2819,7 +2821,7 @@
      sections happened to be written in: who they are, whose they are, how they got
      here, how they are cared for, how they travel, what it costs, who handles it.
      Billing sits sixth, so a 4/3 wrap keeps it on the second line with the rest. */
-  var ORDER = ['Details', 'Family', 'Enrollment', 'Health',
+  var ORDER = ['Details', 'Family', 'Schedule and classroom', 'Health',
                'Transportation', 'Tuition'];
 
   function reorder() {
@@ -3527,7 +3529,7 @@
     };
     var hide = function (rows) { rows.forEach(function (r) { r.style.display = 'none'; }); };
 
-    label(parents, 'Family'); label(reg, 'Enrollment'); label(therapy, 'Health'); label(priv, 'Tuition');
+    label(parents, 'Family'); label(reg, 'Schedule and classroom'); label(therapy, 'Health'); label(priv, 'Tuition');
 
     // Details: the child, with the nickname by their name.
     var lastName = take(details, /^last name$/i)[0];
@@ -3675,13 +3677,13 @@
     });
     // Text is written only when it differs: applyStage now runs on every pass,
     // and an unconditional write is a DOM change that would trigger the next pass.
-    var label = waiting ? 'Waitlist' : 'Enrollment';
+    var label = waiting ? 'Waitlist' : 'Schedule and classroom';
     var h = dst.querySelector('h1,h2,h3,h4,legend,.vB-grouphead');
     if (h && h.textContent !== label) h.textContent = label;
     document.querySelectorAll('button, a, span, li').forEach(function (b) {
       if (b.children.length) return;
       var t = (b.textContent || '').trim();
-      if ((t === 'Enrollment' || t === 'Waitlist') && t !== label) b.textContent = label;
+      if ((t === 'Enrollment' || t === 'Schedule and classroom' || t === 'Waitlist') && t !== label) b.textContent = label;
     });
     /* ONE STAGE ON SCREEN AT A TIME. The tab holds two stages, and a child is in
        exactly one of them:

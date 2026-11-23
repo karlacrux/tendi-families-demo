@@ -110,9 +110,9 @@
 .tendi-skin .fam-misslist{margin:0 0 8px;padding-left:18px;font-size:13.5px;color:var(--ink,#1f1a2e);line-height:1.7}
 
 /* ---- the child inside the family (#tndDrawer is the app's child panel) ------------------- */
-#tndDrawer .tnd-tab[data-tab-name="Parents Details"],#tndDrawer .tnd-tab[data-tab-name="Registration Form Details"]{display:none!important}
+#tndDrawer .tnd-tab[data-tab-name="Parents Details"]{display:none!important}
 #tndDrawer .fr-crumbs{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-3,#5b5470);margin:0 0 6px;padding:0 22px}
-#tndDrawer .fr-crumbs a{color:var(--primary,#5a3fc2);font-weight:600;text-decoration:none}
+#tndDrawer .fr-crumbs a{color:inherit;font-weight:inherit;text-decoration:none}
 #tndDrawer .fr-crumbs a:hover{text-decoration:underline}
 #tndDrawer .fr-famlink{display:block;font-weight:700;font-size:14px;color:var(--primary,#5a3fc2);text-decoration:none;margin-top:2px}
 #tndDrawer .fr-famlink:hover{text-decoration:underline}
@@ -362,3 +362,42 @@ html.fam-b #tndDrawer .tnd-pane-edit .vB-group.fr-pupane::after,html.fam-b #tndD
 #tndDrawer .fr-docbox .fr-dochead{width:100%}
 #tndDrawer .tnd-pane-view .fr-dochead > span{font-size:14px;font-weight:700}
 #tndDrawer .vB-list > .fr-docbox{grid-column:1/-1}
+/* Edit shows what View shows: read-only parts */
+.tendi-skin .fam-edit-ro .fam-cardact,.tendi-skin .fam-edit-ro button,.tendi-skin .fam-edit-ro select,.tendi-skin .fam-edit-ro input{pointer-events:none}
+.tendi-skin .fam-edit-ro .fam-cardact,.tendi-skin .fam-edit-ro .btn-sm,.tendi-skin .fam-edit-ro .fam-apacts button{opacity:.45}
+.tendi-skin .fam-edit-ro .fb-paylink{color:var(--ink-3,#5b5470)!important;text-decoration:none!important;cursor:default}
+#tndDrawer .fr-detro{border:1px solid var(--edge,rgba(95,67,178,.2));border-radius:10px;background:#faf9fd;padding:10px 12px;margin:0 0 12px}
+#tndDrawer .fr-detro-head{display:flex;align-items:center;gap:4px;font-size:12.5px;font-weight:600;color:var(--ink,#1f1a2e);margin-bottom:6px}
+#tndDrawer .fr-detro-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px}
+#tndDrawer .fr-todaysec > :not(.vB-group-label):not(.fr-today){display:none!important}
+#tndDrawer .fr-todaysec::after{content:none!important;display:none!important}
+#tndDrawer .fr-today{margin:4px 0 0;padding:14px 16px;border:1px dashed var(--edge,rgba(95,67,178,.3));border-radius:10px;background:#faf9fd;font-size:13.5px;color:var(--ink-3,#5b5470)}
+/* WCAG AA contrast (4.5:1 for text): muted text and the required asterisk */
+.fam-crumbs .sep,.fam-phone.none{color:#6b6480!important}
+#tndDrawer .fr-detro .vB-muted{color:#6b6480!important}
+.tendi-skin .astric,#tndDrawer .astric{color:#b42318!important}
+/* 7.1 a child opened inside the family: under the family's head and tabs, in place */
+html.fb-childopen #tndDrawerScrim{display:none!important}
+html.fb-childopen #tndDrawer{left:var(--fb-left,auto)!important;width:auto!important;max-width:none!important;min-width:0!important;top:var(--fb-top,110px)!important;bottom:0!important;right:0!important;height:auto!important;transform:none!important;transition:none!important;box-shadow:none!important;background:var(--cream,#faf9fe)!important;z-index:3011!important}
+/* 7.2 new child wizard: a vertical stepper over the child's tabs */
+#tndDrawer .fr-nwiz .fb-sec > .vB-group-label{pointer-events:none;display:flex;align-items:center;gap:10px}
+#tndDrawer .fr-nwiz .fb-sec > .vB-group-label::after{display:none!important}
+#tndDrawer .fr-nwiz .fr-nw-done > .vB-group-label{pointer-events:auto;cursor:pointer}
+#tndDrawer .fr-nwmark{display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;height:22px;border-radius:50%;background:#efedf6;color:var(--ink-2,#3d3650);font-size:12px;font-weight:600}
+#tndDrawer .fr-nw-on .fr-nwmark{background:var(--primary,#5a3fc2);color:#fff}
+#tndDrawer .fr-nw-done .fr-nwmark{background:#e8f3ec;color:#1f6b3a}
+#tndDrawer .fr-nw-next > .vB-group-label{color:var(--ink-3,#5b5470)}
+#tndDrawer .fr-nwsum{margin-left:auto;font-size:12.5px;font-weight:500;color:var(--ink-3,#5b5470);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tndDrawer .fr-nwsum:empty{display:none}
+#tndDrawer .fr-nwnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-4px 0 14px;padding:10px 0 0}
+#tndDrawer .fr-nwreview .fr-nwrevbody{display:none}
+#tndDrawer .fr-nwreview.fr-nw-on .fr-nwrevbody{display:block}
+#tndDrawer .fr-nwiz .fb-sec > .vB-group-label{display:flex!important}
+#tndDrawer .fr-nwiz .fb-sec.fr-nw-done > :not(.vB-group-label),#tndDrawer .fr-nwiz .fb-sec.fr-nw-next > :not(.vB-group-label){display:none!important}
+#tndDrawer .fr-nwrevin{padding:2px 14px 12px}
+#tndDrawer .fr-nwrevin .fb-esub{margin:12px 0 6px;font-size:14px;font-weight:600;color:var(--ink,#1f1a2e)}
+#tndDrawer .fr-nwrevlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;margin:0}
+#tndDrawer .fr-nwrevlist dt{font-size:12px;font-weight:500;color:var(--ink-3,#5b5470)}
+#tndDrawer .fr-nwrevlist dd{margin:0;font-size:13.5px;color:var(--ink,#1f1a2e);overflow-wrap:anywhere}
+#tndDrawer .fr-nwrevnone{margin:0;font-size:13px;color:var(--ink-3,#5b5470)}
+html.fb-childedit #tndDrawer .fr-nwiz .fr-nw-next > .vB-group-label{pointer-events:auto;cursor:pointer}

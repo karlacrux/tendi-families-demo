@@ -5,11 +5,10 @@
      7.1  a breadcrumb back to the family when the child was opened from it, and the
           family's name in bold under the child's, linking back, wherever it was opened;
           no Family tab (the family is in one place only).
-     7.2  no Enrollment tab: "Change registration" opens the registration as a wizard,
-          each step showing the tab its answers belong to. Nothing is stored twice.
+     7.2  no Enrollment tab: it is "Schedule and classroom". An existing child has tabs; a new
+          child is added through a wizard whose steps are those same tabs (newChildWizard).
      7.3  a Forms and immunizations tab (read from the Vaccines and forms data in PHP).
      5.2  on Health, the child's doctor is the family's Doctor contact (one Doctor type).
-     6.2  on Tuition, who pays for this child: the family's payer unless overridden.
      5.1  a Pick-up tab: who may pick up this child, always or for a date range. A separate
           permission from Emergency contact. View reads; Edit adds family contacts, and Save keeps it.
    Sample data only; nothing is saved anywhere.
@@ -109,7 +108,24 @@
   function addFormsTab(d, id) {
     panes(d).forEach(function (p) {
       var sec = addTab(p, 'fi', 'Forms and immunizations', FI_ICON, 'fr-fi');
-      if (sec) sec.innerHTML = formsHtml(id) + (isEditPane(p) ? '<p class="fam-panel-note">Not edited here: forms are updated on Vaccines and forms.</p>' : '');
+      if (!sec) return;
+      sec.innerHTML = formsHtml(id) + (isEditPane(p) ? '<p class="fam-panel-note">Not edited here: forms are updated on <a href="javascript:void(0);" class="fr-vfgo">Vaccines and forms</a>.</p>' : '');
+      // Vaccines and forms is Tendi's files window for this child (the same one the Children list opens).
+      sec.querySelectorAll('.fr-vfgo').forEach(function (a) {
+        a.addEventListener('click', function () {
+          var el = document.createElement('a'), nm = d.querySelector('.tnd-pane-view .vB-name');
+          // The demo is a recorded copy with no files behind it: it says where this goes, like Payments.
+          if (window.__TENDI_REPLAY__ || typeof window.upload_file !== 'function') {
+            toast('In Tendi this opens Vaccines and forms for ' + (nm ? nm.textContent.trim() : 'this child') + '.');
+            return;
+          }
+          el.setAttribute('data-id', id);
+          el.setAttribute('data-name', nm ? nm.textContent.trim() : '');
+          window.upload_file(null, el);
+          var jq = window.jqView || window.jQuery;
+          if (jq && jq.fn && jq.fn.modal) jq('#upload_file').modal('show');
+        });
+      });
     });
   }
   function showPanel(view, key) {
@@ -205,7 +221,7 @@
     var add = sec.querySelector('.fr-puadd');
     if (add) add.addEventListener('change', function () {
       if (add.value === '') return;
-      Object.assign(draft[+add.value], { on: true, always: true });
+      draft[+add.value].on = true;                      // back with the Always or dates they had
       redraw();
     });
   }
@@ -241,7 +257,7 @@
     if (!fam) return;
     var f = fam.f;
     panes(d).forEach(function (p) {
-      var health = p.querySelector(':scope > .vB-group[data-panel="2"]');
+      var health = p.querySelector('.vB-group[data-panel="2"]');
       if (!health) return;
       var box = health.querySelector('.fr-docbox');
       if (!isEditPane(p)) {
@@ -283,7 +299,7 @@
     var f = fam.f;
     f.childPayer = f.childPayer || {};
     panes(d).forEach(function (p) {
-      var tuition = p.querySelector(':scope > .vB-group[data-panel="7"]');
+      var tuition = p.querySelector('.vB-group[data-panel="7"]');
       if (!tuition || tuition.querySelector('.fr-payer')) return;
       var box = document.createElement('div');
       box.className = 'fr-payer';
@@ -309,7 +325,7 @@
   function resetEdit(d, id, fam) {
     var ep = d.querySelector('.tnd-pane-edit');
     if (!ep || !fam) return;
-    var sec = ep.querySelector(':scope > .fr-pupane');
+    var sec = ep.querySelector('.fr-pupane');
     if (sec) { sec._draft = puDraft(id, fam.f); drawPuEdit(sec, d, id, fam.f); }
     var sel = ep.querySelector('[data-fr="payer"]');
     if (sel) { var cur = (fam.f.childPayer || {})[id]; sel.value = cur == null ? '' : String(cur); }
@@ -317,14 +333,14 @@
   function saveEdit(d, id, fam) {
     var ep = d.querySelector('.tnd-pane-edit'), vp = d.querySelector('.tnd-pane-view');
     if (!ep || !fam) return;
-    var f = fam.f, sec = ep.querySelector(':scope > .fr-pupane');
+    var f = fam.f, sec = ep.querySelector('.fr-pupane');
     if (sec && sec._draft) {
       puPeople(f).forEach(function (c) {
         var dr = sec._draft[f.contacts.indexOf(c)];
         if (dr && !dr.always && !dr.from && !dr.to) dr.always = true;   // no dates given: no limit
         if (dr) Object.assign(puOf(c, id), dr);
       });
-      var vsec = vp && vp.querySelector(':scope > .fr-pupane');
+      var vsec = vp && vp.querySelector('.fr-pupane');
       if (vsec) vsec.innerHTML = puViewHtml(d, id, f);
     }
     var sel = ep.querySelector('[data-fr="payer"]');
@@ -350,7 +366,7 @@
     { k: 'schedule', t: 'Schedule and classroom', panel: '6' },
     { k: 'health', t: 'Health', panel: '2' },
     { k: 'transport', t: 'Transportation', panel: '3' },
-    { k: 'tuition', t: 'Tuition and payer', panel: '7' },
+    { k: 'tuition', t: 'Tuition', panel: '7' },
     { k: 'emergency', t: 'Emergency contacts' },
     { k: 'pickup', t: 'Who may pick up', panel: 'pu' },
     { k: 'forms', t: 'Forms', panel: 'fi' },
@@ -430,6 +446,263 @@
     return '';
   }
 
+  /* ---- Edit hides nothing View shows: on Details, the child's address (the family's Home),
+     read-only here: it is changed on the family. */
+  var RO_LABELS = /^(address|apartment number|city|state|zip code)$/i;
+  function addDetailsRo(d) {
+    var vp = d.querySelector('.tnd-pane-view'), ep = d.querySelector('.tnd-pane-edit');
+    var vsec = vp && vp.querySelector('.vB-group[data-panel="0"]'), esec = ep && ep.querySelector('.vB-group[data-panel="0"]');
+    if (!vsec || !esec || esec.querySelector('.fr-detro')) return;
+    var rows = Array.prototype.filter.call(vsec.querySelectorAll('.vB-row'), function (r) {
+      var l = r.querySelector('.vB-row-label');
+      return l && RO_LABELS.test(l.textContent.trim());
+    });
+    if (!rows.length) return;
+    var box = document.createElement('div');
+    box.className = 'fr-detro';
+    var info = window.famInfo ? window.famInfo('The child\u2019s address is the family\u2019s Home: shown here as it is saved, and changed on the family\u2019s Household tab.') : '';
+    box.innerHTML = '<div class="fr-detro-head">Address' + info + '</div><div class="vB-list fr-detro-list"></div>';
+    rows.forEach(function (r) { var c = r.cloneNode(true); c.style.order = ''; c.hidden = false; c.style.display = ''; box.querySelector('.fr-detro-list').appendChild(c); });
+    var label = esec.querySelector('.vB-group-label');
+    if (label) label.parentNode.insertBefore(box, label.nextSibling); else esec.insertBefore(box, esec.firstChild);
+  }
+
+  /* ---- Tuition stays as Tendi has it today: the prototype doesn't repeat it. Its fields are kept
+     (hidden, still posted in Edit) and a note says so. ------------------------------------------- */
+  function tuitionAsToday(d) {
+    panes(d).forEach(function (p) {
+      var tab = p.querySelector(':scope > .tnd-tabs .tnd-tab[data-tab-name="Tuition"]') ||
+        Array.prototype.filter.call(p.querySelectorAll(':scope > .tnd-tabs .tnd-tab'), function (t) { return /^\s*tuition\s*$/i.test(t.textContent); })[0];
+      var sec = tab && p.querySelector('.vB-group[data-panel="' + tab.getAttribute('data-tab') + '"]');
+      if (!sec) return;
+      if (!sec.querySelector(':scope > .fr-today')) {
+        sec.insertAdjacentHTML('beforeend', '<p class="fr-today">The same as Tendi today: Tuition will change after Family Module first implementation</p>');
+        sec.classList.add('fr-todaysec');
+      }
+      // Hidden inline, so the app's own styles can't show them again; anything it adds later too.
+      Array.prototype.forEach.call(sec.children, function (el) {
+        if (!el.classList.contains('vB-group-label') && !el.classList.contains('fr-today')) el.style.setProperty('display', 'none', 'important');
+      });
+    });
+  }
+
+  /* ---- Dates read m/d/yyyy, no leading zeros (03/21/2017 reads 3/21/2017). ------------------------ */
+  function plainDates(d) {
+    var vp = d.querySelector('.tnd-pane-view');
+    if (!vp) return;
+    vp.querySelectorAll('.vB-row-value').forEach(function (v) {
+      if (v.children.length) return;
+      var t = v.textContent, n = t.replace(/\b0?(\d{1,2})\/0?(\d{1,2})\/(\d{4})\b/g, '$1/$2/$3');
+      if (n !== t) v.textContent = n;
+    });
+  }
+
+  /* ---- A child opened inside the family (families-page.js, openChild): a family tab or closing
+     the family leaves the child first; the child closing by itself drops the in-family mode. ---- */
+  var htmlEl = document.documentElement;
+  document.addEventListener('click', function (e) {
+    if (!htmlEl.classList.contains('fb-childopen')) return;
+    var b = e.target.closest && e.target.closest('.fam-portal [data-ftab], .fam-portal .tnd-pane-close, .fam-portal .tnd-pane-scrim');
+    if (!b) return;
+    var dr = drawer();
+    if (window.TndListDrawer) window.TndListDrawer.close();      // a soft close: unsaved edits hold it
+    if (dr && dr.classList.contains('is-open')) { e.stopPropagation(); e.preventDefault(); return; }
+    htmlEl.classList.remove('fb-childopen', 'fb-childedit');
+  }, true);
+  var wasOpen = false;
+  setInterval(function () {
+    if (!htmlEl.classList.contains('fb-childopen')) { wasOpen = false; return; }
+    // Kept on the family's panel as it is now (it may still have been sliding in when the child opened).
+    var fp = document.querySelector('.fam-portal .tnd-pane'), bar = document.querySelector('.fam-portal .fam-ftabs');
+    if (fp) htmlEl.style.setProperty('--fb-left', Math.round(fp.getBoundingClientRect().left) + 'px');
+    if (bar) htmlEl.style.setProperty('--fb-top', Math.round(bar.getBoundingClientRect().bottom) + 'px');
+    var dr = drawer(), open = !!(dr && !dr.hidden && dr.classList.contains('is-open'));
+    if (open) wasOpen = true;
+    else if (wasOpen || Date.now() - (window.__fbOpenAt || 0) > 4000) { htmlEl.classList.remove('fb-childopen', 'fb-childedit'); wasOpen = false; }
+    if (!document.querySelector('.fam-portal')) htmlEl.classList.remove('fb-childopen', 'fb-childedit');
+    // Edited inside the family: Cancel leaves the child (there is no separate reading page here).
+    if (htmlEl.classList.contains('fb-childedit') && dr) {
+      if (dr.classList.contains('is-editing')) dr._fbWasEditing = true;
+      else if (dr._fbWasEditing && dr.classList.contains('is-readonly')) { dr._fbWasEditing = false; if (window.TndListDrawer) window.TndListDrawer.close(true); }
+    }
+  }, 250);
+
+  /* ---- 7.2 A NEW CHILD IS ADDED THROUGH A WIZARD. The steps are the child's own tabs, in order:
+     each step is that tab's fields (the same fields, nothing copied), then a review with the
+     emergency-contacts check. The family's Save adds the child, as before. An existing child has
+     tabs, not the wizard. ------------------------------------------------------------------------ */
+  var NW_CHECK = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  /* A VERTICAL STEPPER: the steps stay stacked, as the form always looked. The current step is
+     open with Back and Continue under it; a finished step is closed with a check and a one-line
+     summary, and opens again on a click; a step still to come shows only its title. */
+  function newChildWizard() {
+    var existing = htmlEl.classList.contains('fb-childedit');   // a saved child, edited inside the family
+    if (!htmlEl.classList.contains('fb-child') && !existing) return;
+    var form = document.querySelector('#tndDrawer .tnd-pane-edit.fb-fold'), card = form && form.querySelector(':scope > .fb-childcard');
+    if (!card) return;
+    var secs = Array.prototype.filter.call(card.querySelectorAll(':scope > .fb-sec'), function (x) { return !x.classList.contains('fb-off') && !x.classList.contains('fr-nwreview'); })
+      .sort(function (a, b) { return (+a.style.order || 0) - (+b.style.order || 0); });
+    if (!secs.length) return;
+    // The tab's own name (family-b.js keeps it in data-fb), not the marks added here.
+    var label = function (x) {
+      var h = x.querySelector(':scope > .vB-group-label');
+      if (!h) return '';
+      if (h.getAttribute('data-fb')) return h.getAttribute('data-fb').split('|')[0];
+      var t = ''; h.childNodes.forEach(function (n) { if (n.nodeType === 3) t += n.textContent; });
+      return t.trim();
+    };
+    // Details and its "Other details" are one step: the Details tab.
+    var steps = [];
+    secs.forEach(function (x) {
+      if (x.classList.contains('fb-other') && steps.length) { steps[0].secs.push(x); return; }
+      steps.push({ t: label(x), secs: [x] });
+    });
+    var rev = card.querySelector(':scope > .fr-nwreview');
+    if (!rev) { rev = document.createElement('section'); rev.className = 'vB-group fb-sec fr-nwreview'; rev.style.order = '990'; card.appendChild(rev); }
+    steps.push({ t: 'Review', secs: [rev], review: true });
+    if (!form.classList.contains('fr-nwiz')) { form.classList.add('fr-nwiz'); form._nwAt = 0; }
+    var at = Math.max(0, Math.min(form._nwAt || 0, steps.length - 1));
+    var old = card.querySelector(':scope > .fr-nwbar'); if (old) old.remove();   // the horizontal chips, before
+
+    var v = function (n) { var e = form.querySelector('[name="' + n + '"]'); return e ? String(e.value || '').trim() : ''; };
+    var wait = form.querySelector('[name="is_waitlist"]'), waiting = !!(wait && wait.checked);
+    var summary = function (st) {
+      if (st.review) return '';
+      if (/^details$/i.test(st.t)) return [[v('fname'), v('lname')].filter(Boolean).join(' '), waiting ? 'On the waiting list' : 'Enrolling now'].filter(Boolean).join(' · ');
+      var days = Array.prototype.filter.call(st.secs[0].querySelectorAll('input[type="checkbox"]:checked'), function (c) { return /days/i.test(c.name); }).length;
+      return days ? days + (days === 1 ? ' day a week' : ' days a week') : 'Done';
+    };
+    steps.forEach(function (st, i) {
+      var state = i === at ? 'on' : i < at ? 'done' : 'next';
+      st.secs.forEach(function (x, k) {
+        x.setAttribute('data-nw', i);
+        ['on', 'done', 'next'].forEach(function (c) { var cl = 'fr-nw-' + c; if (x.classList.contains(cl) !== (c === state)) x.classList.toggle(cl); });
+        var closed = state !== 'on';
+        if (x.classList.contains('fb-closed') !== closed) x.classList.toggle('fb-closed', closed);
+        // A closed step shows one title: the Details step's second part stays out of sight.
+        var hide = closed && k > 0;
+        if ((x.style.display === 'none') !== hide) { if (hide) x.style.setProperty('display', 'none', 'important'); else x.style.removeProperty('display'); }
+        if (k > 0) return;
+        var h = x.querySelector(':scope > .vB-group-label');
+        if (!h) { h = document.createElement('h3'); h.className = 'vB-group-label'; x.insertBefore(h, x.firstChild); }
+        if (st.review && h.textContent.indexOf('Review') < 0) h.textContent = 'Review';
+        var mark = h.querySelector('.fr-nwmark');
+        if (!mark) { mark = document.createElement('span'); mark.className = 'fr-nwmark'; h.insertBefore(mark, h.firstChild); }
+        var mk = state === 'done' ? NW_CHECK : String(i + 1);
+        if (mark.getAttribute('data-k') !== state + i) { mark.setAttribute('data-k', state + i); mark.innerHTML = mk; }
+        var sm = h.querySelector('.fr-nwsum'), text = state === 'done' ? summary(st) : '';
+        if (!sm) { sm = document.createElement('small'); sm.className = 'fr-nwsum'; h.appendChild(sm); }
+        if (sm.textContent !== text) sm.textContent = text;
+      });
+    });
+    if (at === steps.length - 1) {
+      var html = reviewHtml(form, steps.slice(0, -1));
+      var body = rev.querySelector('.fr-nwrevbody');
+      if (!body) { body = document.createElement('div'); body.className = 'fr-nwrevbody'; rev.appendChild(body); }
+      if (body.getAttribute('data-h') !== html) { body.setAttribute('data-h', html); body.innerHTML = html; }
+    }
+    // Back and Continue sit under the open step.
+    var lastSec = steps[at].secs[steps[at].secs.length - 1];
+    var nav = card.querySelector(':scope > .fr-nwnav');
+    if (!nav) {
+      nav = document.createElement('div');
+      nav.className = 'fr-nwnav';
+      card.appendChild(nav);
+      nav.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-nwgo]');
+        if (b) nwGo(form, (form._nwAt || 0) + +b.getAttribute('data-nwgo'));
+        // Saving is the family's own way to add a child (family-b.js): through its Save when it
+        // is being edited, else by returning to its Children tab, which saves a named child.
+        if (e.target.closest('.fr-nwdone')) {
+          // A saved child: the child's own Save.
+          if (htmlEl.classList.contains('fb-childedit')) { var own = document.getElementById('tndDrawerSave'); if (own) own.click(); return; }
+          var save = document.querySelector('.fam-portal .fam-tsave'), kids = document.querySelector('.fam-portal [data-ftab="children"]');
+          (save && save.offsetParent ? save : kids).click();
+        }
+      });
+      // A finished step opens again from its title.
+      card.addEventListener('click', function (e) {
+        var h = e.target.closest && e.target.closest(htmlEl.classList.contains('fb-childedit') ? '.fr-nw-done > .vB-group-label, .fr-nw-next > .vB-group-label' : '.fr-nw-done > .vB-group-label');
+        if (!h) return;
+        e.stopPropagation();
+        nwGo(form, +h.parentNode.getAttribute('data-nw'));
+      }, true);
+    }
+    var order = String((+lastSec.style.order || 0) + 1);
+    if (nav.style.order !== order) nav.style.order = order;
+    var last = at === steps.length - 1, navKey = at + '/' + steps.length;
+    if (nav.getAttribute('data-k') !== navKey) {
+      nav.setAttribute('data-k', navKey);
+      nav.innerHTML = (at ? '<button type="button" class="btn-sm" data-nwgo="-1">Back</button>' : '<span></span>') +
+        (last ? '<button type="button" class="btn-sm primary fr-nwdone">' + (existing ? 'Save changes' : 'Save child') + '</button>' : '<button type="button" class="btn-sm primary" data-nwgo="1">Continue</button>');
+    }
+  }
+  function nwGo(form, i) {
+    // Past the first step only with a first name: the same check Save makes.
+    if (i > 0 && (form._nwAt || 0) === 0) {
+      var fn = form.querySelector('[name="fname"]');
+      if (fn && !fn.value.trim()) { toast('Enter the child’s first name.', true); fn.focus(); return; }
+    }
+    form._nwAt = Math.max(0, i);
+    newChildWizard();
+    var open = form.querySelector('.fr-nw-on');
+    if (open) open.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+  // The last step: everything entered, step by step, under each step's name.
+  function reviewHtml(form, steps) {
+    var v = function (n) { var e = form.querySelector('[name="' + n + '"]'); return e ? String(e.value || '').trim() : ''; };
+    var name = [v('fname'), v('lname')].filter(Boolean).join(' ') || 'The child';
+    var wait = form.querySelector('[name="is_waitlist"]'), waiting = !!(wait && wait.checked);
+    var clean = function (t) { return String(t || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim(); };
+    // A field the form doesn't use now (hidden by the stage or the app) is not reviewed.
+    var unused = function (el, stop) {
+      for (var e = el; e && e !== stop; e = e.parentElement) {
+        if (e.hidden || e.classList.contains('fb-orig') || e.style.display === 'none') return true;
+      }
+      return false;
+    };
+    var rowsOf = function (sec) {
+      var out = [];
+      sec.querySelectorAll('.form-group').forEach(function (g) {
+        if (unused(g, sec) || g.querySelector('.form-group')) return;
+        var l = g.querySelector('label.control-label') || g.querySelector('label');
+        var label = l ? clean(l.textContent) : '';
+        var vals = [];
+        g.querySelectorAll('input, select, textarea').forEach(function (el) {
+          if (unused(el, g) || el.type === 'hidden' || el.type === 'file' || el.type === 'button' || el.type === 'submit') return;
+          if (el.type === 'checkbox' || el.type === 'radio') {
+            if (!el.checked || el.name === 'is_waitlist') return;
+            var lab = el.closest('label') || (el.id && g.querySelector('label[for="' + el.id + '"]'));
+            var t = lab ? clean(lab.textContent) : '';
+            vals.push(t && t !== label ? t : 'Yes');
+            return;
+          }
+          if (el.tagName === 'SELECT') {
+            Array.prototype.forEach.call(el.selectedOptions || [], function (o) {
+              var t = clean(o.textContent);
+              if (o.value !== '' && !/^-+\s*select\s*-+$/i.test(t)) vals.push(t);
+            });
+            return;
+          }
+          var t2 = clean(el.value);
+          if (t2) vals.push(t2);
+        });
+        vals = vals.filter(function (x, k) { return vals.indexOf(x) === k; });
+        if (label && vals.length) out.push([label, vals.join(', ')]);
+      });
+      return out;
+    };
+    var html = '<div class="fr-nwrevin"><p class="fr-wiztext"><b>' + esc(name) + '</b> · ' + (waiting ? 'On the waiting list' : 'Enrolling now') + '</p>';
+    (steps || []).forEach(function (st) {
+      var rows = [];
+      st.secs.forEach(function (x) { rows = rows.concat(rowsOf(x)); });
+      if (!rows.length) return;                         // only what was entered
+      html += '<h4 class="fb-esub">' + esc(st.t) + '</h4>' +
+        '<dl class="fr-nwrevlist">' + rows.map(function (r) { return '<div><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd></div>'; }).join('') + '</dl>';
+    });
+    return html + '<p class="fam-panel-note">Each step was the child’s own tab: after saving, the same fields are on ' + esc(name.split(' ')[0]) + '’s tabs.</p></div>';
+  }
+
   /* ---- run on every child panel ---------------------------------------------------------- */
   function apply() {
     var d = drawer();
@@ -441,10 +714,12 @@
     addFormsTab(d, id);
     addPickupTab(d, id, fam);
     addDoctor(d, id, fam);
-    addPayer(d, id, fam);
-    if (d.classList.contains('is-readonly')) addRegButton(d, id, fam);
+    addDetailsRo(d);
+    tuitionAsToday(d);
+    plainDates(d);
   }
   var t = null;
-  new MutationObserver(function () { clearTimeout(t); t = setTimeout(apply, 80); })
+  // At most every 80ms, never starved: a screen that keeps changing still gets its pass.
+  new MutationObserver(function () { if (t) return; t = setTimeout(function () { t = null; apply(); newChildWizard(); }, 80); })
     .observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 })();

@@ -129,7 +129,7 @@
     ROWS.forEach(function (r, i) { p.appendChild(rowNode(r, i)); });
     p.appendChild(el('div', 'pc-foot',
       'The pediatrician, the trusted list and the emergency list were three separate places on ' +
-      'this form. They are one list of contacts now — <b>emergency contact</b> and ' +
+      'this form. They are one list of contacts now: <b>emergency contact</b> and ' +
       '<b>may collect</b> are permissions on the row, not lists of their own, so the grandmother ' +
       'who is both is one contact with two ticks.'));
     p.querySelector('.pc-add').addEventListener('click', openModal);
@@ -153,11 +153,11 @@
             '<label class="pc-opt"><span class="pc-dot"></span><span><b>This child only</b>' +
             '<i>An exception, alongside the family’s contacts.</i></span></label>' +
           '</div>' +
-          '<div class="pc-sec">Who is it? <i>Doctor, grandmother, car service, emergency — all of them start here</i></div>' +
+          '<div class="pc-sec">Who is it? <i>Doctor, grandmother, car service, emergency: all of them start here</i></div>' +
           '<input class="pc-search" type="search" placeholder="Search by name or phone…" aria-label="Search contacts">' +
           '<div class="pc-results"><div class="pc-hint">Type a name or a number. Try <b>lane</b>, or <b>212</b>.</div></div>' +
           '<div class="pc-note">Every contact is one record, whoever they are. This tenant has ' +
-          '<b>570 children with a pediatrician named and 36 actual doctors</b> — the search below ' +
+          '<b>570 children with a pediatrician named and 36 actual doctors</b>. The search below ' +
           'shows the real names, duplicate spellings and all. That is what linking prevents.</div>' +
         '</div>' +
         '<div class="pc-mfoot"><span>Nothing here is saved.</span>' +

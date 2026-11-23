@@ -947,7 +947,8 @@
      same records, so a change in one is in the other. */
   var EMERG_RELS = TYPES.filter(function (t) { return !/^(car service|doctor|pediatrician|other doctor|therapist|caseworker)$/i.test(t); });
   function emergOf(f) {
-    return (f.contacts || []).filter(function (c) { return c.emerg && !isPro(c.t); })
+    // A kept setting that doesn't apply now (a professional, or a parent with Full access) isn't listed.
+    return (f.contacts || []).filter(function (c) { return c.emerg && !isPro(c.t) && accessOf(c) !== 'full'; })
       .sort(function (a, b) { return (a.emergOrder || 0) - (b.emergOrder || 0); });
   }
   function phoneOf(c, f) { var ph = listsOf(c, f).phone[0]; return (ph && ph.value) || c.p || ''; }
@@ -1560,6 +1561,8 @@
         return '<div class="fam-oasumrow"><span class="fam-pill">' + esc(a.type) + '</span><span class="fam-oasumval">' + esc(a.value) + '</span>' +
           (who.length ? '<small>' + esc(listText(who)) + '</small>' : '') + '</div>';
       }).join('') + '</div>' : '<p class="fam-empty-note">No Home address yet.</p>') +
+      (function () { var off = (f.addrs || []).filter(function (a) { return a.off; }).length;
+        return off ? '<div class="fam-typesrow"><span class="fam-offnote">' + off + (off === 1 ? ' deactivated address' : ' deactivated addresses') + '</span></div>' : ''; })() +
       '<div class="cm-mfoot">' + mgrLink('family') + '</div>' +
       '</div>';
   }
@@ -2212,6 +2215,38 @@
     return (f.ledger = rows);
   }
 
+  /* Cards on file: the family's, shared by the siblings (as in Tendi: the billing household's cards). */
+  function payMethodView(f, line) {
+    var cards = f.cards || [];
+    if (!cards.length) return '<p class="fb-paytext is-none">No cards on file</p>';
+    return cards.map(function (c) {
+      return '<p class="fb-paytext fb-paycard">' + esc(c.brand) + ' \u2022\u2022\u2022\u2022 ' + esc(c.last4) + (c.nick ? ' \u00b7 ' + esc(c.nick) : '') + '</p>';
+    }).join('');
+  }
+  // Edit: the cards on file, and Add card, which opens the secure card form (the card
+  // number is never typed on the family page); the card is kept on Save.
+  function wireCardsEdit(f, portal) {
+    var form = portal.querySelector('.fam-editform'), box = form && form.querySelector('.fam-cards');
+    if (!box) return;
+    var list = box.querySelector('.fam-cardlist');
+    form._newCards = [];
+    var draw = function () {
+      var all = (f.cards || []).concat(form._newCards);
+      list.innerHTML = all.length ? all.map(function (c) {
+        return '<div class="fam-cardrowitem"><b>' + esc(c.brand) + '</b> \u2022\u2022\u2022\u2022 ' + esc(c.last4) + (c.nick ? ' <span>' + esc(c.nick) + '</span>' : '') + '</div>';
+      }).join('') : '<p class="fam-empty-note">No cards on file for this family.</p>';
+    };
+    draw();
+    box.querySelector('.fam-cardadd2').addEventListener('click', function () {
+      famPop('Add a card', '<p>In Tendi this opens the secure card form. The card number never passes through the family page.</p>' +
+        '<p class="fam-pop-note">Prototype: a sample card is used.</p>' +
+        '<input type="text" class="form-control" data-np="nick" placeholder="Nickname (optional)" aria-label="Nickname">', 'Add card', function (p) {
+        form._newCards.push({ brand: 'Visa', last4: String(1000 + Math.floor(Math.random() * 8999)), nick: p.querySelector('[data-np="nick"]').value.trim() });
+        draw();
+        form.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    });
+  }
   var TAB_BODY = {
     details: function (f, edit) {
       var addr = String(f.a || '').replace(/,?\s*USA$/i, '');
@@ -2256,6 +2291,11 @@
           })()) +
           (f.isNew ? '' : hasMany(f) ? addrLinesEdit(f) : homeOnlyFoot(f)) +
         '</div></section>' +
+        // Edit hides nothing View shows: the numbers and what each gets, read-only here (each number's
+        // Text / MMS / Voice is changed in its person's card below, or in View with one click).
+        (f.isNew ? '' : '<section class="vB-group fam-edit-ro"><h3 class="vB-group-label">Notifications' +
+          INFO('Shown here as it is saved. Change each number\u2019s Text, MMS and Voice in the person\u2019s card, or with one click outside Edit.') + '</h3>' +
+          notifyRows(f, false) + '</section>') +
 
         // Creating a family: its parents are part of it. Everyone else is on Contacts.
         (f.isNew ? '<section class="vB-group"><h3 class="vB-group-label">Father</h3><div class="vB-editcard fam-newparent" data-rel="father"></div></section>' +
@@ -2303,10 +2343,7 @@
               '<span class="fb-who"><b>' + esc(payer.n) + '</b><small>' + esc(payer.t) + (payer === primaryOf(f) && !(f.billing || {}).payerC ? ' · primary contact' : '') +
               '</small></span></div>' : line('')) +
           group('Billing address', line(billAddress(f))) +
-          group('Cards and bank accounts', cardRows(f)) +
-          group('Automatic payments', autopayBox(f)) +
-          (f.isNew ? '' : group('Payments', '<a class="fb-paylink fam-topayments" href="javascript:void(0);">Open the ' + esc(famName(f)) + ' in Payments</a>' +
-            '<p class="fam-panel-note">Each child can have a different payer, and tuition and vouchers are each child’s: open a child for their <b>Tuition</b> tab.</p>'));
+          (f.isNew ? '' : group('Payments', '<a class="fb-paylink fam-topayments" href="javascript:void(0);">Open the ' + esc(famName(f)) + ' in Billing</a>'));
       }
       var cs = f.contacts || [];
       return '<section class="vB-group"><h3 class="vB-group-label">Billing</h3><div class="vB-editcard">' +
@@ -2314,7 +2351,9 @@
             '<select class="form-control" data-k="payer">' + cs.map(function (c, i) {
               return canPay(c) ? '<option value="' + i + '"' + (c === payer ? ' selected' : '') + '>' + esc(c.n + ' · ' + c.t) + '</option>' : '';
             }).join('') + (cs.filter(canPay).length ? '' : '<option value="">Nobody in the family yet</option>') + '</select></div></div>' +
-        '</div></section>';
+        '</div></section>' +
+
+        (f.isNew ? '' : group('Payments', '<span class="fb-paylink fam-paylink-ro">Open the ' + esc(famName(f)) + ' in Billing</span>'));
     },
 
     /* EMERGENCY CONTACTS (5.1): the family's own list, in calling order. Reused people with a
@@ -2647,6 +2686,11 @@
         }
         row.classList.toggle('is-editing');
       });
+      // Open by default: Edit shows everything View shows (title, Hebrew name, addresses, permissions).
+      if (!row.querySelector('.fam-crow-card').firstChild) {
+        var card0 = personCard(f, c);
+        if (card0) { row.querySelector('.fam-crow-card').appendChild(card0); row.classList.add('is-editing'); }
+      }
       row.querySelector('.fam-cremove').addEventListener('click', function () {
         var off = !row.classList.contains('is-removed');
         // The primary contact can't be removed until another one is chosen (4.1).
@@ -2726,7 +2770,6 @@
     billing: function (f, portal, st) {
       if (st.edit) return;
       wireToPayments(f, portal);
-      wireBillingActs(f, portal);
     },
     emergency: function (f, portal, st) {
       if (!st.edit) {
@@ -3024,6 +3067,36 @@
     var body = portal && portal.querySelector('.tnd-pane-body');
     var tabBtn = portal && portal.querySelector('.fam-ftabs .tnd-tab.is-active');
     window.__famFrom = portal ? { f: portal._fam, tab: tabBtn ? tabBtn.getAttribute('data-ftab') : 'children', scroll: body ? body.scrollTop : 0, child: String(id) } : null;
+    /* ONE PAGE DEEPER, IN THE SAME WINDOW (7.1): the family's head and tabs stay, and the child
+       opens under them, in place, with no slide, the way a new child is added. Back, a family tab
+       or closing the family leaves the child (family-review.js). */
+    if (portal && document.documentElement.classList.contains('fam-b') && window.TndListDrawer && typeof window.TndListDrawer.openRecord === 'function') {
+      var bar = portal.querySelector('.fam-ftabs');
+      document.documentElement.style.setProperty('--fb-top', (bar ? Math.round(bar.getBoundingClientRect().bottom) : 110) + 'px');
+      var famPane = portal.querySelector('.tnd-pane');
+      document.documentElement.style.setProperty('--fb-left', (famPane ? Math.round(famPane.getBoundingClientRect().left) : 0) + 'px');
+      document.documentElement.classList.add('fb-childopen', 'fb-childedit');
+      window.__fbOpenAt = Date.now();
+      var openIt = function () {
+        window.__fbOpenAt = Date.now();
+        window.TndListDrawer.openRecord('children/edit/' + id, { id: id, name: name });
+        // Inside the family the child is edited in the same steps as a new child (family-review.js).
+        (function toEdit(n) {
+          var b = document.getElementById('tndDrawerEdit'), dr = document.getElementById('tndDrawer');
+          if (b && dr && dr.classList.contains('is-readonly') && document.getElementById('tndDrawerBody') && document.getElementById('tndDrawerBody').classList.contains('is-ready')) { b.click(); return; }
+          if (n < 60) setTimeout(function () { toEdit(n + 1); }, 100);
+        })(0);
+      };
+      // A child panel left in edit by a save is reset first, past its own closing (240ms).
+      var was = document.getElementById('tndDrawer');
+      if (was && (was.classList.contains('is-editing') || !was.hidden)) { window.TndListDrawer.close(true); setTimeout(openIt, 280); }
+      else openIt();
+      setTimeout(function () {
+        var dr = document.getElementById('tndDrawer');
+        if (dr && !dr.hidden && !dr.classList.contains('is-open')) dr.classList.add('is-open');
+      }, 400);
+      return;
+    }
     if (portal) portal.remove();                        // no slide: the next level replaces it
     document.querySelectorAll('.fam-row.is-open').forEach(function (r) { r.classList.remove('is-open'); });
     STATE.open = null;
@@ -3050,6 +3123,15 @@
     famName: famName, payerOf: payerOf, primaryOf: primaryOf, emergOf: emergList, canPay: canPay, esc: esc,
     isPro: isPro, isParentC: isParentC, phoneOf: phoneOf, accessOf: accessOf, undo: famUndo, info: INFO, sw: swHtml,
     backTo: function (f, tab, scroll) {
+      // The child opened inside the family: leaving it shows the family, still where it was.
+      var open = document.querySelector('.fam-portal');
+      if (document.documentElement.classList.contains('fb-childopen') && open && open._fam === f) {
+        if (window.TndListDrawer) window.TndListDrawer.close(true);
+        document.documentElement.classList.remove('fb-childopen', 'fb-childedit');
+        var cur = open.querySelector('.fam-ftabs .tnd-tab.is-active');
+        if (tab && (!cur || cur.getAttribute('data-ftab') !== tab)) { var t = open.querySelector('[data-ftab="' + tab + '"]'); if (t) t.click(); }
+        return;
+      }
       if (window.TndListDrawer) window.TndListDrawer.close(true);
       var go = function () {
         var portal = openDrawer(f, tab || 'children', { instant: true });
@@ -3633,8 +3715,8 @@
     var syncEm = function () {
       var v = rel ? rel.value || '' : '';
       var hide = /^(car_service|doctor|pediatrician|other_doctor|therapist|caseworker)$/i.test(v) || card._access === 'full';
+      // Hidden, never erased (house rule): the setting is kept and comes back when it applies again.
       em.style.display = hide ? 'none' : '';
-      if (hide && card._emerg) { card._emerg = false; em.querySelector('input').checked = false; em.querySelector('.fam-sw').classList.remove('is-on'); }
     };
     if (rel) rel.addEventListener('change', syncEm);
     acc.addEventListener('click', function () { setTimeout(syncEm, 0); });
