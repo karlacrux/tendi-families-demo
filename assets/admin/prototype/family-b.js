@@ -597,7 +597,7 @@
     ],
     Health: [
       ['Allergies and conditions', [/allerg/i, /medical/i]],
-      ['Pediatrician', [/pediatrician/i]],
+      ['Doctor', [/pediatrician/i, /^doctor/i]],
       ['Therapy', [/./]]
     ],
     Transportation: [

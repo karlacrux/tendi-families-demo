@@ -8,7 +8,10 @@
      7.2  no Enrollment tab: "Change registration" opens the registration as a wizard,
           each step showing the tab its answers belong to. Nothing is stored twice.
      7.3  a Forms and immunizations tab (read from the Vaccines and forms data in PHP).
+     5.2  on Health, the child's doctor is the family's Doctor contact (one Doctor type).
      6.2  on Tuition, who pays for this child: the family's payer unless overridden.
+     5.1  a Pick-up tab: who may pick up this child, always or for a date range. A separate
+          permission from Emergency contact. View reads; Edit adds family contacts, and Save keeps it.
    Sample data only; nothing is saved anywhere.
 --------------------------------------------------------------------------- */
 (function () {
@@ -66,31 +69,47 @@
       }).join('') + '</div>' +
       '<p class="fam-panel-note">The same data as Vaccines and forms, read from it: no second copy. The documents page stays for forms handled by classroom.</p>';
   }
-  function addFormsTab(d, id) {
-    var view = d.querySelector('.tnd-pane-view'), strip = view && view.querySelector(':scope > .tnd-tabs');
-    var had = strip && strip.querySelector('[data-tab="fi"]');
-    if (had) { if (strip.lastElementChild !== had) strip.appendChild(had); return; }   // the app reorders its tabs: keep this one last
-    if (!strip) return;
+  /* The child panel has two panes, View and Edit, each with its own tab strip. Our tabs go in both,
+     so the two always show the same tabs: View reads, Edit changes, and Save keeps the changes. */
+  function panes(d) { return [d.querySelector('.tnd-pane-view'), d.querySelector('.tnd-pane-edit')].filter(Boolean); }
+  function isEditPane(p) { return p.classList.contains('tnd-pane-edit'); }
+  // Add a tab and its panel to one pane, once. `before` keeps it ahead of another of our tabs, since
+  // the app reorders its tabs.
+  function addTab(pane, key, label, icon, cls, before) {
+    var strip = pane.querySelector(':scope > .tnd-tabs');
+    if (!strip) return null;
+    var had = strip.querySelector('[data-tab="' + key + '"]');
+    var nextTo = before ? strip.querySelector('[data-tab="' + before + '"]') : null;
+    if (had) {
+      if (nextTo) { if (had.nextElementSibling !== nextTo) strip.insertBefore(had, nextTo); }
+      else if (strip.lastElementChild !== had) strip.appendChild(had);
+      return null;
+    }
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'tnd-tab fr-fitab';
-    btn.setAttribute('data-tab', 'fi');
-    btn.setAttribute('data-tab-name', 'Forms and immunizations');
-    btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="m9 15 2 2 4-4"/></svg> Forms and immunizations';
-    strip.appendChild(btn);
-    var pane = document.createElement('section');
-    pane.className = 'vB-group fr-fipane';
-    pane.setAttribute('data-panel', 'fi');
-    pane.hidden = true;
-    pane.innerHTML = formsHtml(id);
-    view.appendChild(pane);
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      showPanel(view, 'fi');
-    });
+    btn.className = 'tnd-tab ' + cls + 'tab';
+    btn.setAttribute('data-tab', key);
+    btn.setAttribute('data-tab-name', label);
+    btn.innerHTML = icon + ' ' + label;
+    strip.insertBefore(btn, nextTo || null);
+    var sec = document.createElement('section');
+    sec.className = 'vB-group ' + cls + 'pane';
+    sec.setAttribute('data-panel', key);
+    sec.hidden = true;
+    pane.appendChild(sec);
+    btn.addEventListener('click', function (e) { e.stopPropagation(); showPanel(pane, key); });
     strip.addEventListener('click', function (e) {
       var t = e.target.closest('.tnd-tab');
-      if (t && t !== btn) { pane.hidden = true; btn.classList.remove('is-active'); }
+      if (t && t !== btn) { sec.hidden = true; btn.classList.remove('is-active'); }
+    });
+    return sec;
+  }
+  var FI_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="m9 15 2 2 4-4"/></svg>';
+  // Forms are read from Vaccines and forms: the same read-only list in View and Edit.
+  function addFormsTab(d, id) {
+    panes(d).forEach(function (p) {
+      var sec = addTab(p, 'fi', 'Forms and immunizations', FI_ICON, 'fr-fi');
+      if (sec) sec.innerHTML = formsHtml(id) + (isEditPane(p) ? '<p class="fam-panel-note">Not edited here: forms are updated on Vaccines and forms.</p>' : '');
     });
   }
   function showPanel(view, key) {
@@ -98,29 +117,231 @@
     view.querySelectorAll(':scope > .tnd-tabs .tnd-tab').forEach(function (t) { t.classList.toggle('is-active', t.getAttribute('data-tab') === String(key)); });
   }
 
-  /* ---- 6.2 who pays for this child -------------------------------------------------------- */
-  function addPayer(d, id, fam) {
-    var view = d.querySelector('.tnd-pane-view'), tuition = view && view.querySelector(':scope > .vB-group[data-panel="7"]');
-    if (!tuition || !fam || tuition.querySelector('.fr-payer')) return;
-    var f = fam.f, fp = FR().payerOf(f);
-    f.childPayer = f.childPayer || {};
-    var cur = f.childPayer[id];
-    var box = document.createElement('div');
-    box.className = 'fr-payer';
-    box.innerHTML = '<label><span>Who pays for ' + esc(childFirst(d)) + '</span><select class="form-control" aria-label="Who pays for this child">' +
-      '<option value="">The family’s payer' + (fp ? ' · ' + esc(fp.n) : '') + '</option>' +
-      (f.contacts || []).filter(FR().canPay).map(function (c) {
-        var i = f.contacts.indexOf(c);
-        return '<option value="' + i + '"' + (cur === i ? ' selected' : '') + '>' + esc(c.n + ' · ' + c.t) + '</option>';
-      }).join('') + '</select></label><small>Charges are the family’s, with a line per child. A different payer here is the exception.</small>';
-    var label = tuition.querySelector('.vB-group-label');
-    if (label) label.parentNode.insertBefore(box, label.nextSibling); else tuition.insertBefore(box, tuition.firstChild);
-    box.querySelector('select').addEventListener('change', function (e) {
-      var v = e.target.value;
-      if (v === '') delete f.childPayer[id]; else f.childPayer[id] = +v;
-      toast(v === '' ? 'Back to the family’s payer.' : 'Payer for ' + childFirst(d) + ' changed.');
+  /* ---- 5.1 who may pick up this child --------------------------------------------------- */
+  var PU_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg>';
+  var TRASH = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
+  // The family's people who can be given the permission: everyone but professionals (doctor, car service).
+  function puPeople(f) { return (f.contacts || []).filter(function (c) { return !FR().isPro(c.t); }); }
+  // Full access: may pick up, always, by default. Anyone else only when added; in the sample data
+  // an aunt, uncle, nanny or family friend may pick up for the school year.
+  function puOf(c, id) {
+    c.pickup = c.pickup || {};
+    if (!c.pickup[id]) {
+      var full = FR().accessOf(c) === 'full';
+      var dated = !full && /^(aunt|uncle|nanny|babysitter|family friend)$/i.test(c.t || '');
+      c.pickup[id] = full ? { on: true, always: true, from: '', to: '' }
+        : dated ? { on: true, always: false, from: '2026-09-01', to: '2027-06-30' }
+        : { on: false, always: true, from: '', to: '' };
+    }
+    return c.pickup[id];
+  }
+  var usDate = function (v) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? (+m[2]) + '/' + (+m[3]) + '/' + m[1] : ''; };
+  function puWhen(p) {
+    if (p.always) return 'Always';
+    if (p.from && p.to) return usDate(p.from) + ' to ' + usDate(p.to);
+    if (p.from) return 'From ' + usDate(p.from);
+    if (p.to) return 'Until ' + usDate(p.to);
+    return 'Dates not set';
+  }
+  function puTitle(d, edit) {
+    return '<h3 class="vB-group-label">Who may pick up ' + esc(childFirst(d)) + FR().info(edit
+      ? 'Add people from the family’s contacts. Always is on by default; untick it to give a date range. Save keeps the changes.'
+      : 'A separate permission from Emergency contact: being called in an emergency does not let someone collect ' + childFirst(d) + '.') + '</h3>';
+  }
+  function who(c) { return '<div class="fr-puwho"><b>' + esc(c.n) + '</b><small>' + esc(c.t || 'Contact') + (c.emerg ? ' · Emergency contact' : '') + '</small></div>'; }
+  // View: who may pick up, and when. Nothing to change here.
+  function puViewHtml(d, id, f) {
+    var on = puPeople(f).filter(function (c) { return puOf(c, id).on; });
+    return puTitle(d, false) + (on.length
+      ? '<div class="fr-pulist">' + on.map(function (c) {
+          var p = puOf(c, id);
+          return '<div class="fr-pu is-on">' + who(c) + '<span class="fr-puwhen' + (p.always ? '' : ' is-dated') + '">' + esc(puWhen(p)) + '</span></div>';
+        }).join('') + '</div>'
+      : '<p class="fr-wiztext">No one may pick up ' + esc(childFirst(d)) + ' yet. Use Edit to add someone from the family’s contacts.</p>');
+  }
+  // Edit: the same people, with Always or a date range, a way to remove them, and a way to add
+  // another family contact. Works on a draft; Save keeps it.
+  function puEditHtml(d, id, f, draft) {
+    var people = puPeople(f);
+    var on = people.filter(function (c) { var p = draft[f.contacts.indexOf(c)]; return p && p.on; });
+    var off = people.filter(function (c) { return on.indexOf(c) < 0; });
+    return puTitle(d, true) +
+      (on.length ? '<div class="fr-pulist">' + on.map(function (c) {
+        var i = f.contacts.indexOf(c), p = draft[i];
+        return '<div class="fr-pu is-on" data-ci="' + i + '">' + who(c) +
+          '<label class="fr-pualways"><input type="checkbox" data-pu="always"' + (p.always ? ' checked' : '') + '> Always</label>' +
+          '<div class="fr-pudates"' + (p.always ? ' hidden' : '') + '>' +
+            '<label><span>From</span><input type="date" class="form-control" data-pu="from" value="' + esc(p.from) + '"></label>' +
+            '<label><span>To</span><input type="date" class="form-control" data-pu="to" value="' + esc(p.to) + '"></label></div>' +
+          '<button type="button" class="fr-pudel" aria-label="Remove ' + esc(c.n) + ' from pick-up" title="Remove">' + TRASH + '</button>' +
+        '</div>';
+      }).join('') + '</div>' : '<p class="fr-wiztext">No one may pick up ' + esc(childFirst(d)) + ' yet.</p>') +
+      (off.length ? '<select class="form-control fr-puadd" aria-label="Add a family contact who may pick up"><option value="">Add a family contact…</option>' +
+          off.map(function (c) { return '<option value="' + f.contacts.indexOf(c) + '">' + esc(c.n + ' · ' + (c.t || 'Contact')) + '</option>'; }).join('') + '</select>' : '') +
+      '<p class="fam-panel-note">Only the family’s contacts are listed. To add someone new, add them on the family’s Contacts tab first.</p>';
+  }
+  function puDraft(id, f) {
+    var dr = {};
+    puPeople(f).forEach(function (c) { dr[f.contacts.indexOf(c)] = JSON.parse(JSON.stringify(puOf(c, id))); });
+    return dr;
+  }
+  function drawPuEdit(sec, d, id, f) {
+    var draft = sec._draft;
+    sec.innerHTML = puEditHtml(d, id, f, draft);
+    var redraw = function () { drawPuEdit(sec, d, id, f); };
+    sec.querySelectorAll('.fr-pu').forEach(function (row) {
+      var p = draft[+row.getAttribute('data-ci')];
+      row.querySelector('[data-pu="always"]').addEventListener('change', function (e) { p.always = e.target.checked; redraw(); });
+      row.querySelectorAll('[data-pu="from"], [data-pu="to"]').forEach(function (inp) {
+        inp.addEventListener('change', function () {
+          var k = inp.getAttribute('data-pu');
+          if (k === 'to' && inp.value && p.from && inp.value < p.from) { toast('The end date is before the start date.', true); inp.value = p.to; return; }
+          if (k === 'from' && inp.value && p.to && inp.value > p.to) { toast('The start date is after the end date.', true); inp.value = p.from; return; }
+          p[k] = inp.value;
+        });
+      });
+      row.querySelector('.fr-pudel').addEventListener('click', function () { p.on = false; redraw(); });
+    });
+    var add = sec.querySelector('.fr-puadd');
+    if (add) add.addEventListener('change', function () {
+      if (add.value === '') return;
+      Object.assign(draft[+add.value], { on: true, always: true });
+      redraw();
     });
   }
+  function addPickupTab(d, id, fam) {
+    if (!fam) return;
+    var f = fam.f;
+    panes(d).forEach(function (p) {
+      var edit = isEditPane(p), sec = addTab(p, 'pu', 'Pick-up', PU_ICON, 'fr-pu', 'fi');
+      if (!sec) return;
+      if (edit) { sec._draft = puDraft(id, f); drawPuEdit(sec, d, id, f); }
+      else sec.innerHTML = puViewHtml(d, id, f);
+    });
+  }
+
+  /* ---- 5.2 the child's doctor is the family's Doctor contact ------------------------------ */
+  // The registration (Health) shows the family's Doctor: the same record as on the family's Contacts
+  // tab, not three boxes of text. View and Edit show it the same way; it is changed on the family.
+  function doctorsOf(f) { return (f.contacts || []).filter(function (c) { return /^doctor$/i.test(c.t || ''); }); }
+  function docAddr(c) {
+    var a = (c.addrs || []).filter(function (x) { return !x.off && x.value; })[0];
+    return a ? a.value : (c.addr || '');
+  }
+  function doctorHtml(f, d) {
+    var docs = doctorsOf(f);
+    var info = window.famInfo ? window.famInfo('The family’s doctor, from the family’s Contacts. To change it, edit the family.') : '';
+    return '<div class="fr-dochead"><span>Doctor' + info + '</span><a href="javascript:void(0);" class="fr-docgo">Family contacts</a></div>' +
+      (docs.length ? docs.map(function (c) {
+        var ph = FR().phoneOf(c, f), ad = docAddr(c);
+        return '<div class="fr-doc"><b>' + esc(c.n) + '</b>' + (ph ? '<span>' + esc(ph) + '</span>' : '') + (ad ? '<span>' + esc(String(ad).replace(/,?\s*USA$/i, '')) + '</span>' : '') + '</div>';
+      }).join('') : '<p class="fr-docnone">No doctor on file. Add one on the family’s Contacts tab, with the relationship Doctor.</p>');
+  }
+  function addDoctor(d, id, fam) {
+    if (!fam) return;
+    var f = fam.f;
+    panes(d).forEach(function (p) {
+      var health = p.querySelector(':scope > .vB-group[data-panel="2"]');
+      if (!health) return;
+      var box = health.querySelector('.fr-docbox');
+      if (!isEditPane(p)) {
+        // The old pediatrician rows give way to the family's Doctor.
+        health.querySelectorAll('.vB-row').forEach(function (r) {
+          var l = r.querySelector('.vB-row-label');
+          if (l && /^pediatrician/i.test(l.textContent.trim())) { r.hidden = true; r.classList.add('fr-oldped'); r.style.display = 'none'; }
+        });
+        if (box) return;
+        var list = health.querySelector('.vB-list') || health;
+        box = document.createElement('div');
+        box.className = 'vB-row fr-docbox';
+        box.style.order = '201';
+        list.appendChild(box);
+      } else {
+        var old = health.querySelector('.cm-pedi');
+        if (old) old.style.display = 'none';     // its old columns still post: they get the Doctor below
+        if (box) return;
+        box = document.createElement('div');
+        box.className = 'fr-docbox fr-docedit';
+        if (old) old.parentNode.insertBefore(box, old); else health.appendChild(box);
+        // Down-sync: the old columns (and the child form PDF) read the family's Doctor.
+        var doc = doctorsOf(f)[0], set = function (n, v) { var e = p.querySelector('[name="' + n + '"]'); if (e) e.value = v; };
+        if (doc) { set('reg_pediatrician_name', doc.n); set('reg_pediatrician_phone', FR().phoneOf(doc, f)); set('reg_pediatrician_address', String(docAddr(doc)).replace(/,?\s*USA$/i, '')); }
+      }
+      box.innerHTML = doctorHtml(f, d);
+      box.querySelector('.fr-docgo').addEventListener('click', function () { FR().backTo(f, 'contacts', 0); });
+    });
+  }
+
+  /* ---- 6.2 who pays for this child -------------------------------------------------------- */
+  function payerText(f, id) {
+    var cur = (f.childPayer || {})[id], fp = FR().payerOf(f);
+    var c = cur != null ? (f.contacts || [])[cur] : null;
+    return c ? esc(c.n + ' · ' + c.t) + ' <small>instead of the family’s payer</small>' : 'The family’s payer' + (fp ? ' · ' + esc(fp.n) : '');
+  }
+  function addPayer(d, id, fam) {
+    if (!fam) return;
+    var f = fam.f;
+    f.childPayer = f.childPayer || {};
+    panes(d).forEach(function (p) {
+      var tuition = p.querySelector(':scope > .vB-group[data-panel="7"]');
+      if (!tuition || tuition.querySelector('.fr-payer')) return;
+      var box = document.createElement('div');
+      box.className = 'fr-payer';
+      var info = window.famInfo ? window.famInfo('Charges are the family’s, with a line per child. A different payer here is the exception.') : '';
+      if (!isEditPane(p)) {
+        box.innerHTML = '<span class="fr-payerlbl">Who pays for ' + esc(childFirst(d)) + info + '</span><span class="fr-payerval">' + payerText(f, id) + '</span>';
+      } else {
+        var fp = FR().payerOf(f), cur = f.childPayer[id];
+        box.innerHTML = '<label><span>Who pays for ' + esc(childFirst(d)) + info + '</span><select class="form-control" data-fr="payer" aria-label="Who pays for this child">' +
+          '<option value="">The family’s payer' + (fp ? ' · ' + esc(fp.n) : '') + '</option>' +
+          (f.contacts || []).filter(FR().canPay).map(function (c) {
+            var i = f.contacts.indexOf(c);
+            return '<option value="' + i + '"' + (cur === i ? ' selected' : '') + '>' + esc(c.n + ' · ' + c.t) + '</option>';
+          }).join('') + '</select></label>';
+      }
+      var label = tuition.querySelector('.vB-group-label');
+      if (label) label.parentNode.insertBefore(box, label.nextSibling); else tuition.insertBefore(box, tuition.firstChild);
+    });
+  }
+
+  /* Edit opens: start from what is saved. Save: keep the pick-up and payer changes, then View shows
+     them. Cancel: nothing is kept. */
+  function resetEdit(d, id, fam) {
+    var ep = d.querySelector('.tnd-pane-edit');
+    if (!ep || !fam) return;
+    var sec = ep.querySelector(':scope > .fr-pupane');
+    if (sec) { sec._draft = puDraft(id, fam.f); drawPuEdit(sec, d, id, fam.f); }
+    var sel = ep.querySelector('[data-fr="payer"]');
+    if (sel) { var cur = (fam.f.childPayer || {})[id]; sel.value = cur == null ? '' : String(cur); }
+  }
+  function saveEdit(d, id, fam) {
+    var ep = d.querySelector('.tnd-pane-edit'), vp = d.querySelector('.tnd-pane-view');
+    if (!ep || !fam) return;
+    var f = fam.f, sec = ep.querySelector(':scope > .fr-pupane');
+    if (sec && sec._draft) {
+      puPeople(f).forEach(function (c) {
+        var dr = sec._draft[f.contacts.indexOf(c)];
+        if (dr && !dr.always && !dr.from && !dr.to) dr.always = true;   // no dates given: no limit
+        if (dr) Object.assign(puOf(c, id), dr);
+      });
+      var vsec = vp && vp.querySelector(':scope > .fr-pupane');
+      if (vsec) vsec.innerHTML = puViewHtml(d, id, f);
+    }
+    var sel = ep.querySelector('[data-fr="payer"]');
+    if (sel) {
+      if (sel.value === '') delete f.childPayer[id]; else f.childPayer[id] = +sel.value;
+      var val = vp && vp.querySelector('.fr-payer .fr-payerval');
+      if (val) val.innerHTML = payerText(f, id);
+    }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#tndDrawerEdit, #tndDrawerSave');
+    var d = drawer();
+    if (!b || !d || !FR()) return;
+    var id = childId(d), fam = id && FR().familyOfChild(id);
+    if (!fam) return;
+    if (b.id === 'tndDrawerEdit') resetEdit(d, id, fam); else saveEdit(d, id, fam);
+  }, true);
 
   /* ---- 7.2 registration as a wizard -------------------------------------------------------- */
   var STEPS = [
@@ -131,6 +352,7 @@
     { k: 'transport', t: 'Transportation', panel: '3' },
     { k: 'tuition', t: 'Tuition and payer', panel: '7' },
     { k: 'emergency', t: 'Emergency contacts' },
+    { k: 'pickup', t: 'Who may pick up', panel: 'pu' },
     { k: 'forms', t: 'Forms', panel: 'fi' },
     { k: 'review', t: 'Review' }
   ];
@@ -217,6 +439,8 @@
     var fam = FR().familyOfChild(id);
     decorateHead(d, id, fam);
     addFormsTab(d, id);
+    addPickupTab(d, id, fam);
+    addDoctor(d, id, fam);
     addPayer(d, id, fam);
     if (d.classList.contains('is-readonly')) addRegButton(d, id, fam);
   }

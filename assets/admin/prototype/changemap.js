@@ -1271,7 +1271,7 @@
      everyone else, in this order. */
   var CONTACT_TYPES = ['mother', 'father', 'step_mother', 'step_father', 'grandmother', 'grandfather',
     'aunt', 'uncle', 'sibling', 'legal_guardian', 'foster_parent', 'family_friend', 'babysitter',
-    'car_service', 'pediatrician', 'other_doctor', 'therapist', 'caseworker', 'other'];
+    'car_service', 'doctor', 'therapist', 'caseworker', 'other'];
 
   var STANDS_FOR_PARENT = ['mother', 'father', 'step_mother', 'step_father',
                            'legal_guardian', 'foster_parent'];
@@ -2646,7 +2646,7 @@
 
     var wrap = document.createElement('div');
     wrap.className = 'cm-others cm-pedi';
-    wrap.innerHTML = '<div class="cm-personhead">Pediatrician' +
+    wrap.innerHTML = '<div class="cm-personhead">Doctor' +
       '<span class="cm-tag" style="position:static;margin-left:8px">to contact_links</span></div>';
     host.insertBefore(wrap, g0);
 
@@ -2656,7 +2656,7 @@
     if (rm) rm.remove();
     wrap.appendChild(card);
     var sel = card.querySelector('.cm-ptype select');
-    if (sel) { sel.value = 'pediatrician'; sel.dispatchEvent(new Event('change')); }
+    if (sel) { sel.value = 'doctor'; sel.dispatchEvent(new Event('change')); }
 
     var legacy = document.createElement('details');
     legacy.className = 'cm-pmore cm-plegacy';

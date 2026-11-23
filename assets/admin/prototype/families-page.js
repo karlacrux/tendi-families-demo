@@ -41,7 +41,7 @@
     if (FAMILIES !== null) return Promise.resolve();
     return fetch('/tendi-families-demo/assets/admin/prototype/families.json')
       .then(function (r) { return r.json(); })
-      .then(function (d) { FAMILIES = d.families || []; seedRelationships(); seedPhones(); seedHebrew(); seedExtras(); })
+      .then(function (d) { FAMILIES = d.families || []; oneDoctorType(); seedRelationships(); seedPhones(); seedHebrew(); seedExtras(); })
       .catch(function () { FAMILIES = []; });
   }
 
@@ -144,7 +144,7 @@
           c.phones = ph;
         }
         // The pediatrician: a practice phone, email and an address of its own.
-        if (/^pediatrician$/i.test(c.t || '') && !c.addrs) {
+        if (/^doctor$/i.test(c.t || '') && !c.addrs) {
           c.p = c.p || '(732) 555-0400';
           c.phones = [{ type: 'Work', value: c.p, primary: true, perm: NO_PERM, msg: 'None' }];
           c.emails = [{ type: 'Work', value: 'office@littlesteps-peds.example.com', primary: true }];
@@ -213,6 +213,13 @@
     });
   }
 
+  /* ONE DOCTOR TYPE (design review 11/18, 5.2): Pediatrician and Other doctor are one relationship,
+     Doctor. The data on file still says Pediatrician; it reads as Doctor. */
+  function oneDoctorType() {
+    (FAMILIES || []).forEach(function (f) {
+      (f.contacts || []).forEach(function (c) { if (/^(pediatrician|other doctor)$/i.test(c.t || '')) c.t = 'Doctor'; });
+    });
+  }
   function seedRelationships() {
     var byName = function (n) { return (FAMILIES || []).filter(function (f) { return f.n === n; })[0]; };
     SEED.forEach(function (x) {
@@ -477,9 +484,9 @@
   // A parent's access level (6.1); other contacts carry no level of their own.
   function badge(c) {
     var em = c.emerg && !isPro(c.t) ? '<span class="fam-pill fam-empill">Emergency</span>' : '';
-    if (!/^(mother|father)$/i.test(c.t || '')) return em;
+    if (isPro(c.t)) return em;
     var lv = accessOf(c);
-    return em + '<span class="cm-permnote fam-badge' + (lv === 'full' ? '' : ' limited') + '">' + ACCESS_TEXT[lv] + '</span>';
+    return em + '<span class="cm-permnote fam-badge' + (lv === 'full' ? '' : lv === 'payment' ? ' limited' : ' none') + '">' + ACCESS_TEXT[lv] + '</span>';
   }
 
   function emailCell(c, cls) {
@@ -623,11 +630,11 @@
   /* RELATIONSHIPS — one list, no categories (owner, 2026-10-02): parents first,
      then family, then everyone else, in the order the office knows. */
   var TYPES = ['Mother', 'Father', 'Step mother', 'Step father', 'Grandmother', 'Grandfather', 'Aunt', 'Uncle',
-    'Sibling', 'Legal guardian', 'Foster parent', 'Family friend', 'Babysitter', 'Car service', 'Pediatrician',
-    'Other doctor', 'Therapist', 'Caseworker', 'Other'];
+    'Sibling', 'Legal guardian', 'Foster parent', 'Family friend', 'Babysitter', 'Car service', 'Doctor',
+    'Therapist', 'Caseworker', 'Other'];
   // A business or a practice ("Bright Start", a car service) has one name, not a first and
   // a last, and the same name is the same record. A babysitter or a therapist is a person.
-  function isPro(t) { return /^(pediatrician|other doctor|car service)$/i.test(String(t || '')); }
+  function isPro(t) { return /^(doctor|pediatrician|other doctor|car service)$/i.test(String(t || '')); }
   function permLevel(c) {
     if (c.perm) return c.perm;
     return PARENT_STANDING.test(c.t || '') ? 'full' : 'none';
@@ -657,7 +664,7 @@
   var FILTER_GROUPS = [
     ['Parents', ['Mother', 'Father', 'Legal guardian', 'Foster parent']],
     ['Other family members', ['Step mother', 'Step father', 'Grandmother', 'Grandfather', 'Aunt', 'Uncle', 'Sibling']],
-    ['Professionals', ['Babysitter', 'Car service', 'Pediatrician', 'Other doctor', 'Therapist', 'Caseworker']],
+    ['Professionals', ['Babysitter', 'Car service', 'Doctor', 'Therapist', 'Caseworker']],
     ['Others', ['Family friend', 'Other']]
   ];
   function inFilter(p, g) {
@@ -868,8 +875,16 @@
 
   /* ACCESS LEVEL (6.1): Full or Payment only, per parent per family. It belongs to the parent's
      portal login; until those exist in the new system it sits on the family membership. */
-  function accessOf(c) { return c && c.access === 'payment' ? 'payment' : 'full'; }
-  var ACCESS_TEXT = { full: 'Full access', payment: 'Payment only' };
+  /* Three levels (as reviewed 11/20): Full, Payment only, No access. A parent is Full by default, anyone
+     else No access by default; a professional (pediatrician, car service) is always No access. */
+  var ACCESS_LEVELS = ['full', 'payment', 'none'];
+  function accessOf(c) {
+    if (!c) return 'full';
+    if (isPro(c.t)) return 'none';
+    if (ACCESS_LEVELS.indexOf(c.access) > -1) return c.access;
+    return isParentC(c) ? 'full' : 'none';
+  }
+  var ACCESS_TEXT = { full: 'Full access', payment: 'Payment only', none: 'No access' };
 
   /* PHONE NUMBERS (section 3). Each number carries its own Text, MMS and Voice permissions. The
      family has one primary number that receives notifications; any other number with a
@@ -930,7 +945,7 @@
   /* An emergency contact is one of the family's contacts with "Emergency contact" on (c.emerg) and a
      place in the calling order (c.emergOrder). The Contacts tab and the Emergency contacts tab show the
      same records, so a change in one is in the other. */
-  var EMERG_RELS = TYPES.filter(function (t) { return !/^(car service|pediatrician|other doctor|therapist|caseworker)$/i.test(t); });
+  var EMERG_RELS = TYPES.filter(function (t) { return !/^(car service|doctor|pediatrician|other doctor|therapist|caseworker)$/i.test(t); });
   function emergOf(f) {
     return (f.contacts || []).filter(function (c) { return c.emerg && !isPro(c.t); })
       .sort(function (a, b) { return (a.emergOrder || 0) - (b.emergOrder || 0); });
@@ -1085,14 +1100,26 @@
   function famPop(title, bodyHtml, okLabel, onOk, danger) {
     var pane = document.querySelector('.fam-setportal .tnd-pane') || document.querySelector('.fam-portal .tnd-pane');
     if (!pane) return null;
-    var old = pane.querySelector('.fam-pop'); if (old) old.remove();
+    // A child form opened from the family sits on top of it (its own panel): the pop-up then goes in
+    // a layer above both, over the family's panel, or it would be hidden behind the form with only
+    // its shade showing.
+    var child = document.getElementById('tndDrawer'), host = pane;
+    document.querySelectorAll('.fam-pop').forEach(function (o) { o.remove(); });
+    if (child && !child.hidden && child.classList.contains('is-open') && pane.closest('.fam-portal')) {
+      var r = child.getBoundingClientRect();                    // the right-hand panel, header included
+      host = document.createElement('div');
+      host.className = 'tendi-skin fam-poplayer';
+      host.style.cssText = 'background:transparent;position:fixed;z-index:3200;top:0;bottom:0;right:0;left:' + Math.max(0, r.left) + 'px';
+      document.body.appendChild(host);
+    }
     var pop = document.createElement('div');
     pop.className = 'fam-pop';
     pop.innerHTML = '<div class="fam-pop-card" role="dialog" aria-modal="true" aria-label="' + esc(title) + '">' +
       '<h3 class="fam-pop-title">' + esc(title) + '</h3><div class="fam-pop-body">' + bodyHtml + '</div>' +
       '<div class="fam-pop-acts"><button type="button" class="btn-sm fam-pop-cancel">Cancel</button>' +
       '<button type="button" class="btn-sm ' + (danger ? 'fam-pop-danger' : 'primary') + ' fam-pop-ok">' + esc(okLabel) + '</button></div></div>';
-    pane.appendChild(pop);
+    host.appendChild(pop);
+    if (host !== pane) { var rm = pop.remove.bind(pop); pop.remove = function () { rm(); host.remove(); }; }
     var close = function () { pop.remove(); if (pop._onCancel) pop._onCancel(); };
     pop.querySelector('.fam-pop-cancel').addEventListener('click', close);
     pop.addEventListener('click', function (e) { if (e.target === pop) close(); });
@@ -1301,6 +1328,8 @@
       delete f.bFlow; delete f.creating;
       f.draft = true;
       refresh();
+      var ch = document.getElementById('tndDrawer');           // a child form left open on top closes too
+      if (ch && !ch.hidden && ch.classList.contains('is-open') && window.TndListDrawer) window.TndListDrawer.close(true);
       closeDrawer();
       if (window.tndToast) window.tndToast.success('Saved as a draft.' + (moved ? (moved === 1 ? ' The child is' : ' The children are') + ' on the waiting list until the family is complete.' : ' Open the family any time to finish it.'));
     };
@@ -1318,7 +1347,12 @@
           return '<li>' + esc(m.text) + '</li>';
         }).join('') + '</ul><p class="fam-pop-note">Or save it as a draft and finish later. Everything entered so far is kept' +
           ((f.extra || []).some(function (k) { return k.s === 'enrolled'; }) ? ', and the children go on the waiting list until the family is complete.' : '.') + '</p>',
-        'Complete now', function () { leave(miss[0].tab, true); });
+        'Complete now', function () {
+          // From a child form still open on top: back to it. Otherwise to the first thing missing.
+          var ch = document.getElementById('tndDrawer');
+          if (ch && !ch.hidden && ch.classList.contains('is-open')) return;
+          leave(miss[0].tab, true);
+        });
       if (pop) {
         var cancel = pop.querySelector('.fam-pop-cancel'), keep = cancel.cloneNode(true);
         keep.textContent = 'Save as draft, finish later';
@@ -1473,7 +1507,7 @@
         .replace('<div class="vB-row"', '<a class="vB-row vB-row--action fam-toperson" data-person="' +
         esc(pkey(c)) + '" href="javascript:void(0);"').replace(/<\/div>$/, DI.cta + '</a>') +
       (c.heb ? vRow(DI.person, 'Hebrew name', c.heb) : '') +
-      (isParentC(c) ? vRow(DI.person, 'Access', ACCESS_TEXT[accessOf(c)]) : '') +
+      (!isPro(c.t) ? vRow(DI.person, 'Access', ACCESS_TEXT[accessOf(c)]) : '') +
       (c.emerg && !isPro(c.t) ? vRow(DI.phone, 'Emergency contact', 'Number ' + (emergOf(f).indexOf(c) + 1) + ' to call') : '') +
       (!isParentC(c) ? (function () {
         var ad = listsOf(c, f).address[0];
@@ -1674,8 +1708,8 @@
     var rel = card.querySelector('.cm-ptype select');
     var allowed = function () {
       var v = rel ? rel.value || '' : '';
-      if (/^(car_service|pediatrician|other_doctor|therapist|caseworker)$/i.test(v)) return false;
-      return !(/^(father|mother)$/i.test(v) && card._access === 'payment');
+      if (/^(car_service|doctor|pediatrician|other_doctor|therapist|caseworker)$/i.test(v)) return false;
+      return card._access !== 'payment';
     };
     var paint = function () {
       var pb = card.querySelector('.cm-multi[data-multi="phone"]');
@@ -2236,8 +2270,7 @@
       var others = otherContacts(f);
       if (!edit) {
         return group('Contacts', (others.length ? others.map(function (c) { return contactView(f, c); }).join('') : '') +
-          '<button type="button" class="reg-add fam-caddview">+ Add contact</button>') +
-          '<p class="fam-panel-note">Anyone here can be made the primary contact, the payer or an emergency contact.</p>';
+          '<button type="button" class="reg-add fam-caddview">+ Add contact</button>');
       }
       return '<section class="vB-group"><h3 class="vB-group-label">Contacts</h3><div class="vB-editcard fam-clist">' +
           others.map(function (c) { return contactSummary(c, f.contacts.indexOf(c)); }).join('') +
@@ -2289,18 +2322,18 @@
     emergency: function (f, edit) {
       var list = emergOf(f);
       // Required once a child is enrolled (5.1): an asterisk on the title says so. Waiting-list children don't count.
-      var title = 'Emergency contacts' + (needsEnrollInfo(f) ? REQ : '');
+      var title = 'Emergency contacts' + (needsEnrollInfo(f) ? REQ : '') + INFO(edit ? 'The order is the calling order: use the arrows. To change someone\u2019s details, edit them on the Contacts tab. A new person is added to Contacts too.' : 'Called in this order when no parent answers. These are the family\u2019s contacts with Emergency contact on, the same people as in Contacts. Picking up a child is a separate permission on each child.');
       if (!edit) {
         return group(title, (list.length ? '<div class="vB-list fam-headed fam-emlist">' + list.map(function (c, i) {
             var p = phoneOf(c, f);
             return '<div class="vB-row fam-emrow"><span class="fam-emn" aria-hidden="true">' + (i + 1) + '</span>' +
               '<span class="vB-row-body"><span class="vB-row-label">' + esc(c.t) + '</span><span class="vB-row-value">' + esc(c.n) + '</span></span>' +
               (p ? '<a class="fam-emphone" href="' + tel(p) + '">' + esc(p) + '</a>' : '<span class="fam-emphone is-none">No phone</span>') + '</div>';
-          }).join('') + '</div><p class="fam-panel-note">Called in this order when no parent answers. These are the family\u2019s contacts with Emergency contact on, the same people as in Contacts. Picking up a child is a separate permission on each child.</p>'
+          }).join('') + '</div>'
           : '') +
           '<button type="button" class="reg-add fam-emaddview">+ Add emergency contact</button>');
       }
-      var others = (f.contacts || []).filter(function (c) { return !isPro(c.t) && !c.emerg && !(isParentC(c) && accessOf(c) === 'full'); });
+      var others = (f.contacts || []).filter(function (c) { return !isPro(c.t) && !c.emerg && accessOf(c) !== 'full'; });
       return '<section class="vB-group"><h3 class="vB-group-label">' + title + '</h3><div class="vB-editcard fam-clist">' +
           '<div class="fam-emrows">' + list.map(function (c, i) { return emergRow(f, c, i + 1); }).join('') + '</div>' +
           '<div class="fam-emnew"></div>' +
@@ -2308,7 +2341,7 @@
           (others.length ? '<select class="form-control fam-emadd-pick" aria-label="Add one of the family\u2019s contacts"><option value="">Add a family contact\u2026</option>' +
             others.map(function (c) { return '<option value="' + (f.contacts || []).indexOf(c) + '">' + esc(c.n + ' \u00b7 ' + c.t) + '</option>'; }).join('') + '</select>' : '') +
           '<button type="button" class="reg-add fam-emadd-new">+ New person</button></div>' +
-          '<p class="fam-panel-note">The order is the calling order: use the arrows. To change someone\u2019s details, edit them on the Contacts tab. A new person is added to Contacts too.</p>' +
+
         '</div></section>';
     },
 
@@ -2640,7 +2673,7 @@
       wrap.querySelector('.fam-cremove').addEventListener('click', function () { wrap.remove(); });
       var sel = card.querySelector('.cm-ptype select');
       if (sel) {
-        if (rel) { sel.value = rel; sel.dispatchEvent(new Event('change')); card.classList.add('fam-fixedrel'); }   // + Add parent: fixed too
+        if (rel) { sel.value = rel; sel.dispatchEvent(new Event('change')); card.classList.add('fam-fixedrel', 'fam-newparentcard'); }   // + Add parent: fixed, Full or Payment only
         else sel.focus();
       }
     });
@@ -2668,6 +2701,8 @@
         if (sel) { sel.value = hostEl.getAttribute('data-rel'); sel.dispatchEvent(new Event('change')); }
         // The Father and Mother sections fix the relationship (4.2): the section title says it, no dropdown.
         card.classList.add('fam-fixedrel');
+        // A parent being created is Full or Payment only: No access is not offered here.
+        card.classList.add('fam-newparentcard');
         // "Copy the household address" reads what is typed above, not what is saved.
         var ab = card.querySelector('.cm-multi[data-multi="address"]');
         if (ab) ab._hhAddr = function () {
@@ -3013,6 +3048,7 @@
     },
     load: load,
     famName: famName, payerOf: payerOf, primaryOf: primaryOf, emergOf: emergList, canPay: canPay, esc: esc,
+    isPro: isPro, isParentC: isParentC, phoneOf: phoneOf, accessOf: accessOf, undo: famUndo, info: INFO, sw: swHtml,
     backTo: function (f, tab, scroll) {
       if (window.TndListDrawer) window.TndListDrawer.close(true);
       var go = function () {
@@ -3549,7 +3585,8 @@
     var acc = document.createElement('div');
     acc.className = 'fam-access';
     acc.innerHTML = '<span class="fam-mini-l">Access</span><div class="fam-accseg" role="radiogroup" aria-label="Access level">' +
-      '<button type="button" data-acc="full" role="radio">Full</button><button type="button" data-acc="payment" role="radio">Payment only</button></div>' +
+      '<button type="button" data-acc="full" role="radio">Full</button><button type="button" data-acc="payment" role="radio">Payment only</button>' +
+      '<button type="button" data-acc="none" role="radio">No access</button></div>' +
       '<small class="fam-access-note"></small>';
     var ptype = card.querySelector('.cm-ptype');
     if (ptype) ptype.parentNode.insertBefore(acc, ptype.nextSibling);
@@ -3557,6 +3594,7 @@
       acc.querySelectorAll('[data-acc]').forEach(function (b) { var on = b.getAttribute('data-acc') === card._access; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
       acc.querySelector('.fam-access-note').textContent = card._access === 'payment'
         ? 'Bills, receipts and card links only. No child notifications or reports, and can\u2019t pick up.'
+        : card._access === 'none' ? 'No portal access and no reports. Emergency contact, notifications and pick-up are set separately.'
         : 'Everything: notifications, reports and pick-up. Who pays is set on Billing.';
     };
     card._access = accessOf(c);
@@ -3564,10 +3602,17 @@
       var b = e.target.closest('[data-acc]');
       if (!b) return;
       card._access = b.getAttribute('data-acc');
+      card._accessPicked = true;
       drawAcc();
       card.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    var syncAcc = function () { acc.style.display = rel && /^(father|mother)$/i.test(rel.value || '') ? '' : 'none'; };
+    var syncAcc = function () {
+      var v = rel ? rel.value || '' : '';
+      var pro = /^(car_service|doctor|pediatrician|other_doctor|therapist|caseworker)$/i.test(v);
+      acc.style.display = pro || !v ? 'none' : '';
+      // Until someone picks a level, it follows the relationship: a parent Full, anyone else No access.
+      if (!card._accessPicked && !(c && c.access)) { card._access = /^(father|mother)$/i.test(v) ? 'full' : 'none'; drawAcc(); }
+    };
     if (rel) rel.addEventListener('change', syncAcc);
     syncAcc(); drawAcc();
     // Emergency contact: the same setting the Emergency contacts tab lists and orders (5.1).
@@ -3587,7 +3632,7 @@
     // Not for professionals, and not for a parent with Full access: they are called first anyway.
     var syncEm = function () {
       var v = rel ? rel.value || '' : '';
-      var hide = /^(car_service|pediatrician|other_doctor|therapist|caseworker)$/i.test(v) || (/^(father|mother)$/i.test(v) && card._access !== 'payment');
+      var hide = /^(car_service|doctor|pediatrician|other_doctor|therapist|caseworker)$/i.test(v) || card._access === 'full';
       em.style.display = hide ? 'none' : '';
       if (hide && card._emerg) { card._emerg = false; em.querySelector('input').checked = false; em.querySelector('.fam-sw').classList.remove('is-on'); }
     };
@@ -3723,7 +3768,7 @@
     return {
       title: tEl ? tEl.value : undefined, heb: hEl ? hEl.value.trim() : undefined,
       emerg: card.querySelector('.fam-emsw') ? !!card._emerg : undefined,
-      access: card.classList.contains('fam-ctx') && /^(father|mother)$/i.test(sel && sel.value || '') ? (card._access || 'full') : undefined,
+      access: card.classList.contains('fam-ctx') && sel && sel.value && !/^(car_service|doctor|pediatrician|other_doctor|therapist|caseworker)$/i.test(sel.value) ? (card._access || 'none') : undefined,
       addrPick: card._isParentCard ? (card._addrPick || 'home') : '',
       addrNew: card._isParentCard && card._addrPick === '__new' ? readAddrFields(card.querySelector('.fam-apick-new'), 'pa') : null,
       t: sel && sel.value ? typeText(sel.value) : '',

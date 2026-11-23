@@ -111,7 +111,7 @@
 
 /* ---- the child inside the family (#tndDrawer is the app's child panel) ------------------- */
 #tndDrawer .tnd-tab[data-tab-name="Parents Details"],#tndDrawer .tnd-tab[data-tab-name="Registration Form Details"]{display:none!important}
-#tndDrawer .fr-crumbs{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-3,#5b5470);margin:0 0 6px}
+#tndDrawer .fr-crumbs{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-3,#5b5470);margin:0 0 6px;padding:0 22px}
 #tndDrawer .fr-crumbs a{color:var(--primary,#5a3fc2);font-weight:600;text-decoration:none}
 #tndDrawer .fr-crumbs a:hover{text-decoration:underline}
 #tndDrawer .fr-famlink{display:block;font-weight:700;font-size:14px;color:var(--primary,#5a3fc2);text-decoration:none;margin-top:2px}
@@ -150,7 +150,7 @@ html.fam-b .tnd-drawer-portal .tnd-tab[data-ftab="portal"]{--fb-ico:url("data:im
 html.fam-b .tnd-drawer-portal .tnd-tab[data-ftab="ledger"]{--fb-ico:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3Cpath d='M9 7h7M9 11h7'/%3E%3C/svg%3E")}
 .tendi-skin .fam-popck{border:0!important;background:none!important;padding:0!important;box-shadow:none!important;cursor:pointer}
 .tendi-skin .fam-popck input{position:static!important;opacity:1!important;width:16px!important;height:16px!important;margin:0!important;pointer-events:auto!important;appearance:auto!important;-webkit-appearance:checkbox!important;accent-color:var(--primary,#5a3fc2)}
-#tndDrawer .fr-fitab::before{display:none!important;content:none!important}
+#tndDrawer .fr-fitab::before,#tndDrawer .fr-putab::before{display:none!important;content:none!important}
 #tndDrawer .fr-fitab{order:99!important}
 #tndDrawer.fr-wizzing .tnd-pane-view > .tnd-tabs,#tndDrawer.fr-wizzing .fr-regbtn{display:none!important}
 .tendi-skin .fam-req{color:#b42318;font-weight:700;margin-left:2px}
@@ -320,3 +320,45 @@ html.fam-b .tnd-drawer-portal .tnd-tab[data-ftab="ledger"]{--fb-ico:url("data:im
 .tendi-skin .fam-pcrow select,.tendi-skin .fam-pnrow select{width:100%!important;max-width:420px!important}
 .tendi-skin .cm-extra.fam-fixedrel .cm-ptype{display:none!important}
 .tendi-skin .fam-nrow .fam-nperms{margin-left:8px}
+.tendi-skin .cm-permnote.fam-badge.none{color:#4a4458!important;background:#ecebf1!important}
+.tendi-skin .cm-extra.fam-newparentcard .fam-access [data-acc="none"]{display:none!important}
+/* 5.1 Pick-up tab */
+#tndDrawer .fr-pulist{display:flex;flex-direction:column;border:1px solid var(--edge,rgba(95,67,178,.2));border-radius:10px;background:#fff;overflow:hidden}
+#tndDrawer .fr-pu{display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--edge,rgba(95,67,178,.12));flex-wrap:wrap}
+#tndDrawer .fr-pu:first-child{border-top:0}
+#tndDrawer .fr-puwho{display:flex;flex-direction:column;min-width:150px;flex:1}
+#tndDrawer .fr-puwho b{font-size:13.5px;color:var(--ink,#1f1a2e)}
+#tndDrawer .fr-puwho small{font-size:12px;color:var(--ink-3,#5b5470)}
+#tndDrawer .fr-pudates{display:flex;gap:8px}
+#tndDrawer .fr-pudates[hidden]{display:flex;visibility:hidden}
+#tndDrawer .fr-pudates label{display:flex;align-items:center;gap:5px;margin:0;font-size:12px;font-weight:500;color:var(--ink-3,#5b5470)}
+#tndDrawer .fr-pudates input{width:138px;height:30px;padding:2px 6px;font-size:12.5px}
+#tndDrawer .fr-pu:not(.is-on) .fr-puwho b{color:var(--ink-3,#5b5470)}
+html.fam-b #tndDrawer .tnd-pane-view .vB-group.fr-pupane::after,html.fam-b #tndDrawer .tnd-pane-view .vB-group.fr-fipane::after,html.fam-b #tndDrawer .tnd-pane-view .vB-group.fr-wizpane::after{content:none!important;display:none!important}
+#tndDrawer .fr-pualways{display:inline-flex;align-items:center;gap:5px;margin:0;font-size:12.5px;font-weight:500;color:var(--ink-3,#5b5470);cursor:pointer}
+#tndDrawer .fr-pualways input{accent-color:var(--primary,#5a3fc2);margin:0}
+#tndDrawer .fr-pupane label.fr-pualways{border:0!important;background:none!important;padding:0!important;box-shadow:none!important;min-height:0!important;height:auto!important;border-radius:0!important}
+#tndDrawer .fr-pupane label.fr-pualways input{position:static!important;opacity:1!important;width:14px!important;height:14px!important;pointer-events:auto!important;appearance:auto!important;-webkit-appearance:checkbox!important;display:inline-block!important}
+#tndDrawer .fr-pupane label.fr-pualways::before,#tndDrawer .fr-pupane label.fr-pualways::after{content:none!important;display:none!important}
+#tndDrawer .fr-puwhen{font-size:12.5px;font-weight:600;color:var(--primary,#5a3fc2);background:rgba(90,63,194,.08);border-radius:9999px;padding:3px 10px;white-space:nowrap}
+#tndDrawer .fr-puwhen.is-dated{color:var(--ink-2,#3d3650);background:#f1eff6}
+#tndDrawer .fr-pudel{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;color:var(--ink-3,#5b5470);background:none;border:0;cursor:pointer}
+#tndDrawer .fr-pudel:hover{background:#fbeaea;color:#b42318}
+#tndDrawer .fr-puadd{max-width:320px;margin-top:10px}
+#tndDrawer .fr-payerlbl{font-size:12.5px;font-weight:600;color:var(--ink,#1f1a2e);display:inline-flex;align-items:center;gap:4px}
+#tndDrawer .fr-payerval{font-size:13.5px;color:var(--ink,#1f1a2e)}
+#tndDrawer .fr-payerval small{color:var(--ink-3,#5b5470);font-size:12px}
+html.fam-b #tndDrawer .tnd-pane-edit .vB-group.fr-pupane::after,html.fam-b #tndDrawer .tnd-pane-edit .vB-group.fr-fipane::after{content:none!important;display:none!important}
+/* 5.2 the family's Doctor on the child's Health */
+#tndDrawer .fr-docbox{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+#tndDrawer .fr-docedit{padding:10px 12px;border:1px solid var(--edge,rgba(95,67,178,.2));border-radius:10px;background:#fff;margin:8px 0 12px}
+#tndDrawer .fr-dochead{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink,#1f1a2e)}
+#tndDrawer .fr-dochead > span{display:inline-flex;align-items:center;gap:4px}
+#tndDrawer .fr-docgo{font-size:12.5px;font-weight:600;color:var(--primary,#5a3fc2);text-decoration:none}
+#tndDrawer .fr-docgo:hover{text-decoration:underline}
+#tndDrawer .fr-doc{display:flex;flex-direction:column;gap:1px;font-size:13px;color:var(--ink-2,#3d3650)}
+#tndDrawer .fr-doc b{font-size:13.5px;color:var(--ink,#1f1a2e)}
+#tndDrawer .fr-docnone{margin:0;font-size:13px;color:var(--ink-3,#5b5470)}
+#tndDrawer .fr-docbox .fr-dochead{width:100%}
+#tndDrawer .tnd-pane-view .fr-dochead > span{font-size:14px;font-weight:700}
+#tndDrawer .vB-list > .fr-docbox{grid-column:1/-1}

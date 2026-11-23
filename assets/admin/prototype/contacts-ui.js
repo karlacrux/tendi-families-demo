@@ -22,7 +22,7 @@
     .catch(function () { PEOPLE = []; });
 
   var KIND = {
-    pediatrician: { label: 'Pediatrician', colour: '#3a7686' },
+    pediatrician: { label: 'Doctor', colour: '#3a7686' },
     father:       { label: 'Father',       colour: '#45805a' },
     mother:       { label: 'Mother',       colour: '#9c4f80' }
   };
@@ -51,7 +51,7 @@
     { av: 'MB', c: '#6b54a3', name: 'Gene Brody', type: 'Grandmother', scope: 'family',
       sub: 'Also linked to the Halley household',
       perms: ['Emergency contact', 'May collect'], links: 2 },
-    { av: 'DS', c: '#3a7686', name: 'Dr. Lane', type: 'Pediatrician', scope: 'family',
+    { av: 'DS', c: '#3a7686', name: 'Dr. Lane', type: 'Doctor', scope: 'family',
       sub: '2125550130 · one record, 259 children', perms: [], links: 259 },
     { av: 'SG', c: '#8a5a30', name: 'Nell Talgate', type: 'Car service', scope: 'child',
       sub: 'Authorised by D. Halley · 24 Sep 2026',
