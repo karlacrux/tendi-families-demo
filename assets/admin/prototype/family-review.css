@@ -521,3 +521,6 @@ html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded .fb-who smal
 html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded .fb-who .fr-foldwhere{display:block}
 html.fb-childopen #tndDrawer .fr-vcard.fr-folded{padding:14px 18px!important}
 html.fb-childopen #tndDrawer .fr-vcard.fr-folded > section.vB-group.fr-von{display:none!important}
+/* The Doctor box sits inside its area, on the same edges as the fields (the area itself has no padding). */
+#tndDrawer .fb-sec > .fr-docedit{margin:8px 16px 16px!important}
+#tndDrawer .tnd-pane-edit .vB-group:not(.fb-sec) > .fr-docedit{margin:8px 0 12px}
