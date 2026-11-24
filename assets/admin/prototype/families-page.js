@@ -37,12 +37,38 @@
 
   /* ---- data -------------------------------------------------------------- */
 
+  var CHILDREN_READY = null;
   function load() {
     if (FAMILIES !== null) return Promise.resolve();
-    return fetch('/tendi-families-demo/assets/admin/prototype/families.json')
-      .then(function (r) { return r.json(); })
-      .then(function (d) { FAMILIES = d.families || []; oneDoctorType(); seedRelationships(); seedPhones(); seedHebrew(); seedExtras(); })
-      .catch(function () { FAMILIES = []; });
+    return Promise.all([fetch('/tendi-families-demo/assets/admin/prototype/families.json').then(function (r) { return r.json(); }), CHILDREN_READY || Promise.resolve()])
+      .then(function (res) { var d = res[0]; FAMILIES = d.families || []; seedOrphans(); oneDoctorType(); seedRelationships(); seedPhones(); seedHebrew(); seedExtras(); })
+      .catch(function () { FAMILIES = FAMILIES || []; });
+  }
+  /* EVERY CHILD HAS A FAMILY. The sample's enrolled and waiting children whose surname and address
+     match no household get one: grouped by surname and address, with a mother and a father, so the
+     family is complete. A child with no address gets a sample one. Prototype data only. */
+  var SAMPLE_MOMS = ['Rachel', 'Miriam', 'Dina', 'Sara', 'Leah', 'Ruth', 'Esther', 'Naomi', 'Tamar', 'Hannah'];
+  var SAMPLE_DADS = ['David', 'Aaron', 'Eli', 'Ben', 'Sam', 'Noah', 'Jacob', 'Isaac', 'Levi', 'Dan'];
+  function seedOrphans() {
+    var keys = {};
+    FAMILIES.forEach(function (f) { keys[String(f.sur || f.n).toLowerCase() + '|' + homeKey(f)] = 1; });
+    var groups = {}, order = [];
+    CHILDREN_ALL.forEach(function (c) {
+      if (c.s !== 'enrolled' && c.s !== 'waitlist') return;
+      var k = String(c.l).toLowerCase() + '|' + String(c.a || '').toLowerCase();
+      if (keys[k]) return;
+      if (!groups[k]) { groups[k] = []; order.push(k); }
+      groups[k].push(c);
+    });
+    order.forEach(function (k, i) {
+      var kids = groups[k], last = kids[0].l;
+      var addr = kids[0].a || ((101 + i * 12) + ' Maple Ave, Lakewood, NJ 08701, USA');
+      kids.forEach(function (c) { if (!c.a) c.a = addr; });
+      var ph = function (n) { return '(732) 555-0' + String(n).slice(-3); };
+      FAMILIES.push({ n: last, a: addr, p: ph(600 + i), k: kids.map(function (c) { return c.f; }).join(', '), c: kids.length,
+        contacts: [{ n: SAMPLE_MOMS[i % SAMPLE_MOMS.length] + ' ' + last, t: 'Mother', p: ph(600 + i), on: true },
+                   { n: SAMPLE_DADS[i % SAMPLE_DADS.length] + ' ' + last, t: 'Father', p: ph(700 + i), on: true }] });
+    });
   }
 
   /* ONE PERSON, SEVERAL RELATIONSHIPS. The relationship belongs to the link, not
@@ -768,7 +794,7 @@
      caps label, value, "Not set" in .vB-muted, tappable phone rows with the arrow.
      The icons are the ones that drawer draws. */
   var CHILDREN_ALL = [];
-  fetch('/tendi-families-demo/assets/admin/prototype/children.json')
+  CHILDREN_READY = fetch('/tendi-families-demo/assets/admin/prototype/children.json')
     .then(function (r) { return r.json(); })
     .then(function (d) { CHILDREN_ALL = d.children || []; })
     .catch(function () { CHILDREN_ALL = []; });
@@ -1462,6 +1488,9 @@
       host.querySelectorAll('.fam-tochild').forEach(function (a) {
         a.addEventListener('click', function () { openChild(a.getAttribute('data-child'), a.getAttribute('data-childname')); });
       });
+      host.querySelectorAll('.fam-toadded').forEach(function (a) {
+        a.addEventListener('click', function () { editAddedChild(f, a.getAttribute('data-added')); });
+      });
       host.querySelectorAll('[data-goto]').forEach(function (a) {
         a.addEventListener('click', function () { go(a.getAttribute('data-goto'), false); });
       });
@@ -1497,6 +1526,9 @@
   }
   function childRow(k, label) {
     var row = vRow(DI.person, label || whereOf(k.rec), k.full);
+    // A child added while the family is being registered opens again in the same steps, to be changed.
+    if (k.rec && k.rec.addedId && k.rec.snap) return row.replace('<div class="vB-row"', '<a class="vB-row vB-row--action fam-toadded" data-added="' + k.rec.addedId +
+      '" href="javascript:void(0);"').replace(/<\/div>$/, DI.cta + '</a>');
     return k.rec && k.rec.id ? row.replace('<div class="vB-row"', '<a class="vB-row vB-row--action fam-tochild" data-child="' + k.rec.id +
       '" data-childname="' + esc(k.full) + '" href="javascript:void(0);"').replace(/<\/div>$/, DI.cta + '</a>') : row;
   }
@@ -1655,6 +1687,11 @@
     requestAnimationFrame(function () { t.classList.add('is-in'); });
   }
 
+  /* A contact being added (not saved yet) gets a draft record, so its addresses are managed in the
+     same Manage addresses window as a saved contact's. Its id starts with "d". */
+  var DRAFT_CONTACTS = {}, DRAFT_N = 0;
+  var ciOf = function (f, c) { return c && c._draftId ? c._draftId : f.contacts.indexOf(c); };
+  var contactByCi = function (f, ci) { ci = String(ci); return ci.charAt(0) === 'd' ? DRAFT_CONTACTS[ci] : f.contacts[+ci]; };
   var normAddr = function (v) { return String(v || '').toLowerCase().replace(/,?\s*usa$/, '').replace(/[^a-z0-9]/g, ''); };
   function mgrLink(kind, ci, label) {
     return '<button type="button" class="fam-mgrlink" data-mgr="' + kind + '"' + (ci != null ? ' data-ci="' + ci + '"' : '') + '>' +
@@ -1697,7 +1734,9 @@
     var portal = document.querySelector('.fam-portal'), f = portal && portal._fam;
     if (!f) return;
     if (l.getAttribute('data-mgr') !== 'contact') commitHomeFields(f, portal.querySelector('.fam-editform'));
-    openAddrMgr(f, l.getAttribute('data-mgr') === 'contact' ? f.contacts[+l.getAttribute('data-ci')] : null);
+    var mc = l.getAttribute('data-mgr') === 'contact' ? contactByCi(f, l.getAttribute('data-ci')) : null;
+    if (mc && mc._draftId) { var hostCard = l.closest('.cm-extra'); if (hostCard && hostCard._draftName) mc.n = hostCard._draftName() || 'New contact'; }
+    openAddrMgr(f, mc);
   });
   /* PHONE ROWS ON A CARD (as reviewed 11/19): "Primary" only when the person has two or more numbers
      (one number is their primary). "Also receives notifications" sits under the field, beside
@@ -1830,12 +1869,12 @@
 
   function contactAddrLines(f, c) {
     var list = listsOf(c, f).address;
-    return '<div class="cm-multi fam-caddrsum" data-ci="' + f.contacts.indexOf(c) + '"><div class="cm-mlabel">Addresses</div>' +
+    return '<div class="cm-multi fam-caddrsum" data-ci="' + ciOf(f, c) + '"><div class="cm-mlabel">Addresses</div>' +
       (list.length ? '<div class="fam-oasumlist">' + list.map(function (a) {
         return '<div class="fam-oasumrow"><span class="fam-pill">' + esc(a.type) + '</span><span class="fam-oasumval">' + esc(a.value) + '</span>' +
           (a.primary ? '<small>Primary</small>' : '') + '</div>';
       }).join('') + '</div>' : '<p class="fam-empty-note">No address yet.</p>') +
-      '<div class="cm-mfoot">' + mgrLink('contact', f.contacts.indexOf(c)) + '</div></div>';
+      '<div class="cm-mfoot">' + mgrLink('contact', ciOf(f, c)) + '</div></div>';
   }
   // A contact's own addresses as a list the window can keep (their first active one is their primary).
   function contactAddrs(c, f) {
@@ -1905,7 +1944,6 @@
         })() : '') +
         '<div class="fam-mgradd"><div class="cm-mlabel">Add an address</div>' + addrFields('mg') +
           '<div class="fam-mgraddbtn"><button type="button" class="btn-sm primary fam-mgrnew">Add address</button></div></div>' +
-        '<p class="fam-panel-note">Delete appears once an address is deactivated. Adding an address that is already here but deactivated makes it active again.</p>' +
         '</section></div>';
       wire();
     };
@@ -2034,13 +2072,13 @@
       ['line1', 'line2', 'city', 'state', 'zip'].forEach(function (k) { var el = hf.querySelector('[data-k="' + k + '"]'); if (el) el.value = pa[k] || ''; });
     }
     portal.querySelectorAll('.cm-extra.fam-addrfields').forEach(function (card) {
-      var c = f.contacts[+card.getAttribute('data-ci')];
+      var c = contactByCi(f, card.getAttribute('data-ci'));
       if (!c) return;
       if (contactLined(f, c)) lineCard(f, c, card);
       else if (window.cmMulti) window.cmMulti.set(card, 'address', listsOf(c, f).address);
     });
     portal.querySelectorAll('.fam-caddrsum').forEach(function (box) {
-      var c = f.contacts[+box.getAttribute('data-ci')];
+      var c = contactByCi(f, box.getAttribute('data-ci'));
       if (c) box.outerHTML = contactAddrLines(f, c);
     });
   }
@@ -2715,6 +2753,7 @@
       wrap.appendChild(card);
       list.insertBefore(wrap, add);
       wrap.querySelector('.fam-cremove').addEventListener('click', function () { wrap.remove(); });
+      newCardSave(wrap, card, rel ? 'details' : 'contacts');
       var sel = card.querySelector('.cm-ptype select');
       if (sel) {
         if (rel) { sel.value = rel; sel.dispatchEvent(new Event('change')); card.classList.add('fam-fixedrel', 'fam-newparentcard'); }   // + Add parent: fixed, Full or Payment only
@@ -2798,6 +2837,7 @@
         var sw = card.querySelector('.fam-emsw input');
         if (sw && !sw.checked) { sw.checked = true; sw.dispatchEvent(new Event('change', { bubbles: true })); }
         wrap.querySelector('.fam-cremove').addEventListener('click', function () { wrap.remove(); });
+        newCardSave(wrap, card, 'emergency');
         var sel = card.querySelector('.cm-ptype select');
         if (sel) sel.focus();
       });
@@ -2989,6 +3029,19 @@
     else newChildPanel({ n: f.n, a: f.a });
   }
 
+  // A child added in this registration, opened again with everything that was entered, to be changed.
+  function editAddedChild(f, id) {
+    var k = (f.extra || []).filter(function (x) { return x.addedId === id; })[0];
+    if (!k || !k.snap) return;
+    STATE.regFam = f;
+    STATE.regEdit = { f: f, id: id };
+    writePlan({ kids: [{ m: k.s === 'waitlist' ? 'wait' : 'enroll' }], cur: 0, snaps: [k.snap], at: Date.now(), lname: f.n, famKnown: true, earlier: [] });
+    if (window.cmAddFamily) window.cmAddFamily(f);
+    var portal = document.querySelector('.fam-portal');
+    if (portal) swapToChild(portal, { n: f.n, a: f.a });
+    else newChildPanel({ n: f.n, a: f.a });
+  }
+
   // From a child's Tuition tab, wherever the child was opened: to their family's Billing tab.
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('.cm-tobilling');
@@ -3027,10 +3080,26 @@
   document.addEventListener('cm-reg-done', function (e) {
     var f = STATE.regFam, plan = e.detail;
     if (!f || !plan) return;
+    var edit = STATE.regEdit && STATE.regEdit.f === f ? STATE.regEdit : null;
+    STATE.regEdit = null;
     (plan.snaps || []).forEach(function (s, i) {
       if (!s || !s.fname) return;
-      f.extra = (f.extra || []).concat([{ f: s.fname, l: f.sur || f.n, a: homeKey(f),
-        s: plan.kids[i] && plan.kids[i].m === 'wait' ? 'waitlist' : 'enrolled', cl: s.cls || '' }]);
+      // On the waiting list or not as the child was saved, whichever button it was started from.
+      var wait = s.wait != null ? s.wait : (plan.kids[i] && plan.kids[i].m === 'wait');
+      var rec = { f: s.fname, l: f.sur || f.n, a: homeKey(f), s: wait ? 'waitlist' : 'enrolled', cl: s.cls || '',
+                  snap: s, addedId: 'a' + Date.now() + i };
+      // A child added in this registration and opened again: the same child, changed, not a second one.
+      var old = edit && (f.extra || []).filter(function (k) { return k.addedId === edit.id; })[0];
+      if (old) {
+        var names = kids(f), at = names.indexOf(old.f);
+        if (at > -1) names[at] = s.fname;
+        rec.addedId = old.addedId;
+        if (old.toEnroll && wait) rec.toEnroll = true;
+        f.extra[f.extra.indexOf(old)] = rec;
+        f.k = names.join(', ');
+        return;
+      }
+      f.extra = (f.extra || []).concat([rec]);
       f.k = kids(f).concat([s.fname]).join(', ');
       f.c = kids(f).length;
     });
@@ -3040,6 +3109,7 @@
   document.addEventListener('cm-reg-closed', function () {
     var f = STATE.regFam;
     STATE.regFam = null;
+    STATE.regEdit = null;
     var html = document.documentElement;
     if (f && html.classList.contains('fam-b') && document.querySelector('.fam-portal')) {
       var tab = html.getAttribute('data-fb-tab') || 'children';
@@ -3064,7 +3134,7 @@
   /* A CHILD OPENS ONE LEVEL DEEPER (design review 11/18, 7.1). The child record is the app's own
      panel, so the family panel steps aside without a slide and the child panel opens in its place,
      with a breadcrumb back (family-review.js). Back returns to the same tab and scroll. */
-  function openChild(id, name) {
+  function openChild(id, name, mode) {
     var portal = document.querySelector('.fam-portal');
     var body = portal && portal.querySelector('.tnd-pane-body');
     var tabBtn = portal && portal.querySelector('.fam-ftabs .tnd-tab.is-active');
@@ -3077,11 +3147,18 @@
       document.documentElement.style.setProperty('--fb-top', (bar ? Math.round(bar.getBoundingClientRect().bottom) : 110) + 'px');
       var famPane = portal.querySelector('.tnd-pane');
       document.documentElement.style.setProperty('--fb-left', (famPane ? Math.round(famPane.getBoundingClientRect().left) : 0) + 'px');
-      document.documentElement.classList.add('fb-childopen', 'fb-childedit');
+      // The family being edited: the child opens to be edited, in the same steps as a new child.
+      // The family being read: the child opens to be read (its summary), with its own Edit.
+      var editing = mode ? mode === 'edit' : !!portal.querySelector('.fam-editform');
+      document.documentElement.classList.add('fb-childopen');
+      document.documentElement.classList.toggle('fb-childedit', editing);
+      // Opened from a child's row or Edit (a mode is given): Cancel goes back to reading it.
+      window.__fbChildView = mode ? true : !editing;
       window.__fbOpenAt = Date.now();
       var openIt = function () {
         window.__fbOpenAt = Date.now();
         window.TndListDrawer.openRecord('children/edit/' + id, { id: id, name: name });
+        if (!editing) return;
         // Inside the family the child is edited in the same steps as a new child (family-review.js).
         (function toEdit(n) {
           var b = document.getElementById('tndDrawerEdit'), dr = document.getElementById('tndDrawer');
@@ -3124,6 +3201,12 @@
     load: load,
     famName: famName, payerOf: payerOf, primaryOf: primaryOf, emergOf: emergList, canPay: canPay, esc: esc,
     isPro: isPro, isParentC: isParentC, phoneOf: phoneOf, accessOf: accessOf, undo: famUndo, info: INFO, sw: swHtml,
+    // The family's children, in order, for the child opened inside it (family-review.js).
+    kidsList: function (f) {
+      return childLinks(f).map(function (k) { return { name: k.full, id: k.rec && k.rec.id ? String(k.rec.id) : '', where: whereOf(k.rec) }; });
+    },
+    openChild: function (id, name, mode) { openChild(id, name, mode); },
+    icons: function () { return { edit: ICON_EDIT, save: ICON_SAVE }; },
     backTo: function (f, tab, scroll) {
       // The child opened inside the family: leaving it shows the family, still where it was.
       var open = document.querySelector('.fam-portal');
@@ -3595,6 +3678,40 @@
   /* No "Applies to" here any more (client review, 2026-10-27): a household's
      contact applies to every child in it, so the card has no scope choice. */
 
+  /* A person being added has a Save of their own, at the end of their card: it saves the tab (the
+     same as the panel's Save) and stays on it, so they appear in the list, in order. While a family is
+     being created, the panel's Save moves on to the next tab; this one does not. */
+  /* SAVE AND CONTINUE WITH SOMEONE NEW ON THE TAB: while a family is being created, Save and continue
+     on Contacts or Emergency contacts with a new person filled in saves them and stays, showing the
+     whole list. Clicked again, with nobody new, it moves on to the next tab. */
+  document.addEventListener('click', function (e) {
+    var sv = e.target.closest && e.target.closest('.fam-portal .fam-tsave');
+    if (!sv || !/continue/i.test(sv.textContent)) return;
+    var portal = sv.closest('.fam-portal'), act = portal.querySelector('.fam-ftabs .tnd-tab.is-active');
+    var tab = act && act.getAttribute('data-ftab');
+    if (tab !== 'contacts' && tab !== 'emergency') return;
+    var filled = Array.prototype.some.call(portal.querySelectorAll('.fam-cnew .cm-extra'), function (card) {
+      var v = window.cmCardValues ? window.cmCardValues(card) : {};
+      return !!(v.first || v.last);
+    });
+    if (!filled) return;
+    setTimeout(function () {
+      var p2 = document.querySelector('.fam-portal'), t = p2 && p2.querySelector('[data-ftab="' + tab + '"]');
+      if (t && !t.classList.contains('is-active')) t.click();
+    }, 120);
+  }, true);
+
+  function newCardSave(wrap, card, tab) {
+    wrap.insertAdjacentHTML('beforeend', '<div class="fam-cnew-foot"><button type="button" class="btn-sm primary fam-cnew-save">' + ICON_SAVE + ' Save contact</button></div>');
+    wrap.querySelector('.fam-cnew-save').addEventListener('click', function () {
+      var v = window.cmCardValues ? window.cmCardValues(card) : {};
+      if (!(v.first || v.last)) { if (window.tndToast) window.tndToast.error('Give a first or last name.'); var fi = card.querySelector('[data-part="name"] input'); if (fi) fi.focus(); return; }
+      var portal = wrap.closest('.fam-portal'), sv = portal && portal.querySelector('.fam-tsave');
+      if (!sv) return;
+      sv.click();
+    });
+  }
+
   // The creation card, emptied of what does not apply here (its own Remove), and
   // filled with the contact's details: names, the phone / email / address lists, work.
   function personCard(f, c) {
@@ -3787,6 +3904,37 @@
           openAddrMgr(f, c);
         }, true);
       }
+    }
+    // A contact being added: the same rule. One address is typed in place; a second one, or a person
+    // linked from the people on file with two or more, shows as lines with Manage addresses.
+    if (!c) {
+      var draft = { n: '', addrs: [], _draftId: 'd' + (++DRAFT_N) };
+      DRAFT_CONTACTS[draft._draftId] = draft;
+      card._draftC = draft;
+      card.setAttribute('data-ci', draft._draftId);
+      card.classList.add('fam-addrfields');
+      card._draftName = function () {
+        var v = window.cmCardValues ? window.cmCardValues(card) : {};
+        return [v.first, v.last].filter(Boolean).join(' ');
+      };
+      card.addEventListener('click', function (e) {
+        var add = e.target.closest && e.target.closest('.cm-multi[data-multi="address"] .cm-madd');
+        if (!add || !card.classList.contains('fam-addrfields')) return;
+        var filled = window.cmMulti && window.cmMulti.values(card, 'address').length;
+        if (!filled) return;                         // the first address is typed in place
+        e.preventDefault(); e.stopPropagation();
+        commitCardAddrs(f, draft, card);
+        draft.n = card._draftName() || 'New contact';
+        openAddrMgr(f, draft);
+      }, true);
+      card.addEventListener('cm-linked', function () {
+        setTimeout(function () {
+          var vals = window.cmMulti ? window.cmMulti.values(card, 'address') : [];
+          if (vals.length < 2 || !card.classList.contains('fam-addrfields')) return;
+          commitCardAddrs(f, draft, card);
+          lineCard(f, draft, card);
+        }, 60);
+      });
     }
     // A parent's numbers: Primary number and Also receives notifications, the same settings as the
     // Household tab's Notifications (3.2 and 3.3), saved with this card.

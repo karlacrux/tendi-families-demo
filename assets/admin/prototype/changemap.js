@@ -790,7 +790,7 @@
   var TABS = {
     'parents details': { to: 'Family', why: '' },
     'therapy': { to: 'Health', why: '' },
-    'registration form details': { to: 'Schedule and classroom', why: '' },
+    'registration form details': { to: 'Schedule', why: '' },
     // Names the mechanism, not the thing. These five columns say WHICH STAFF MEMBER
     // handles this child, overriding the class/branch default. Nothing to do with
     // the family module — a cheap, separate win.
@@ -884,9 +884,17 @@
     if (!secs.length) secs = document.querySelectorAll('#frmAddEditRecord fieldset');
     for (var i = 0; i < secs.length; i++) {
       var h = secs[i].querySelector('h1,h2,h3,h4,legend,.vB-grouphead');
-      var ht = h ? (h.textContent || '').trim().toLowerCase() : '';
-      // The Enrollment tab is called "Schedule and classroom" now: looked up by either name.
-      if (h && (ht.indexOf(text) === 0 || (text === 'enrollment' && ht.indexOf('schedule and classroom') === 0))) return secs[i];
+      // The heading's own name: the new-child steps put a number and a summary beside it.
+      var ht = '';
+      if (h) {
+        var fbName = h.getAttribute && h.getAttribute('data-fb');
+        if (fbName) ht = fbName.split('|')[0];
+        else if (h.querySelector('.fr-nwmark, .fr-nwsum, .fb-seccount')) h.childNodes.forEach(function (n) { if (n.nodeType === 3) ht += n.textContent; });
+        else ht = h.textContent || '';
+        ht = ht.trim().toLowerCase();
+      }
+      // The Enrollment tab is called "Schedule" now: looked up by either name.
+      if (h && (ht.indexOf(text) === 0 || (text === 'enrollment' && (ht === 'schedule' || ht.indexOf('schedule and classroom') === 0)))) return secs[i];
     }
     return null;
   }
@@ -1573,13 +1581,14 @@
         if (editing) eb.remove();
         else eb.addEventListener('click', function () {
           editing = true;
+          card.classList.add('is-lkedit');
           showFields(true);
           paint();
         });
         row.querySelector('.cm-lkun').addEventListener('click', function () {
           var g = fields();
           if (before) { setVal(g.first, before.first || ''); setVal(g.last, before.last || ''); setVal(g.phone, before.phone || ''); }
-          card.classList.remove('is-linked');
+          card.classList.remove('is-linked', 'is-lkedit');
           showFields(true);
           card.dispatchEvent(new CustomEvent('cm-unlinked'));
           row.innerHTML = '<button type="button" class="cm-lklink" title="Link an existing contact">Find existing</button>';
@@ -2704,7 +2713,7 @@
   function relocateMedical() {
     var n = 0;
     n += renameHead('therapy', 'Health');
-    n += renameHead('registration form details', 'Schedule and classroom');
+    n += renameHead('registration form details', 'Schedule');
     n += renameHead('parents details', 'Family');
     n += renameHead('contact assignment overrides', 'Assigned Staff');
     n += renameHead('privileges', 'Tuition');
@@ -2772,7 +2781,7 @@
     }
     document.querySelectorAll('#tndDrawer .tnd-pane-view section.vB-group').forEach(function (s) {
       var gl = s.querySelector('.vB-group-label');
-      if (!gl || gl.textContent.trim() !== 'Schedule and classroom') return;
+      if (!gl || gl.textContent.trim() !== 'Schedule') return;
       var list = s.querySelector('.vB-list');
       s.querySelectorAll('.vB-row').forEach(function (r) {
         var l = r.querySelector('.vB-row-label');
@@ -2821,7 +2830,7 @@
      sections happened to be written in: who they are, whose they are, how they got
      here, how they are cared for, how they travel, what it costs, who handles it.
      Billing sits sixth, so a 4/3 wrap keeps it on the second line with the rest. */
-  var ORDER = ['Details', 'Family', 'Schedule and classroom', 'Health',
+  var ORDER = ['Details', 'Family', 'Schedule', 'Health',
                'Transportation', 'Tuition'];
 
   function reorder() {
@@ -2987,6 +2996,7 @@
       fname: ((form.querySelector('[name="fname"]') || {}).value || '').trim(),
       lname: ((form.querySelector('[name="lname"]') || {}).value || '').trim(),
       cls: cls && cls.selectedIndex > 0 ? cls.options[cls.selectedIndex].text : '',
+      wait: !!((form.querySelector('[name="is_waitlist"]') || {}).checked),
       fam: FAMILY_MODE === 'existing' && PICKED_FAMILY ? { n: PICKED_FAMILY.n, a: PICKED_FAMILY.a } : null,
       father: ((form.querySelector('[name="reg_father_lname"]') || {}).value || '').trim()
     };
@@ -3179,7 +3189,7 @@
     // Everyone registered in this visit, not only the child just finished.
     var regd = (plan.earlier || []).concat(plan.kids.map(function (k, i) {
       var sn = plan.snaps[i] || {};
-      return { what: k.m === 'wait' ? 'Waiting list' : 'Enrolled' + (sn.cls ? ' · ' + sn.cls : ''),
+      return { what: (sn.wait != null ? sn.wait : k.m === 'wait') ? 'Waiting list' : 'Enrolled' + (sn.cls ? ' · ' + sn.cls : ''),
                name: [sn.fname, sn.lname].filter(Boolean).join(' ') || 'Child ' + (i + 1) };
     }));
     w.innerHTML =
@@ -3529,7 +3539,7 @@
     };
     var hide = function (rows) { rows.forEach(function (r) { r.style.display = 'none'; }); };
 
-    label(parents, 'Family'); label(reg, 'Schedule and classroom'); label(therapy, 'Health'); label(priv, 'Tuition');
+    label(parents, 'Family'); label(reg, 'Schedule'); label(therapy, 'Health'); label(priv, 'Tuition');
 
     // Details: the child, with the nickname by their name.
     var lastName = take(details, /^last name$/i)[0];
@@ -3677,7 +3687,7 @@
     });
     // Text is written only when it differs: applyStage now runs on every pass,
     // and an unconditional write is a DOM change that would trigger the next pass.
-    var label = waiting ? 'Waitlist' : 'Schedule and classroom';
+    var label = waiting ? 'Waitlist' : 'Schedule';
     var h = dst.querySelector('h1,h2,h3,h4,legend,.vB-grouphead');
     // Only the heading's own words: the new-child stepper adds a number and a summary beside them.
     if (h) {
@@ -3693,7 +3703,9 @@
     document.querySelectorAll('button, a, span, li').forEach(function (b) {
       if (b.children.length) return;
       var t = (b.textContent || '').trim();
-      if ((t === 'Enrollment' || t === 'Schedule and classroom' || t === 'Waitlist') && t !== label) b.textContent = label;
+      // "Schedule" is also a part name inside the tab, so it is only renamed on the tab itself.
+      var isTab = !!(b.closest && b.closest('.tnd-tab, .tnd-tabs, [role=tab]'));
+      if ((t === 'Enrollment' || t === 'Schedule and classroom' || t === 'Waitlist' || (t === 'Schedule' && isTab)) && t !== label) b.textContent = label;
     });
     /* ONE STAGE ON SCREEN AT A TIME. The tab holds two stages, and a child is in
        exactly one of them:

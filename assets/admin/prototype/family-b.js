@@ -592,7 +592,7 @@
       ['Address', [/^address/i, /^apartment/i, /^city/i, /^state/i, /^zip/i]],
       ['Notes', [/./]]
     ],
-    'Schedule and classroom': [
+    'Schedule': [
       ['Schedule', [/^days enrolled/i]],
       ['Father', [/^father/i]],
       ['Mother', [/^mother/i]],
@@ -746,7 +746,8 @@
     e.stopPropagation();
     e.preventDefault();
     if (b.classList.contains('fam-tcancel')) { dropChild(); return; }
-    if (b.classList.contains('fam-tsave')) { saveChild(/continue/i.test(b.textContent) ? 'contacts' : 'children'); return; }
+    // Saving a child goes back to the family's Children list; Save and continue there moves on.
+    if (b.classList.contains('fam-tsave')) { saveChild('children'); return; }
     var first = document.querySelector('#tndDrawer [name="fname"]');
     var tab = b.getAttribute('data-ftab');
     if (first && first.value.trim()) saveChild(tab);

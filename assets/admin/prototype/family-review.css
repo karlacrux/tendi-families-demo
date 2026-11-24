@@ -407,3 +407,117 @@ html.fb-childedit #tndDrawer .fr-nwiz .fr-nw-next > .vB-group-label{pointer-even
    Add Child and Add to waiting list buttons are hidden. The Families page's buttons stay. */
 .tendi-skin a.tnd-btn-add[href="children/add"],.tendi-skin a.btn-add-waitlist[href^="children/add"],
 a.tnd-btn-add[href="children/add"],a.btn-add-waitlist[href^="children/add"]{display:none!important}
+/* Children page: the child's family under the name, a link to the family. */
+.tendi-skin .tnd-nm .fr-rowfam{display:block;font-size:12.5px;font-weight:500;color:#5b3fd1;text-decoration:none;margin-top:1px;width:max-content}
+.tendi-skin .tnd-nm .fr-rowfam:hover{text-decoration:underline}
+/* Families page: a child is added to the waiting list from inside the family, so the page's own button is hidden. */
+.tendi-skin .fam-addwait{display:none!important}
+/* A contact linked from the people on file: Title and Hebrew name belong to that person, shown and changed
+   with their details (Edit), not as loose fields under the linked card. */
+.tendi-skin .cm-extra.is-linked:not(.is-lkedit) .fam-titlebox{display:none!important}
+/* A person being added: their own Save, at the end of the card. */
+.tendi-skin .fam-cnew-foot{display:flex;justify-content:flex-end;padding:0 22px 18px}
+.tendi-skin .fam-cnew-foot .fam-cnew-save{display:inline-flex;align-items:center;gap:6px}
+.tendi-skin .fam-cnew-foot .fam-cnew-save svg{width:14px;height:14px}
+/* A child open inside the family: the family's name, tabs and Household are right above, so the child
+   does not repeat them (no breadcrumb, no family link, no read-only family address). */
+html.fb-childopen #tndDrawer .fr-crumbs,html.fb-childopen #tndDrawer .fr-famlink,html.fb-childopen #tndDrawer .fr-detro{display:none!important}
+/* A child read inside the family: one card with a block per section, laid out as the steps are
+   (the same border, radius, title row and number). */
+.tendi-skin #tndDrawer .tnd-pane-view .fr-vhead{display:none}
+html.fb-childopen #tndDrawer .tnd-pane-view.fr-vstack > .tnd-tabs{display:none!important}
+html.fb-childopen #tndDrawer .tnd-pane-view.fr-vstack .fr-vcard{margin:18px 22px 24px;border:1px solid rgba(95,67,178,.11);border-radius:14px;padding:18px;background:#fff;display:flex;flex-direction:column;gap:10px}
+html.fb-childopen #tndDrawer .fr-vcard > section.vB-group{display:none!important}
+html.fb-childopen #tndDrawer .fr-vcard > section.vB-group.fr-von{display:flex!important;flex-direction:column;border:1px solid rgba(95,67,178,.11)!important;border-radius:12px!important;padding:0 16px 16px!important;margin:0!important;background:#fff!important;box-shadow:none!important}
+html.fb-childopen #tndDrawer .fr-vcard > section.vB-group.fr-von > .fr-vhead{display:flex!important;align-items:center;gap:8px;margin:0 0 6px;padding:13px 0;font-size:14.5px;font-weight:600;line-height:1.3;color:#1f1a2e;letter-spacing:-.005em;text-transform:none}
+html.fb-childopen #tndDrawer .fr-vcard .fr-vnum{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#efedf6;color:#332e47;font-size:12px;font-weight:600;flex:none}
+/* A child inside the family looks as it does when a child is added: no head of its own, the child's
+   circle and name at the top of the card, then areas that expand. */
+html.fb-childopen #tndDrawer > .tnd-pane-head{display:none!important}
+html.fb-childopen #tndDrawer .tnd-pane-view.fr-vstack > .vB-hero{display:none!important}
+html.fb-childopen #tndDrawer .fr-vcard > .fr-vchead{display:flex;align-items:center;gap:10px;margin:0 0 6px}
+html.fb-childopen #tndDrawer .fr-vchead .fr-vav{display:inline-grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;background:#5a3fc2;color:#fff;font-size:14px;font-weight:600}
+html.fb-childopen #tndDrawer .fr-vchead .fb-who{display:flex;flex-direction:column;min-width:0}
+html.fb-childopen #tndDrawer .fr-vchead .fb-who b{font-size:14px;font-weight:600;color:#1f1a2e}
+html.fb-childopen #tndDrawer .fr-vchead .fb-who small{font-size:12px;color:#6b6480}
+html.fb-childopen #tndDrawer .fr-vchead .up-head-spacer,html.fb-childopen #tndDrawer .fb-childhead .up-head-spacer{flex:1}
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von > .fr-vhead{cursor:pointer;position:relative;padding-right:28px!important}
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von > .fr-vhead::after{content:"";position:absolute;right:2px;top:50%;width:8px;height:8px;border-right:2px solid #6b6480;border-bottom:2px solid #6b6480;transform:translateY(-70%) rotate(45deg);transition:transform .15s}
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von.fr-vclosed > .fr-vhead::after{transform:translateY(-30%) rotate(-45deg)}
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von.fr-vclosed{padding-bottom:0!important}
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von.fr-vclosed > :not(.fr-vhead){display:none!important}
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von.fr-vclosed > .fr-vhead{margin:0!important}
+/* Editing: the head row shows the child, the stage choice, then Cancel and Save. */
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard > .fb-childhead{display:flex!important;align-items:center;gap:10px;flex-wrap:wrap}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard > .fb-childhead .fb-phead-av{display:inline-grid!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard > .fb-childhead .fb-who{display:flex!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childhead .fr-vcacts{display:inline-flex;gap:8px;margin-left:auto}
+html.fb-childopen #tndDrawer .tnd-pane-edit > .vB-idstrip{display:none!important}
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von.fr-vclosed::after,html.fb-childopen #tndDrawer .fr-vcard > section.fr-von.fr-vclosed::before{display:none!important}
+html.fb-childopen #tndDrawer .fr-vcard > .fr-vchead .fb-who{display:flex!important}
+/* The family's other children, above and below the open one: each a folded card that expands on click. */
+html.fb-childopen #tndDrawer .fr-sibs{display:flex;flex-direction:column;gap:10px}
+html.fb-childopen #tndDrawer .tnd-pane-view .fr-sibs.before{margin:18px 22px 0}
+html.fb-childopen #tndDrawer .tnd-pane-view .fr-sibs.after{margin:0 22px 24px}
+html.fb-childopen #tndDrawer .tnd-pane-view .fr-sibs.before:not(:empty) + .fr-vcard{margin-top:10px}
+html.fb-childopen #tndDrawer .tnd-pane-view .fr-sibs.after:not(:empty){margin-top:-14px}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.before:not(:empty){margin-bottom:10px}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.after:not(:empty){margin-top:10px}
+html.fb-childopen #tndDrawer .fr-sib{display:flex;align-items:center;gap:10px;width:100%;padding:14px 18px;border:1px solid rgba(95,67,178,.11);border-radius:14px;background:#fff;text-align:left;cursor:pointer;font:inherit}
+html.fb-childopen #tndDrawer .fr-sib:hover{border-color:rgba(95,67,178,.3)}
+html.fb-childopen #tndDrawer .fr-sib .fr-vav{display:inline-grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;background:#6b54a3;color:#fff;font-size:14px;font-weight:600}
+html.fb-childopen #tndDrawer .fr-sib .fb-who{display:flex!important;flex-direction:column;min-width:0}
+html.fb-childopen #tndDrawer .fr-sib .fb-who b{font-size:14px;font-weight:600;color:#1f1a2e}
+html.fb-childopen #tndDrawer .fr-sib .fb-who small{font-size:12px;color:#6b6480}
+html.fb-childopen #tndDrawer .fr-sib .up-head-spacer{flex:1}
+html.fb-childopen #tndDrawer .fr-sibchev{width:8px;height:8px;border-right:2px solid #6b6480;border-bottom:2px solid #6b6480;transform:rotate(-45deg);margin-right:4px;flex:none}
+html.fb-childopen #tndDrawer .fr-vchead{cursor:pointer}
+html.fb-childopen #tndDrawer .fr-vchead .fr-sibchev{transform:rotate(45deg)}
+/* Edit, Cancel and Save in the family's head on the Children tab. */
+.fam-portal .tnd-pane-head-actions .fr-fhacts{display:inline-flex;align-items:center;gap:10px;margin-right:6px}
+.fam-portal .tnd-pane-head-actions .fr-fhacts .btn-sm{margin:0!important}
+.fam-portal .tnd-pane-head-actions .fr-fhacts .btn-sm{display:inline-flex;align-items:center}
+/* Edit layout, the same rhythm as reading: room under the tabs, numbered area titles, content inset. */
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.before{margin-top:18px}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.before:empty{margin:0}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.before:empty + .fb-childcard{margin-top:18px}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.after:not(:empty){margin-bottom:24px}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard .vB-group-label .fr-vnum{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#efedf6;color:#332e47;font-size:12px;font-weight:600;flex:none;margin-right:2px}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-sec.fr-pupane > :not(.vB-group-label),html.fb-childopen #tndDrawer .tnd-pane-edit .fb-sec.fr-fipane > :not(.vB-group-label){margin:4px 16px 16px}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-sec.fr-pupane > .fam-panel-note,html.fb-childopen #tndDrawer .tnd-pane-edit .fb-sec.fr-pupane > p{margin:-4px 16px 16px!important;padding:0!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-sec.fr-todaysec > .fr-today{margin:4px 16px 16px}
+/* Reading: the same inset for lists that come in their own boxes. */
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von .fr-today{margin:0}
+/* Reading a child: plain section titles, every section open (no numbers, no arrows, nothing to click). */
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von > .fr-vhead{cursor:default;padding-right:0!important}
+html.fb-childopen #tndDrawer .fr-vcard > section.fr-von > .fr-vhead::after{display:none!important}
+/* Editing a child inside the family: plain area titles (no numbers, no arrows); a title opens its area. */
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard .vB-group-label .fr-vnum{display:none!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard > .fb-sec > .vB-group-label::after{display:none!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard > .fb-sec > .vB-group-label{padding-right:16px!important}
+/* The child's title row folds the child to that row, and unfolds it. */
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard > .fb-childhead{cursor:pointer}
+html.fb-childopen #tndDrawer .fr-vcard > .fr-vchead .fr-sibchev{display:none}
+html.fb-childopen #tndDrawer .fr-vcard.fr-folded > :not(.fr-vchead),html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded > :not(.fb-childhead){display:none!important}
+html.fb-childopen #tndDrawer .fr-vcard.fr-folded > .fr-vchead,html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded > .fb-childhead{margin:0!important}
+/* No arrows on the children's rows either: a row (or the open child's title) opens on click. */
+html.fb-childopen #tndDrawer .fr-sib .fr-sibchev{display:none!important}
+/* The same 10px between every child, open or folded. */
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.before:not(:empty) + .fb-childcard{margin-top:0!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard{margin-bottom:0!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.after:not(:empty){margin-top:0!important}
+html.fb-childopen #tndDrawer .tnd-pane-view .fr-sibs.after:not(:empty){margin-top:-14px!important}
+/* Editing inside the family: 10px between children, as when reading (the form's own gap is 22px). */
+html.fb-childopen #tndDrawer .tnd-pane-edit.fb-fold{row-gap:10px!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.before{margin:18px 0 0!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.before:empty{margin:8px 0 0!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.after{margin:0 0 24px!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fr-sibs.after:empty{margin:0!important}
+/* A folded child looks like the other children's rows: same padding, name and status, no stage choice. */
+html.fb-childopen #tndDrawer .fr-foldwhere{display:none}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded{padding:14px 18px!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded .fb-stagerow,html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded .fr-vcacts{display:none!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded .fb-who small:not(.fr-foldwhere){display:none!important}
+html.fb-childopen #tndDrawer .tnd-pane-edit .fb-childcard.fr-folded .fb-who .fr-foldwhere{display:block}
+html.fb-childopen #tndDrawer .fr-vcard.fr-folded{padding:14px 18px!important}
+html.fb-childopen #tndDrawer .fr-vcard.fr-folded > section.vB-group.fr-von{display:none!important}

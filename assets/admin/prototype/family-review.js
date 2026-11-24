@@ -5,7 +5,7 @@
      7.1  a breadcrumb back to the family when the child was opened from it, and the
           family's name in bold under the child's, linking back, wherever it was opened;
           no Family tab (the family is in one place only).
-     7.2  no Enrollment tab: it is "Schedule and classroom". An existing child has tabs; a new
+     7.2  no Enrollment tab: it is "Schedule". An existing child has tabs; a new
           child is added through a wizard whose steps are those same tabs (newChildWizard).
      7.3  a Forms and immunizations tab (read from the Vaccines and forms data in PHP).
      5.2  on Health, the child's doctor is the family's Doctor contact (one Doctor type).
@@ -107,7 +107,7 @@
   // Forms are read from Vaccines and forms: the same read-only list in View and Edit.
   function addFormsTab(d, id) {
     panes(d).forEach(function (p) {
-      var sec = addTab(p, 'fi', 'Forms and immunizations', FI_ICON, 'fr-fi');
+      var sec = addTab(p, 'fi', 'Docs', FI_ICON, 'fr-fi');
       if (!sec) return;
       sec.innerHTML = formsHtml(id) + (isEditPane(p) ? '<p class="fam-panel-note">Not edited here: forms are updated on <a href="javascript:void(0);" class="fr-vfgo">Vaccines and forms</a>.</p>' : '');
       // Vaccines and forms is Tendi's files window for this child (the same one the Children list opens).
@@ -363,7 +363,7 @@
   var STEPS = [
     { k: 'details', t: 'Child details', panel: '0' },
     { k: 'family', t: 'Family' },
-    { k: 'schedule', t: 'Schedule and classroom', panel: '6' },
+    { k: 'schedule', t: 'Schedule', panel: '6' },
     { k: 'health', t: 'Health', panel: '2' },
     { k: 'transport', t: 'Transportation', panel: '3' },
     { k: 'tuition', t: 'Tuition', panel: '7' },
@@ -481,7 +481,7 @@
       }
       // Hidden inline, so the app's own styles can't show them again; anything it adds later too.
       Array.prototype.forEach.call(sec.children, function (el) {
-        if (!el.classList.contains('vB-group-label') && !el.classList.contains('fr-today')) el.style.setProperty('display', 'none', 'important');
+        if (!el.classList.contains('vB-group-label') && !el.classList.contains('fr-today') && !el.classList.contains('fr-vhead') && el.style.display !== 'none') el.style.setProperty('display', 'none', 'important');
       });
     });
   }
@@ -497,6 +497,23 @@
     });
   }
 
+  /* Leaving a child that is being edited saves it, as leaving a family tab saves the tab: the app's
+     Save, then `next` once the panel has closed. A refused Save (something required missing) stays. */
+  function saveChildThen(next) {
+    var sv = document.getElementById('tndDrawerSave');
+    if (!sv) { next(); return; }
+    window.__fbOpenAt = Date.now();
+    sv.click();
+    var t0 = Date.now();
+    (function wait() {
+      var dr = document.getElementById('tndDrawer');
+      var closed = !dr || dr.hidden || !dr.classList.contains('is-open');
+      if (closed) { next(); return; }
+      if (dr.querySelector('.has-error, .tnd-field-missing, input.error') && Date.now() - t0 > 400) return;   // refused: stay
+      if (Date.now() - t0 < 5000) setTimeout(wait, 120);
+    })();
+  }
+
   /* ---- A child opened inside the family (families-page.js, openChild): a family tab or closing
      the family leaves the child first; the child closing by itself drops the in-family mode. ---- */
   var htmlEl = document.documentElement;
@@ -505,23 +522,102 @@
     var b = e.target.closest && e.target.closest('.fam-portal [data-ftab], .fam-portal .tnd-pane-close, .fam-portal .tnd-pane-scrim');
     if (!b) return;
     var dr = drawer();
-    if (window.TndListDrawer) window.TndListDrawer.close();      // a soft close: unsaved edits hold it
-    if (dr && dr.classList.contains('is-open')) { e.stopPropagation(); e.preventDefault(); return; }
+    // Editing a child: leaving it saves it (as leaving a family tab does), then goes where was clicked.
+    if (htmlEl.classList.contains('fb-childedit') && dr && dr.classList.contains('is-editing')) {
+      e.stopPropagation(); e.preventDefault();
+      saveChildThen(function () {
+        htmlEl.classList.remove('fb-childopen', 'fb-childedit');
+        if (b.classList.contains('tnd-pane-close') || b.classList.contains('tnd-pane-scrim')) b.click();
+        else b.click();
+      });
+      return;
+    } else if (window.TndListDrawer) window.TndListDrawer.close();      // a soft close: unsaved edits hold it
+    if (dr && dr.classList.contains('is-open') && !dr.hidden && dr.classList.contains('is-editing')) { e.stopPropagation(); e.preventDefault(); return; }
     htmlEl.classList.remove('fb-childopen', 'fb-childedit');
+  }, true);
+  /* A child opened to be read inside the family: Edit reopens it in the same steps as a new child.
+     The steps are laid out as the form loads, so the record is opened again, already in that layout. */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#tndDrawerEdit');
+    if (!b || !htmlEl.classList.contains('fb-childopen') || htmlEl.classList.contains('fb-childedit') || !window.__fbChildView) return;
+    var d = drawer(), id = d && childId(d);
+    if (!id || !window.TndListDrawer || !window.TndListDrawer.openRecord) return;
+    e.preventDefault(); e.stopPropagation();
+    var nm = d.querySelector('.tnd-pane-view .vB-name');
+    var name = nm ? nm.textContent.trim() : '';
+    htmlEl.classList.add('fb-childedit');
+    d._fbWasEditing = false;
+    window.__fbOpenAt = Date.now();
+    window.TndListDrawer.close(true);
+    setTimeout(function () {
+      window.__fbOpenAt = Date.now();
+      window.TndListDrawer.openRecord('children/edit/' + id, { id: id, name: name });
+      (function toEdit(n) {
+        var eb = document.getElementById('tndDrawerEdit'), dr = document.getElementById('tndDrawer'), body = document.getElementById('tndDrawerBody');
+        if (eb && dr && dr.classList.contains('is-readonly') && body && body.classList.contains('is-ready')) { eb.click(); return; }
+        if (n < 60) setTimeout(function () { toEdit(n + 1); }, 100);
+      })(0);
+      setTimeout(function () { var dr = document.getElementById('tndDrawer'); if (dr && !dr.hidden && !dr.classList.contains('is-open')) dr.classList.add('is-open'); }, 400);
+    }, 280);
+  }, true);
+  // ...and Cancel there goes back to reading the child (the app's Cancel would close it).
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#tndDrawerCancel');
+    if (!b || !window.__fbChildView || !htmlEl.classList.contains('fb-childopen') || !htmlEl.classList.contains('fb-childedit')) return;
+    var d = drawer(), id = d && childId(d);
+    if (!id || !window.TndListDrawer || !window.TndListDrawer.openRecord) return;
+    e.preventDefault(); e.stopPropagation();
+    var nm = d.querySelector('.tnd-pane-view .vB-name');
+    var name = nm ? nm.textContent.trim() : '';
+    htmlEl.classList.remove('fb-childedit');
+    d._fbWasEditing = false;
+    window.__fbOpenAt = Date.now();
+    window.TndListDrawer.close(true);
+    setTimeout(function () {
+      window.__fbOpenAt = Date.now();
+      window.TndListDrawer.openRecord('children/edit/' + id, { id: id, name: name });
+      setTimeout(function () { var dr = document.getElementById('tndDrawer'); if (dr && !dr.hidden && !dr.classList.contains('is-open')) dr.classList.add('is-open'); }, 400);
+    }, 280);
+  }, true);
+  /* A DATE CALENDAR LEFT OPEN. The calendar sits outside the panel, so when the panel's content is
+     replaced (another child, Edit, Cancel, a tab) an open calendar stayed on screen with no field.
+     Any open calendar whose date field is gone or hidden is closed; moving around closes them all. */
+  function closeStrayCalendars(all) {
+    var live = [];
+    document.querySelectorAll('input').forEach(function (i) {
+      var fp = i._flatpickr;
+      if (fp && fp.calendarContainer && !all && document.body.contains(i) && (i.offsetParent || (fp.altInput && fp.altInput.offsetParent))) live.push(fp.calendarContainer);
+    });
+    document.querySelectorAll('.flatpickr-calendar.open').forEach(function (cal) {
+      if (live.indexOf(cal) < 0) cal.classList.remove('open');
+    });
+  }
+  setInterval(function () { closeStrayCalendars(false); }, 300);
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.fr-sib, .fr-fhacts button, .fam-portal [data-ftab], .fr-vchead, .fb-childhead, .fam-tochild')) closeStrayCalendars(true);
   }, true);
   var wasOpen = false;
   setInterval(function () {
     if (!htmlEl.classList.contains('fb-childopen')) { wasOpen = false; return; }
+    stackChildView(); siblings();                        // the head row follows the record as it fills in
     // Kept on the family's panel as it is now (it may still have been sliding in when the child opened).
     var fp = document.querySelector('.fam-portal .tnd-pane'), bar = document.querySelector('.fam-portal .fam-ftabs');
     if (fp) htmlEl.style.setProperty('--fb-left', Math.round(fp.getBoundingClientRect().left) + 'px');
     if (bar) htmlEl.style.setProperty('--fb-top', Math.round(bar.getBoundingClientRect().bottom) + 'px');
     var dr = drawer(), open = !!(dr && !dr.hidden && dr.classList.contains('is-open'));
     if (open) wasOpen = true;
-    else if (wasOpen || Date.now() - (window.__fbOpenAt || 0) > 4000) { htmlEl.classList.remove('fb-childopen', 'fb-childedit'); wasOpen = false; }
+    // (Not while it is being reopened: closed for a moment, then opened again.)
+    else if (Date.now() - (window.__fbOpenAt || 0) > 1500 && (wasOpen || Date.now() - (window.__fbOpenAt || 0) > 4000)) { htmlEl.classList.remove('fb-childopen', 'fb-childedit'); wasOpen = false; }
     if (!document.querySelector('.fam-portal')) htmlEl.classList.remove('fb-childopen', 'fb-childedit');
-    // Edited inside the family: Cancel leaves the child (there is no separate reading page here).
-    if (htmlEl.classList.contains('fb-childedit') && dr) {
+    // Opened to be read, then edited (its Edit reopens it in the steps): Cancel or Save goes back to reading it.
+    if (window.__fbChildView && dr) {
+      if (htmlEl.classList.contains('fb-childedit')) {
+        if (dr.classList.contains('is-editing')) dr._fbWasEditing = true;
+        else if (dr._fbWasEditing && dr.classList.contains('is-readonly')) { dr._fbWasEditing = false; htmlEl.classList.remove('fb-childedit'); }
+      }
+    }
+    // Opened to be edited (the family was being edited): Cancel leaves the child.
+    else if (htmlEl.classList.contains('fb-childedit') && dr) {
       if (dr.classList.contains('is-editing')) dr._fbWasEditing = true;
       else if (dr._fbWasEditing && dr.classList.contains('is-readonly')) { dr._fbWasEditing = false; if (window.TndListDrawer) window.TndListDrawer.close(true); }
     }
@@ -538,9 +634,14 @@
   function newChildWizard() {
     var existing = htmlEl.classList.contains('fb-childedit');   // a saved child, edited inside the family
     if (!htmlEl.classList.contains('fb-child') && !existing) return;
+    // A saved child is edited in areas that expand, like reading it: no steps, no Continue.
+    if (existing && !htmlEl.classList.contains('fb-child')) return;
     var form = document.querySelector('#tndDrawer .tnd-pane-edit.fb-fold'), card = form && form.querySelector(':scope > .fb-childcard');
     if (!card) return;
-    var secs = Array.prototype.filter.call(card.querySelectorAll(':scope > .fb-sec'), function (x) { return !x.classList.contains('fb-off') && !x.classList.contains('fr-nwreview'); })
+    // A section the child's stage hides (Health, Transportation and Tuition on the waiting list) is not a step.
+    var secs = Array.prototype.filter.call(card.querySelectorAll(':scope > .fb-sec'), function (x) {
+      return !x.classList.contains('fb-off') && !x.classList.contains('fr-nwreview') && !(x.style.display === 'none' && !x.classList.contains('fb-other'));
+    })
       .sort(function (a, b) { return (+a.style.order || 0) - (+b.style.order || 0); });
     if (!secs.length) return;
     // The tab's own name (family-b.js keeps it in data-fb), not the marks added here.
@@ -797,8 +898,218 @@
       if (key && shown[key] && v && /not set/i.test(v.textContent)) v.textContent = shown[key];
     });
   }
+  /* Children page: each child's family, as a link under the name. A child is added and its family
+     information kept on the family, so the list leads there. */
+  var famLoading = false;
+  function rowFamilyLinks() {
+    var cells = document.querySelectorAll('td.tndcol-child .tnd-namecell');
+    if (!cells.length || !FR()) return;
+    if (!famLoading && FR().load) { famLoading = true; FR().load().then(function () { rowFamilyLinks(); }); return; }
+    Array.prototype.forEach.call(cells, function (cell) {
+      if (cell.querySelector('.fr-rowfam')) return;
+      var tr = cell.closest('tr'), id = tr && tr.id, fam = id && FR().familyOfChild(id);
+      if (!fam) return;
+      var nm = cell.querySelector('.tnd-nm') || cell;
+      nm.insertAdjacentHTML('beforeend', '<a href="javascript:void(0);" class="fr-rowfam">' + esc(FR().famName(fam.f)) + '</a>');
+      nm.querySelector('.fr-rowfam').addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        FR().backTo(fam.f, 'details', 0);
+      });
+    });
+  }
+  /* A CHILD READ INSIDE THE FAMILY: one page, top to bottom, like the new child's Review. Every tab
+     the child has is a section with its title, in tab order; no second row of tabs under the family's. */
+  function stackChildView() {
+    var d = drawer(), vp = d && d.querySelector('.tnd-pane-view');
+    if (!vp) return;
+    var on = htmlEl.classList.contains('fb-childopen') && !htmlEl.classList.contains('fb-childedit');
+    if (vp.classList.contains('fr-vstack') !== on) vp.classList.toggle('fr-vstack', on);
+    if (!on) return;
+    // One card holding a block per section, as the steps are laid out (the record is opened again to edit).
+    var card = vp.querySelector(':scope > .fr-vcard');
+    if (!card) {
+      card = document.createElement('div'); card.className = 'fr-vcard';
+      var tabsEl = vp.querySelector(':scope > .tnd-tabs');
+      vp.insertBefore(card, tabsEl ? tabsEl.nextSibling : null);
+    }
+    // The child's own head row, as when a child is added: circle, name, where they are, then Edit.
+    var head = card.querySelector(':scope > .fr-vchead');
+    if (!head) {
+      head = document.createElement('div'); head.className = 'fb-phead fr-vchead';
+      head.innerHTML = '<span class="fb-av fr-vav"></span><span class="fb-who"><b></b><small></small></span><span class="up-head-spacer"></span><span class="fr-sibchev" aria-hidden="true"></span>';
+      card.insertBefore(head, card.firstChild);
+    }
+    var hero = vp.querySelector('.vB-hero'), nm = hero && hero.querySelector('.vB-name');
+    var who = nm ? nm.textContent.trim() : '';
+    var fid = childId(d), famc = fid && FR() && FR().familyOfChild(fid), rec = famc && famc.rec;
+    var where = rec ? (rec.s === 'waitlist' ? 'Waiting list' : rec.s === 'inactive' ? 'Not enrolled' : 'Enrolled' + (rec.cl ? ' \u00b7 ' + rec.cl : '')) : '';
+    var av = head.querySelector('.fr-vav'), letter = (who.charAt(0) || '?').toUpperCase();
+    if (av.textContent !== letter) av.textContent = letter;
+    var heroAv = hero && hero.querySelector('.vB-avatar, .fb-av, .tnd-rowav, [class*=avatar]');
+    var bg = heroAv ? window.getComputedStyle(heroAv).backgroundColor : '';
+    if (bg && bg !== 'rgba(0, 0, 0, 0)' && av.style.background !== bg) av.style.background = bg;
+    if (head.querySelector('b').textContent !== who) head.querySelector('b').textContent = who;
+    if (head.querySelector('small').textContent !== where) head.querySelector('small').textContent = where;
+    var n = 0, tabs = vp.querySelectorAll('.tnd-tabs .tnd-tab');
+    // Moved only when the order is wrong: a move on every pass would keep the page from settling.
+    var want = Array.prototype.map.call(tabs, function (tab) { return vp.querySelector('section.vB-group[data-panel="' + tab.getAttribute('data-tab') + '"]'); }).filter(Boolean);
+    var have = Array.prototype.filter.call(card.children, function (c) { return c.matches('section.vB-group[data-panel]'); });
+    if (want.length !== have.length || want.some(function (x, i) { return have[i] !== x; })) want.forEach(function (x) { card.appendChild(x); });
+    Array.prototype.forEach.call(tabs, function (tab) {
+      var key = tab.getAttribute('data-tab'), sec = vp.querySelector('section.vB-group[data-panel="' + key + '"]');
+      if (!sec) return;
+      var shown = !tab.hidden && window.getComputedStyle(tab).display !== 'none';
+      if (sec.classList.contains('fr-von') !== shown) sec.classList.toggle('fr-von', shown);
+      if (!shown) return;
+      n++;
+      // Areas that expand, as when a child is added: the first is open, the others open from their title.
+      // Read as one page: every section open, titles only (no numbers, no arrows).
+      var closed = false;
+      if (sec.classList.contains('fr-vclosed') !== closed) sec.classList.toggle('fr-vclosed', closed);
+      var name = (tab.textContent || '').trim(), h = sec.querySelector(':scope > .fr-vhead');
+      if (!h) { h = document.createElement('h3'); h.className = 'fr-vhead'; sec.insertBefore(h, sec.firstChild); }
+      var html = '<span>' + esc(name) + '</span>';
+      if (h.getAttribute('data-k') !== n + name) { h.setAttribute('data-k', n + name); h.innerHTML = html; }
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var h = e.target.closest && e.target.closest('#tndDrawer .fr-vcard > section.fr-von > .fr-vhead');
+    if (!h) return;
+    var sec = h.parentNode;
+    sec.setAttribute('data-vopen', sec.getAttribute('data-vopen') === '1' ? '0' : '1');
+    stackChildView();
+  });
+  /* THE FAMILY'S CHILDREN IN ONE WINDOW. A child opened inside the family is one row of the family's
+     children, expanded: the other children stay listed above and below it, and a click on one of them
+     expands that child instead (read, or edited when editing). A click on the open child's row folds it. */
+  function sibRow(k) {
+    return '<button type="button" class="fr-sib" data-id="' + esc(k.id) + '" data-name="' + esc(k.name) + '">' +
+      '<span class="fr-vav">' + esc((k.name.charAt(0) || '?').toUpperCase()) + '</span>' +
+      '<span class="fb-who"><b>' + esc(k.name) + '</b><small>' + esc(k.where) + '</small></span>' +
+      '<span class="up-head-spacer"></span><span class="fr-sibchev" aria-hidden="true"></span></button>';
+  }
+  // Editing a saved child: the areas carry the same numbers as when reading it.
+  function editNumbers() {
+    if (!htmlEl.classList.contains('fb-childopen') || !htmlEl.classList.contains('fb-childedit') || htmlEl.classList.contains('fb-child')) return;
+    var card = document.querySelector('#tndDrawer .tnd-pane-edit .fb-childcard');
+    if (!card) return;
+    var secs = Array.prototype.filter.call(card.querySelectorAll(':scope > .fb-sec'), function (x) {
+      return !x.classList.contains('fb-off') && !x.classList.contains('fb-other') && x.style.display !== 'none' && window.getComputedStyle(x).display !== 'none';
+    }).sort(function (a, b) { return (+a.style.order || 0) - (+b.style.order || 0); });
+    secs.forEach(function (x, i) {
+      if (i === 0) return;                                  // the first area is the child's own, under their name
+      var h = x.querySelector(':scope > .vB-group-label');
+      if (!h) return;
+      var m = h.querySelector(':scope > .fr-vnum');
+      if (!m) { m = document.createElement('span'); m.className = 'fr-vnum'; h.insertBefore(m, h.firstChild); }
+      if (m.textContent !== String(i + 1)) m.textContent = String(i + 1);
+    });
+  }
+  function siblings() {
+    var d = drawer();
+    if (!d || !htmlEl.classList.contains('fb-childopen') || !FR() || !FR().kidsList) return;
+    var editing = htmlEl.classList.contains('fb-childedit');
+    var pane = d.querySelector(editing ? '.tnd-pane-edit' : '.tnd-pane-view');
+    var card = pane && pane.querySelector(editing ? '.fb-childcard' : '.fr-vcard');
+    var id = childId(d), fam = id && FR().familyOfChild(id);
+    if (!card || !fam) return;
+    var list = FR().kidsList(fam.f), at = -1;
+    list.forEach(function (k, i) { if (k.id === String(id)) at = i; });
+    if (at < 0) return;
+    var key = fam.f.n + '|' + id + '|' + list.length;
+    [['before', list.slice(0, at)], ['after', list.slice(at + 1)]].forEach(function (pair) {
+      var box = pane.querySelector('.fr-sibs.' + pair[0]);
+      if (!box) {
+        box = document.createElement('div'); box.className = 'fr-sibs ' + pair[0];
+        card.parentNode.insertBefore(box, pair[0] === 'before' ? card : card.nextSibling);
+      }
+      if (box.getAttribute('data-k') !== key) { box.setAttribute('data-k', key); box.innerHTML = pair[1].map(sibRow).join(''); }
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var row = e.target.closest && e.target.closest('#tndDrawer .fr-sib');
+    if (row) {
+      if (!row.getAttribute('data-id')) { toast('This child is not on file yet.', true); return; }
+      var rid = row.getAttribute('data-id'), rname = row.getAttribute('data-name');
+      var drw = drawer();
+      if (htmlEl.classList.contains('fb-childedit') && drw && drw.classList.contains('is-editing')) {
+        saveChildThen(function () { FR().openChild(rid, rname, 'edit'); });      // the open one is saved first
+        return;
+      }
+      FR().openChild(rid, rname, htmlEl.classList.contains('fb-childedit') ? 'edit' : 'view');
+      return;
+    }
+    // The open child's own title row folds or unfolds the child (read or edited; what is typed is kept).
+    var head = e.target.closest && e.target.closest('#tndDrawer .fr-vchead, #tndDrawer .tnd-pane-edit .fb-childcard > .fb-childhead');
+    if (head && !(e.target.closest('button, a, input, select, label, .fb-stagerow'))) {
+      var c = head.parentNode;
+      c.classList.toggle('fr-folded');
+      // Folded, it reads like the other children's rows: name and where they are, nothing to choose.
+      if (!head.querySelector('.fr-foldwhere')) {
+        var d1 = drawer(), id1 = d1 && childId(d1), fam1 = id1 && FR().familyOfChild(id1);
+        var k1 = fam1 && FR().kidsList(fam1.f).filter(function (k) { return k.id === String(id1); })[0];
+        var who1 = head.querySelector('.fb-who');
+        if (who1 && k1) who1.insertAdjacentHTML('beforeend', '<small class="fr-foldwhere">' + esc(k1.where) + '</small>');
+      }
+    }
+  });
+
+  /* Edit is at the top, as on the family's other tabs: on the Children tab the family's head carries
+     Edit, then Cancel and Save while a child is edited. */
+  function familyHeadActions() {
+    var portal = document.querySelector('.fam-portal');
+    if (!portal) return;
+    var acts = portal.querySelector('.tnd-pane-head-actions');
+    var tab = portal.querySelector('.fam-ftabs .tnd-tab.is-active');
+    var mine = acts && acts.querySelector('.fr-fhacts');
+    // Not while the family itself is being edited: its own Cancel and Save are there then.
+    var famEditing = !!(acts && acts.querySelector('.fam-tsave, .fam-tcancel'));
+    var onKids = tab && tab.getAttribute('data-ftab') === 'children' && !portal.querySelector('.fam-editform') && !htmlEl.classList.contains('fb-child') && !famEditing;
+    var mode = !onKids ? '' : htmlEl.classList.contains('fb-childedit') ? 'edit' : 'view';
+    if (!acts) return;
+    if (!mode) { if (mine) mine.remove(); return; }
+    if (mine && mine.getAttribute('data-mode') === mode) return;
+    if (mine) mine.remove();
+    var close = acts.querySelector('.tnd-pane-close');
+    var wrap = document.createElement('span');
+    wrap.className = 'fr-fhacts'; wrap.setAttribute('data-mode', mode);
+    // The family's own buttons: the same look and icons as Edit and Save on its other tabs.
+    var ic = FR().icons ? FR().icons() : { edit: '', save: '' };
+    wrap.innerHTML = mode === 'edit'
+      ? '<button type="button" class="btn-sm tnd-drawer-cancel fr-fhcancel">Cancel</button><button type="button" class="btn-sm primary tnd-drawer-save fr-fhsave">' + ic.save + ' Save</button>'
+      : '<button type="button" class="btn-sm primary tnd-drawer-edit fr-fhedit">' + ic.edit + ' Edit</button>';
+    acts.insertBefore(wrap, close);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.fam-portal .fr-fhacts button');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (b.classList.contains('fr-fhsave')) {
+      // Saved: back to reading the same child (the app's Save closes the panel).
+      var d0 = drawer(), id0 = d0 && childId(d0), nm0 = d0 && d0.querySelector('.tnd-pane-view .vB-name');
+      var name0 = nm0 ? nm0.textContent.trim() : '';
+      var sv = document.getElementById('tndDrawerSave'); if (sv) sv.click();
+      var t0 = Date.now();
+      (function back() {
+        var dr = document.getElementById('tndDrawer');
+        var closed = !dr || dr.hidden || !dr.classList.contains('is-open');
+        var invalid = dr && dr.querySelector('.has-error, .tnd-field-missing, input.error');
+        if (invalid && !closed) return;                       // refused: stays in edit, showing what is missing
+        if (closed && id0) { window.__fbOpenAt = Date.now(); FR().openChild(id0, name0, 'view'); return; }
+        if (Date.now() - t0 < 4000) setTimeout(back, 150);
+      })();
+      return;
+    }
+    if (b.classList.contains('fr-fhcancel')) { var cn = document.getElementById('tndDrawerCancel'); if (cn) cn.click(); return; }
+    // Edit: the open child, or else the family's first child on file.
+    if (htmlEl.classList.contains('fb-childopen')) { var eb = document.getElementById('tndDrawerEdit'); if (eb) eb.click(); return; }
+    var portal = document.querySelector('.fam-portal'), f = portal && portal._fam;
+    var first = f && FR().kidsList(f).filter(function (k) { return k.id; })[0];
+    if (first) FR().openChild(first.id, first.name, 'edit');
+    else toast('This family has no child on file to edit yet.', true);
+  }, true);
   var t = null;
   // At most every 80ms, never starved: a screen that keeps changing still gets its pass.
-  new MutationObserver(function () { if (t) return; t = setTimeout(function () { t = null; apply(); newChildWizard(); }, 80); })
+  new MutationObserver(function () { if (t) return; t = setTimeout(function () { t = null; apply(); newChildWizard(); rowFamilyLinks(); stackChildView(); siblings(); familyHeadActions(); }, 80); })
     .observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 })();
