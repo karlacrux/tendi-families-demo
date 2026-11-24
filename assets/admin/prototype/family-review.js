@@ -499,9 +499,17 @@
 
   /* Leaving a child that is being edited saves it, as leaving a family tab saves the tab: the app's
      Save, then `next` once the panel has closed. A refused Save (something required missing) stays. */
+  // What the child's form held when editing started, to know whether anything was changed.
+  var formState = function (f) { try { return new URLSearchParams(new FormData(f)).toString(); } catch (e) { return ''; } };
+  var childChanged = function () {
+    var f = document.querySelector('#tndDrawer #frmAddEditRecord');
+    return !!(f && f._fbSnap != null && formState(f) !== f._fbSnap);
+  };
   function saveChildThen(next) {
     var sv = document.getElementById('tndDrawerSave');
     if (!sv) { next(); return; }
+    // Nothing changed: nothing to save, and no message.
+    if (!childChanged()) { window.__fbOpenAt = Date.now(); if (window.TndListDrawer) window.TndListDrawer.close(true); setTimeout(next, 280); return; }
     window.__fbOpenAt = Date.now();
     sv.click();
     var t0 = Date.now();
@@ -592,7 +600,31 @@
       if (live.indexOf(cal) < 0) cal.classList.remove('open');
     });
   }
-  setInterval(function () { closeStrayCalendars(false); }, 300);
+  setInterval(function () {
+    closeStrayCalendars(false);
+    // The child's form as it opened for editing (after the sample data fills it in).
+    var f = document.querySelector('#tndDrawer.is-editing #frmAddEditRecord');
+    if (f && f._fbSnap == null) {
+      if (!f._fbSnapAt) f._fbSnapAt = Date.now() + 1500;
+      else if (Date.now() > f._fbSnapAt) f._fbSnap = formState(f);
+    }
+  }, 300);
+  // The same message twice in a row is shown once.
+  (function dedupe() {
+    var t = window.tndToast;
+    if (!t || t._frDedupe) { if (!t) setTimeout(dedupe, 300); return; }
+    t._frDedupe = true;
+    ['success', 'error'].forEach(function (k) {
+      var orig = t[k];
+      if (typeof orig !== 'function') return;
+      var last = '', at = 0;
+      t[k] = function (m) {
+        if (m === last && Date.now() - at < 2500) return;
+        last = m; at = Date.now();
+        return orig.apply(this, arguments);
+      };
+    });
+  })();
   document.addEventListener('click', function (e) {
     if (e.target.closest && e.target.closest('.fr-sib, .fr-fhacts button, .fam-portal [data-ftab], .fr-vchead, .fb-childhead, .fam-tochild')) closeStrayCalendars(true);
   }, true);
@@ -1088,6 +1120,8 @@
       // Saved: back to reading the same child (the app's Save closes the panel).
       var d0 = drawer(), id0 = d0 && childId(d0), nm0 = d0 && d0.querySelector('.tnd-pane-view .vB-name');
       var name0 = nm0 ? nm0.textContent.trim() : '';
+      // Nothing changed: back to reading, without a save or a message.
+      if (!childChanged()) { var cn0 = document.getElementById('tndDrawerCancel'); if (cn0) cn0.click(); return; }
       var sv = document.getElementById('tndDrawerSave'); if (sv) sv.click();
       var t0 = Date.now();
       (function back() {

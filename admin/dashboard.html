@@ -166,11 +166,7 @@
     var f = e.target, action = f.getAttribute('action') || location.href;
     if (new URL(action, location.href).origin !== location.origin) return;
     e.preventDefault();
-    // The form's own checks run after this listener: a refused Save says what is missing, not "Saved".
-    setTimeout(function () {
-      if (f.querySelector('input.error, select.error, textarea.error, .tnd-enroll-missing label.error') || document.querySelector('.tnd-enroll-summary')) return;
-      if (window.tndToast && window.tndToast.success) window.tndToast.success('Saved in the prototype only. Nothing is stored.');
-    }, 200);
+    // No message of its own: the panel's Save already says "Saved." (the prototype's not storing is obvious).
   }, true);
 
   /* ---------------- keep the visitor inside Families and Children ---------------- */
@@ -2185,16 +2181,16 @@ if (window.jQuery) {
 	</div>
 
 
-<link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/changemap.css?v=1800900000">
+<link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/changemap.css?v=1801000000">
 <link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/contacts-ui.css?v=1793193900">
-<link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/families-page.css?v=1800900000">
-<script src="/tendi-families-demo/assets/admin/prototype/changemap.js?v=1800900000"></script>
-<script src="/tendi-families-demo/assets/admin/prototype/contacts-ui.js?v=1800900000"></script>
-<script src="/tendi-families-demo/assets/admin/prototype/families-page.js?v=1800900000"></script>
-<link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/family-b.css?v=1800900000">
-<script src="/tendi-families-demo/assets/admin/prototype/family-b.js?v=1800900000"></script>
-<link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/family-review.css?v=1800900000">
-<script src="/tendi-families-demo/assets/admin/prototype/family-review.js?v=1800900000"></script>
+<link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/families-page.css?v=1801000000">
+<script src="/tendi-families-demo/assets/admin/prototype/changemap.js?v=1801000000"></script>
+<script src="/tendi-families-demo/assets/admin/prototype/contacts-ui.js?v=1801000000"></script>
+<script src="/tendi-families-demo/assets/admin/prototype/families-page.js?v=1801000000"></script>
+<link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/family-b.css?v=1801000000">
+<script src="/tendi-families-demo/assets/admin/prototype/family-b.js?v=1801000000"></script>
+<link rel="stylesheet" href="/tendi-families-demo/assets/admin/prototype/family-review.css?v=1801000000">
+<script src="/tendi-families-demo/assets/admin/prototype/family-review.js?v=1801000000"></script>
 </body>
 <script>
 	// `jqView` is the per-view jQuery.noConflict() alias. On the dashboard SHELL no view has
