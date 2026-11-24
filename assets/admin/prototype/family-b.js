@@ -40,7 +40,7 @@
   var PERSON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
   function paintCircle(el, name) {
     var letter = String(name || '').trim().charAt(0).toUpperCase();
-    el.classList.add('fb-av');
+    if (!el.classList.contains('fb-av')) el.classList.add('fb-av');
     el.classList.toggle('is-empty', !letter);
     if (letter) {
       if (el.textContent !== letter) el.textContent = letter;
@@ -487,11 +487,12 @@
     var first = get('fname'), box = form.querySelector('[name="is_waitlist"]'), cls = form.querySelector('[name="class"]');
     var waiting = !!(box && box.checked);
     paintCircle(head.querySelector('.fb-phead-av'), first);
-    head.querySelector('b').textContent = first ? first + ' ' + get('lname') : 'New child';
+    var nameText = first ? first + ' ' + get('lname') : 'New child', nb = head.querySelector('b');
+    if (nb.textContent !== nameText) nb.textContent = nameText;
     var where = !waiting && cls && cls.selectedIndex > 0 ? cls.options[cls.selectedIndex].text : '';
     var sub = head.querySelector('small');
-    sub.textContent = where;
-    sub.hidden = !where;
+    if (sub.textContent !== where) sub.textContent = where;
+    if (sub.hidden !== !where) sub.hidden = !where;
     // "This child is", beside the name: two choices in place of the original switch, which
     // stays in the form, hidden, and still drives what a waiting child is asked.
     if (box) {
@@ -513,8 +514,9 @@
      these fields a moment after the form loads. */
   var FIRST = ['fname', 'lname', 'reg_nickname', 'legal_name', 'hebrew_first', 'hebrew_last', 'profile_picture', 'dob', 'is_waitlist', 'branches', 'class', 'start_date', 'allergies[]', 'other_allergy', 'hra_acs'];
   function splitDetails(form, card, details, at) {
-    details.classList.add('fb-first');
-    details.classList.remove('fb-closed');
+    if (!details.classList.contains('fb-first')) details.classList.add('fb-first');
+    // The new-child stepper (family-review.js) opens and closes its steps: leave Details to it.
+    if (!form.classList.contains('fr-nwiz') && details.classList.contains('fb-closed')) details.classList.remove('fb-closed');
     var other = card.querySelector('.fb-other');
     if (!other) {
       other = document.createElement('section');
@@ -530,14 +532,14 @@
     });
     // ...the Hebrew date stays beside the date of birth, and anything else goes to Other details.
     var dob = first.querySelector('[name="dob"]'), dobGroup = dob && dob.closest('.form-group');
-    if (dobGroup && dobGroup.nextElementSibling) dobGroup.nextElementSibling.setAttribute('data-fb-keep', '1');
+    if (dobGroup && dobGroup.nextElementSibling && !dobGroup.nextElementSibling.hasAttribute('data-fb-keep')) dobGroup.nextElementSibling.setAttribute('data-fb-keep', '1');
     Array.prototype.forEach.call(first.querySelectorAll(':scope > .form-group'), function (g) {
       var keep = g.hasAttribute('data-fb-keep') || FIRST.some(function (n) { return g.querySelector('[name="' + n + '"]'); });
       if (!keep) rest.appendChild(g);
     });
     var type = card.querySelector('.form-group [name="hra_acs"]');
-    if (type) type.closest('.form-group').setAttribute('data-fb-moved', '1');
-    other.style.order = at * 10 + 5;
+    if (type && !type.closest('.form-group').hasAttribute('data-fb-moved')) type.closest('.form-group').setAttribute('data-fb-moved', '1');
+    if (other.style.order !== String(at * 10 + 5)) other.style.order = at * 10 + 5;
   }
 
   // Editing a child, Family tab: its contacts wear the family panel's circle and its button.

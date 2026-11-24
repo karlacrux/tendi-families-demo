@@ -264,7 +264,7 @@
         // The old pediatrician rows give way to the family's Doctor.
         health.querySelectorAll('.vB-row').forEach(function (r) {
           var l = r.querySelector('.vB-row-label');
-          if (l && /^pediatrician/i.test(l.textContent.trim())) { r.hidden = true; r.classList.add('fr-oldped'); r.style.display = 'none'; }
+          if (l && /^pediatrician/i.test(l.textContent.trim())) { if (!r.hidden) r.hidden = true; if (!r.classList.contains('fr-oldped')) r.classList.add('fr-oldped'); if (r.style.display !== 'none') r.style.display = 'none'; }
         });
         if (box) return;
         var list = health.querySelector('.vB-list') || health;
@@ -575,7 +575,7 @@
     steps.forEach(function (st, i) {
       var state = i === at ? 'on' : i < at ? 'done' : 'next';
       st.secs.forEach(function (x, k) {
-        x.setAttribute('data-nw', i);
+        if (x.getAttribute('data-nw') !== String(i)) x.setAttribute('data-nw', i);
         ['on', 'done', 'next'].forEach(function (c) { var cl = 'fr-nw-' + c; if (x.classList.contains(cl) !== (c === state)) x.classList.toggle(cl); });
         var closed = state !== 'on';
         if (x.classList.contains('fb-closed') !== closed) x.classList.toggle('fb-closed', closed);
@@ -700,7 +700,7 @@
       html += '<h4 class="fb-esub">' + esc(st.t) + '</h4>' +
         '<dl class="fr-nwrevlist">' + rows.map(function (r) { return '<div><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd></div>'; }).join('') + '</dl>';
     });
-    return html + '<p class="fam-panel-note">Each step was the child’s own tab: after saving, the same fields are on ' + esc(name.split(' ')[0]) + '’s tabs.</p></div>';
+    return html + '</div>';
   }
 
   /* ---- run on every child panel ---------------------------------------------------------- */
@@ -717,6 +717,85 @@
     addDetailsRo(d);
     tuitionAsToday(d);
     plainDates(d);
+    seedChild(d, id, fam);
+  }
+
+  /* SEED DATA. Branch, Class, Join Date and Tuition Type are required for a child, and so is a way
+     to reach the family, so no child on file in Tendi is without them. The recorded sample children
+     were, and showed Tendi's "Still missing" note. Fill them here, the same value every time for the
+     same child, in the form and in the view, so the sample reads like real data. */
+  var CLASS_NAMES = [];
+  fetch('/tendi-families-demo/assets/admin/prototype/children.json').then(function (r) { return r.json(); }).then(function (j) {
+    (j.children || []).forEach(function (c) { if (c.cl && CLASS_NAMES.indexOf(c.cl) < 0) CLASS_NAMES.push(c.cl); });
+    CLASS_NAMES.sort();
+  }).catch(function () {});
+  function seedChild(d, id, fam) {
+    var form = d.querySelector('#frmAddEditRecord');
+    if (!form || !/children\/save\/[1-9]/.test(form.getAttribute('action') || '')) return;
+    var q = function (n) { return form.querySelector('[name="' + n + '"]'); };
+    var br = q('branches');
+    if (!br || !CLASS_NAMES.length) return;
+    if (form._frSeeded === id) { seedClass(d, form); return; }
+    form._frSeeded = id;
+    var n = +id || 1, shown = {};
+    var fire = function (el) { if (window.jQuery) window.jQuery(el).trigger('change'); else el.dispatchEvent(new Event('change', { bubbles: true })); };
+    var real = function (sel) { return Array.prototype.filter.call(sel.options, function (o) { return o.value !== ''; }); };
+    var waiting = !!(q('is_waitlist') && q('is_waitlist').checked);
+    if (!waiting && !br.value && real(br).length) {
+      var bo = real(br)[n % real(br).length];
+      br.value = bo.value; fire(br); shown.Branch = bo.text.trim();
+    }
+    var sd = q('start_date');
+    if (!waiting && sd && !sd.value) {
+      var dobEl = q('dob'), dob = dobEl && dobEl._flatpickr && dobEl._flatpickr.selectedDates[0];
+      var when = new Date(2025, 8, 2 + (n % 20));
+      if (dob && dob > when) when = new Date(dob.getFullYear(), dob.getMonth() + 3, 1);
+      if (sd._flatpickr) sd._flatpickr.setDate(when, true); else { sd.value = (when.getMonth() + 1) + '/' + when.getDate() + '/' + when.getFullYear(); fire(sd); }
+      shown['Join Date'] = (when.getMonth() + 1) + '/' + when.getDate() + '/' + when.getFullYear();
+    }
+    var types = form.querySelectorAll('[name="hra_acs"]');
+    if (types.length && !form.querySelector('[name="hra_acs"]:checked')) {
+      var pick = ['cash', 'hra', 'acs', 'tax_credit'][n % 4], r = form.querySelector('[name="hra_acs"][value="' + pick + '"]') || types[0];
+      r.checked = true; fire(r);
+      var lab = r.closest('label'); shown['Tuition Type (HRA/ACS)'] = lab ? lab.textContent.trim() : r.value;
+    }
+    var reach = ['father_phone', 'mother_phone', 'home_phone', 'cell_number', 'number', 'parent_email'].some(function (k) { var e = q(k); return e && e.value.trim(); });
+    if (!reach && q('home_phone')) {
+      var ph = '';
+      (fam && fam.contacts || []).some(function (c) { ph = c.p || ''; return !!ph; });
+      q('home_phone').value = ph || '(212) 555-0' + String(100 + n % 900).slice(-3);
+      fire(q('home_phone'));
+      shown['Home Phone'] = q('home_phone').value;
+    }
+    // Class: by the child's age, among the classes the sample uses. Its list is filled when a branch
+    // is picked, so it is set on the next passes too, until it holds.
+    if (!waiting && q('class') && !q('class').value) {
+      var dobEl2 = q('dob'), dob2 = dobEl2 && dobEl2._flatpickr && dobEl2._flatpickr.selectedDates[0];
+      var months = dob2 ? (new Date().getFullYear() - dob2.getFullYear()) * 12 + new Date().getMonth() - dob2.getMonth() : 30;
+      var want = months < 6 ? 'younger babies' : months < 12 ? 'Older babies' : months < 24 ? '18-24' : months < 30 ? "younger 2's" : months < 36 ? "Older 2's" : months < 42 ? "younger 3's" : months < 48 ? "Older 3's" : (n % 2 ? 'Kindergarten Boys' : 'Kindergarten Girls');
+      form._frClass = CLASS_NAMES.indexOf(want) > -1 ? want : CLASS_NAMES[n % CLASS_NAMES.length];
+      shown.Class = form._frClass;
+    }
+    form._frShown = shown;
+    seedClass(d, form);
+    if (window.tndEnrollment && window.tndEnrollment.refresh) setTimeout(function () { window.tndEnrollment.refresh(); }, 700);
+  }
+  function seedClass(d, form) {
+    var cl = form.querySelector('[name="class"]'), want = form._frClass;
+    // A few tries only: if something keeps clearing it, stop rather than fight over it.
+    if (cl && want && !cl.value && (form._frTries = (form._frTries || 0) + 1) <= 8) {
+      var o = Array.prototype.find.call(cl.options, function (x) { return x.text.trim() === want; });
+      if (!o) { o = document.createElement('option'); o.value = 'seed-' + want; o.textContent = want; cl.appendChild(o); }
+      cl.value = o.value;
+      if (window.jQuery) window.jQuery(cl).trigger('change'); else cl.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    // The view shows what was filled, where it said "Not set".
+    var shown = form._frShown || {};
+    d.querySelectorAll('.tnd-pane-view .vB-row').forEach(function (row) {
+      var l = row.querySelector('.vB-row-label'), v = row.querySelector('.vB-row-value') || row.lastElementChild;
+      var key = l && l.textContent.trim();
+      if (key && shown[key] && v && /not set/i.test(v.textContent)) v.textContent = shown[key];
+    });
   }
   var t = null;
   // At most every 80ms, never starved: a screen that keeps changing still gets its pass.

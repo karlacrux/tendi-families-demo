@@ -3739,6 +3739,10 @@
       acc.style.display = pro || !v ? 'none' : '';
       // Until someone picks a level, it follows the relationship: a parent Full, anyone else No access.
       if (!card._accessPicked && !(c && c.access)) { card._access = /^(father|mother)$/i.test(v) ? 'full' : 'none'; drawAcc(); }
+      // A parent is Full or Payment only, when added and when edited: No access is not offered.
+      var isPar = /^(father|mother)$/i.test(v);
+      card.classList.toggle('fam-parentacc', isPar);
+      if (isPar && card._access === 'none') { card._access = 'full'; drawAcc(); }
     };
     if (rel) rel.addEventListener('change', syncAcc);
     syncAcc(); drawAcc();

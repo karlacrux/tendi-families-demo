@@ -3679,7 +3679,17 @@
     // and an unconditional write is a DOM change that would trigger the next pass.
     var label = waiting ? 'Waitlist' : 'Schedule and classroom';
     var h = dst.querySelector('h1,h2,h3,h4,legend,.vB-grouphead');
-    if (h && h.textContent !== label) h.textContent = label;
+    // Only the heading's own words: the new-child stepper adds a number and a summary beside them.
+    if (h) {
+      var own = '';
+      h.childNodes.forEach(function (n) { if (n.nodeType === 3) own += n.textContent; });
+      if (own.trim() !== label) {
+        if (h.querySelector('.fr-nwmark, .fr-nwsum, .fb-seccount')) {
+          h.childNodes.forEach(function (n) { if (n.nodeType === 3) n.textContent = ''; });
+          h.insertBefore(document.createTextNode(label), h.querySelector('.fr-nwsum, .fb-seccount'));
+        } else h.textContent = label;
+      }
+    }
     document.querySelectorAll('button, a, span, li').forEach(function (b) {
       if (b.children.length) return;
       var t = (b.textContent || '').trim();
