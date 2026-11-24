@@ -2741,6 +2741,8 @@
       portal.querySelectorAll('.fam-newparent').forEach(function (hostEl) {
         var card = personCard(f, null);
         if (!card) return;
+        // A new family has no name on file yet: its last name is the Family name being typed.
+        card._famLast = function () { return nm ? nm.value.trim() : ''; };
         var sel = card.querySelector('.cm-ptype select');
         if (sel) { sel.value = hostEl.getAttribute('data-rel'); sel.dispatchEvent(new Event('change')); }
         // The Father and Mother sections fix the relationship (4.2): the section title says it, no dropdown.
@@ -3615,7 +3617,30 @@
       };
     }
     addrPicker(f, c, card, ab);
-    if (!c) { cardExtras(f, null, card); return card; }
+    if (!c) {
+      /* A new Father or Mother starts with the last name on file for the family.
+         It stays editable; once typed over, a change of relationship leaves it alone. */
+      card._famLast = function () { return String(f.n || '').trim(); };
+      var relSel = card.querySelector('.cm-ptype select');
+      var lastIn = (function () {
+        var gs = card.querySelectorAll('[data-part="name"] .form-group');
+        for (var i = 0; i < gs.length; i++) {
+          var l = gs[i].querySelector('label');
+          if (l && /^last name$/i.test((l.textContent || '').trim())) return gs[i].querySelector('input');
+        }
+        return null;
+      })();
+      if (relSel && lastIn) {
+        relSel.addEventListener('change', function () {
+          if (lastIn.value && lastIn.getAttribute('data-auto') !== '1') return;
+          var ln = /^(father|mother)$/i.test(relSel.value) ? card._famLast() : '';
+          lastIn.value = ln;
+          if (ln) lastIn.setAttribute('data-auto', '1'); else lastIn.removeAttribute('data-auto');
+        });
+        lastIn.addEventListener('input', function () { lastIn.removeAttribute('data-auto'); });
+      }
+      cardExtras(f, null, card); return card;
+    }
     var sel = card.querySelector('.cm-ptype select');
     if (sel) { sel.value = typeKey(c.t); sel.dispatchEvent(new Event('change')); }
     var inp = function (part, re) {
@@ -3648,6 +3673,10 @@
      level for a parent (6.1) in place of the five permission ticks, and "Pick a family number"
      (3): the home number stays the family's, linked into the person's list, never retyped. */
   var TITLES = ['', 'Mr.', 'Mrs.', 'Ms.', 'Dr.', 'Rabbi'];
+  var TITLES_M = ['', 'Mr.', 'Dr.', 'Rabbi'];
+  var TITLES_F = ['', 'Mrs.', 'Ms.', 'Dr.'];
+  var MALE_REL = /^(father|step[ _]father|grandfather|uncle)$/;
+  var FEMALE_REL = /^(mother|step[ _]mother|grandmother|aunt)$/;
   function cardExtras(f, c, card) {
     card.classList.add('fam-ctx');
     // A parent's relationship is fixed, in the new-family form and in Edit (4.2, as reviewed 11/20).
@@ -3662,6 +3691,22 @@
         '<label class="fam-mini fam-mini-wide"><span>Hebrew name</span><input type="text" class="form-control fam-heb" dir="auto" aria-label="Hebrew name" value="' + esc((c && c.heb) || '') + '"></label>';
       namePart.parentNode.insertBefore(tb, namePart.nextSibling);
     }
+    // The Title list follows the relationship: a man's relationship offers no woman's title, and the other way round.
+    (function () {
+      var tSel = card.querySelector('.fam-title'), rSel = card.querySelector('.cm-ptype select');
+      if (!tSel || !rSel) return;
+      var draw = function () {
+        var r = String(rSel.value || '').toLowerCase();
+        var list = MALE_REL.test(r) ? TITLES_M : FEMALE_REL.test(r) ? TITLES_F : TITLES;
+        var cur = tSel.value;
+        if (list.indexOf(cur) < 0) cur = '';
+        tSel.innerHTML = list.map(function (t) {
+          return '<option value="' + t + '"' + (t === cur ? ' selected' : '') + '>' + (t || 'None') + '</option>';
+        }).join('');
+      };
+      rSel.addEventListener('change', draw);
+      draw();
+    })();
     // Access level: a parent is Full by default; Payment only gets bills and nothing else.
     var rel = card.querySelector('.cm-ptype select');
     var acc = document.createElement('div');
