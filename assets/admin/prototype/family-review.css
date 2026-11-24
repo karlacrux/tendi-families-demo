@@ -403,3 +403,7 @@ html.fb-childopen #tndDrawer{left:var(--fb-left,auto)!important;width:auto!impor
 #tndDrawer .fr-nwrevlist dd{margin:0;font-size:13.5px;color:var(--ink,#1f1a2e);overflow-wrap:anywhere}
 #tndDrawer .fr-nwrevnone{margin:0;font-size:13px;color:var(--ink-3,#5b5470)}
 html.fb-childedit #tndDrawer .fr-nwiz .fr-nw-next > .vB-group-label{pointer-events:auto;cursor:pointer}
+/* Children page: a child is added from its family (Families > a family > Children), so the page's own
+   Add Child and Add to waiting list buttons are hidden. The Families page's buttons stay. */
+.tendi-skin a.tnd-btn-add[href="children/add"],.tendi-skin a.btn-add-waitlist[href^="children/add"],
+a.tnd-btn-add[href="children/add"],a.btn-add-waitlist[href^="children/add"]{display:none!important}
